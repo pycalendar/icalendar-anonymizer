@@ -273,8 +273,21 @@ Self-Hosting
 Docker Deployment
 -----------------
 
-.. note::
-    Docker support is planned. See `Issue #8 <https://github.com/mergecal/icalendar-anonymizer/issues/8>`_.
+Pull and run the Docker image:
+
+.. code-block:: shell
+
+    docker pull sashankbhamidi/icalendar-anonymizer
+    docker run -p 8000:8000 sashankbhamidi/icalendar-anonymizer
+
+The web service will be available at http://localhost:8000.
+
+Build from source:
+
+.. code-block:: shell
+
+    docker build -t icalendar-anonymizer .
+    docker run -p 8000:8000 icalendar-anonymizer
 
 Manual Deployment
 -----------------
