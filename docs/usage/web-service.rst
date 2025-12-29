@@ -176,11 +176,11 @@ This endpoint includes SSRF (Server-Side Request Forgery) protection:
 
 **Error Responses**
 
-- ``400 Bad Request`` - Invalid URL, private IP, or invalid ICS format
-- ``404 Not Found`` - URL not found (or other HTTP errors from upstream server)
+- ``400 Bad Request`` - Invalid URL, private IP, invalid ICS format, or connection failed
 - ``408 Request Timeout`` - Request exceeded 10-second timeout
 - ``413 Payload Too Large`` - Response exceeds 10 MB size limit
-- ``500 Internal Server Error`` - Fetch failed or anonymization failed
+- ``Various HTTP status codes`` - Returns the actual HTTP status code from the upstream server (e.g., 404 Not Found, 500 Internal Server Error, 503 Service Unavailable)
+- ``500 Internal Server Error`` - Anonymization failed
 
 **Example with curl**
 
