@@ -48,6 +48,55 @@ Interactive API documentation is available at:
 - Swagger UI: http://127.0.0.1:8000/docs
 - ReDoc: http://127.0.0.1:8000/redoc
 
+Frontend Interface
+==================
+
+The web service includes a user-friendly web interface at the root URL (``/``).
+
+Features
+--------
+
+The frontend provides three input methods:
+
+Upload File
+    Drag and drop or click to select an ``.ics`` file from your device.
+    Maximum file size: 10 MB.
+
+Paste Content
+    Copy and paste iCalendar content directly into a text area.
+    Useful for small calendars or quick tests.
+
+Fetch from URL
+    Enter a URL to fetch and anonymize a remote calendar.
+    Subject to SSRF protection (see security considerations).
+
+Accessibility
+-------------
+
+The interface is fully accessible:
+
+- **Keyboard navigation**: All controls keyboard accessible with proper tab order
+- **Screen reader support**: ARIA labels and live regions for status updates
+- **High contrast**: WCAG AA compliant color contrast ratios
+- **Mobile responsive**: Works on all device sizes
+- **Progressive enhancement**: Basic functionality works without JavaScript
+
+Usage Example
+-------------
+
+1. Navigate to ``http://localhost:8000/``
+2. Choose an input method (upload, paste, or fetch)
+3. Submit your calendar
+4. Click "Download" to save the anonymized result
+
+The interface handles errors gracefully with informative messages.
+
+No-JavaScript Fallback
+----------------------
+
+If JavaScript is disabled, file upload still works via direct form submission to the
+``/upload`` endpoint. The file downloads automatically on success.
+
 API Endpoints
 =============
 

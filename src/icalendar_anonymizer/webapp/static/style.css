@@ -1,0 +1,550 @@
+/* SPDX-FileCopyrightText: 2025 icalendar-anonymizer contributors */
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --primary: #0066ff;
+    --primary-hover: #0052cc;
+    --success: #00c853;
+    --success-hover: #00a845;
+    --success-text: #008040;
+    --error: #ff3b30;
+    --error-text: #d32f2f;
+    --bg: #ffffff;
+    --surface: #fafafa;
+    --border: #e0e0e0;
+    --text: #1a1a1a;
+    --text-muted: #6b6b6b;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+    line-height: 1.5;
+    color: var(--text);
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+header {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 1.5rem;
+}
+
+.header-content {
+    max-width: 80rem;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+}
+
+.header-left {
+    flex: 1;
+}
+
+h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: var(--text);
+    letter-spacing: -0.025em;
+}
+
+header p {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    font-weight: 400;
+    margin: 0;
+}
+
+.header-nav {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+.header-nav a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    transition: all 0.15s ease;
+}
+
+.header-nav a:hover {
+    color: var(--text);
+}
+
+.header-link-primary {
+    color: var(--primary) !important;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--primary);
+    border-radius: 6px;
+}
+
+.header-link-primary:hover {
+    background: var(--primary);
+    color: white !important;
+}
+
+main {
+    flex: 1;
+    max-width: 48rem;
+    width: 100%;
+    margin: 0 auto;
+    padding: 3rem 1.5rem;
+}
+
+.tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.tabs button {
+    padding: 0.875rem 1.5rem;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.9375rem;
+    transition: all 0.15s ease;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    position: relative;
+}
+
+.tabs button:hover {
+    color: var(--text);
+}
+
+.tabs button[aria-selected="true"] {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+.tabs button:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+[role="tabpanel"] {
+    display: none;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 2rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+[role="tabpanel"][aria-hidden="false"] {
+    display: block;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+[role="tabpanel"] h2 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 1.25rem;
+    color: var(--text);
+    letter-spacing: -0.01em;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.dropzone {
+    border: 1.5px dashed var(--border);
+    border-radius: 8px;
+    padding: 3rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--surface);
+}
+
+.dropzone:hover,
+.dropzone.dragover {
+    border-color: var(--primary);
+    background: rgba(0, 102, 255, 0.04);
+}
+
+.dropzone input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+}
+
+.dropzone label {
+    cursor: pointer;
+    display: block;
+}
+
+.dropzone-text {
+    display: block;
+    color: var(--text);
+    font-weight: 500;
+    margin-bottom: 0.375rem;
+    font-size: 0.9375rem;
+}
+
+.dropzone-hint {
+    display: block;
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+}
+
+textarea,
+input[type="url"] {
+    width: 100%;
+    padding: 0.75rem 0.875rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: ui-monospace, 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
+    font-size: 0.875rem;
+    resize: vertical;
+    background: var(--bg);
+    color: var(--text);
+    transition: all 0.15s ease;
+}
+
+textarea:focus,
+input[type="url"]:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
+}
+
+textarea {
+    min-height: 13rem;
+    line-height: 1.6;
+}
+
+input[type="url"]::placeholder {
+    color: var(--text-muted);
+}
+
+.btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn:hover {
+    background: var(--primary-hover);
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+.btn:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.result {
+    margin-top: 1.25rem;
+    padding: 0.875rem 1rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    border: 1px solid;
+}
+
+.result.loading {
+    background: rgba(0, 102, 255, 0.06);
+    border-color: rgba(0, 102, 255, 0.2);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.result.loading::before {
+    content: '';
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid rgba(0, 102, 255, 0.2);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.result.success {
+    background: rgba(0, 200, 83, 0.06);
+    border-color: rgba(0, 200, 83, 0.2);
+    color: var(--success-text);
+}
+
+.result.error {
+    background: rgba(255, 59, 48, 0.06);
+    border-color: rgba(255, 59, 48, 0.2);
+    color: var(--error-text);
+}
+
+.result-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.result .download-btn {
+    background: var(--success);
+    color: white;
+    border: none;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+
+.result .download-btn:hover {
+    background: var(--success-hover);
+    transform: translateY(-1px);
+}
+
+.result .download-btn:active {
+    transform: translateY(0);
+}
+
+footer {
+    text-align: center;
+    padding: 2rem 1.5rem;
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    border-top: 1px solid var(--border);
+    margin-top: auto;
+    background: var(--surface);
+}
+
+.footer-content {
+    max-width: 48rem;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.footer-copyright {
+    margin: 0;
+    font-size: 0.75rem;
+    opacity: 0.7;
+}
+
+.footer-links {
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.footer-links .separator {
+    opacity: 0.4;
+}
+
+footer a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.15s ease;
+}
+
+footer a:hover {
+    color: var(--text);
+}
+
+.notice {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text);
+    color: var(--bg);
+    padding: 0.875rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+}
+
+@media (max-width: 768px) {
+    header {
+        padding: 1rem;
+    }
+
+    .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .header-left {
+        width: 100%;
+    }
+
+    h1 {
+        font-size: 1.25rem;
+        margin-bottom: 0.125rem;
+    }
+
+    header p {
+        font-size: 0.8125rem;
+        line-height: 1.4;
+    }
+
+    .header-nav {
+        width: 100%;
+    }
+
+    .header-link-primary {
+        display: block;
+        text-align: center;
+        width: 100%;
+    }
+
+    main {
+        padding: 1.5rem 1rem;
+    }
+
+    .tabs {
+        margin-bottom: 1rem;
+    }
+
+    .tabs button {
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+        flex: 1;
+    }
+
+    [role="tabpanel"] {
+        padding: 1.25rem;
+        border-radius: 6px;
+    }
+
+    [role="tabpanel"] h2 {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .dropzone {
+        padding: 2rem 1rem;
+    }
+
+    .dropzone-text {
+        font-size: 0.875rem;
+    }
+
+    .dropzone-hint {
+        font-size: 0.75rem;
+    }
+
+    textarea {
+        min-height: 10rem;
+        font-size: 0.8125rem;
+    }
+
+    input[type="url"] {
+        font-size: 0.875rem;
+    }
+
+    .btn {
+        width: 100%;
+        padding: 0.875rem 1.25rem;
+    }
+
+    .result {
+        font-size: 0.8125rem;
+        padding: 0.75rem 0.875rem;
+    }
+
+    .result-content {
+        gap: 0.75rem;
+    }
+
+    footer {
+        padding: 1.5rem 1rem;
+    }
+
+    .footer-links {
+        gap: 0.5rem;
+        font-size: 0.75rem;
+    }
+
+    .footer-copyright {
+        font-size: 0.6875rem;
+    }
+}
+
+/* Tablet-specific adjustments */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .header-content {
+        max-width: 100%;
+        padding: 0 1rem;
+    }
+
+    main {
+        max-width: 100%;
+        padding: 2.5rem 2rem;
+    }
+
+    [role="tabpanel"] {
+        padding: 1.75rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation: none !important;
+        transition: none !important;
+    }
+}
