@@ -176,11 +176,11 @@ This endpoint includes SSRF (Server-Side Request Forgery) protection:
 
 **Error Responses**
 
-- ``400 Bad Request`` - Invalid URL, private IP, or invalid ICS format
-- ``404 Not Found`` - URL not found (or other HTTP errors from upstream server)
+- ``400 Bad Request`` - Invalid URL, private IP, invalid ICS format, or connection failed
 - ``408 Request Timeout`` - Request exceeded 10-second timeout
 - ``413 Payload Too Large`` - Response exceeds 10 MB size limit
-- ``500 Internal Server Error`` - Fetch failed or anonymization failed
+- ``Various HTTP status codes`` - Returns the actual HTTP status code from the upstream server (e.g., 404 Not Found, 500 Internal Server Error, 503 Service Unavailable)
+- ``500 Internal Server Error`` - Anonymization failed
 
 **Example with curl**
 
@@ -273,8 +273,21 @@ Self-Hosting
 Docker Deployment
 -----------------
 
-.. note::
-    Docker support is planned. See `Issue #8 <https://github.com/mergecal/icalendar-anonymizer/issues/8>`_.
+Pull and run the Docker image:
+
+.. code-block:: shell
+
+    docker pull sashankbhamidi/icalendar-anonymizer
+    docker run -p 8000:8000 sashankbhamidi/icalendar-anonymizer
+
+The web service will be available at http://localhost:8000.
+
+Build from source:
+
+.. code-block:: shell
+
+    docker build -t icalendar-anonymizer .
+    docker run -p 8000:8000 icalendar-anonymizer
 
 Manual Deployment
 -----------------

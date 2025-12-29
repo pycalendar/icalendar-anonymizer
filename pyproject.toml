@@ -56,7 +56,12 @@ dependencies = ["icalendar>=6.3.0"]
 [project.optional-dependencies]
 cli = ["click>=8.3.1"]
 
-web = ["fastapi>=0.121.0", "uvicorn[standard]>=0.38.0"]
+web = [
+    "fastapi>=0.125.0",
+    "uvicorn[standard]>=0.38.0",
+    "python-multipart>=0.0.18",
+    "httpx>=0.28.0",
+]
 
 dev = [
     "pytest>=9.0",
@@ -77,7 +82,14 @@ doc = [
     "sphinx-design>=0.6.0",
 ]
 
-test = ["pytest>=9.0", "pytest-cov>=6.0", "coverage>=7.11", "hypothesis>=6.147", "click>=8.3.1"]
+test = [
+    "pytest>=9.0",
+    "pytest-cov>=6.0",
+    "coverage>=7.11",
+    "hypothesis>=6.147",
+    "click>=8.3.1",
+    "pytest-httpx>=0.30.0",
+]
 
 all = ["icalendar-anonymizer[cli,web,dev,doc]"]
 
