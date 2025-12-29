@@ -1,0 +1,104 @@
+<!-- SPDX-FileCopyrightText: 2025 icalendar-anonymizer contributors -->
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Anonymize iCalendar files - strip personal data while preserving technical properties">
+    <meta name="keywords" content="icalendar, anonymize, privacy, calendar, ics">
+    <meta name="author" content="icalendar-anonymizer contributors">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="iCalendar Anonymizer">
+    <meta property="og:description" content="Strip personal data from calendar files while preserving dates and technical properties">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="iCalendar Anonymizer">
+    <meta name="twitter:description" content="Strip personal data from calendar files while preserving dates and technical properties">
+
+    <title>iCalendar Anonymizer</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="header-left">
+                <h1>iCalendar Anonymizer</h1>
+                <p>Strip personal data from calendar files while preserving dates and technical properties</p>
+            </div>
+            <nav class="header-nav">
+                <a href="/docs" class="header-link-primary">API Docs</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="tabs" role="tablist" aria-label="Input methods">
+            <button role="tab" aria-selected="true" aria-controls="upload-panel" id="upload-tab" tabindex="0">
+                Upload
+            </button>
+            <button role="tab" aria-selected="false" aria-controls="paste-panel" id="paste-tab" tabindex="-1">
+                Paste
+            </button>
+            <button role="tab" aria-selected="false" aria-controls="fetch-panel" id="fetch-tab" tabindex="-1">
+                Fetch URL
+            </button>
+        </div>
+
+        <div id="upload-panel" role="tabpanel" aria-labelledby="upload-tab" aria-hidden="false">
+            <h2>Upload File</h2>
+            <form id="upload-form" action="/upload" method="POST" enctype="multipart/form-data">
+                <div class="dropzone" id="dropzone">
+                    <input type="file" id="file-input" name="file" accept=".ics,text/calendar" aria-label="Choose calendar file">
+                    <label for="file-input">
+                        <span class="dropzone-text">Drop file here or click to select</span>
+                        <span class="dropzone-hint">Max 10 MB</span>
+                    </label>
+                </div>
+                <button type="submit" class="btn">Anonymize</button>
+            </form>
+            <div class="result" id="upload-result" hidden></div>
+        </div>
+
+        <div id="paste-panel" role="tabpanel" aria-labelledby="paste-tab" aria-hidden="true">
+            <h2>Paste Content</h2>
+            <form id="paste-form">
+                <textarea id="ics-textarea" rows="10" placeholder="BEGIN:VCALENDAR&#10;VERSION:2.0&#10;...&#10;END:VCALENDAR" spellcheck="false" aria-label="Calendar content"></textarea>
+                <button type="submit" class="btn">Anonymize</button>
+            </form>
+            <div class="result" id="paste-result" hidden></div>
+        </div>
+
+        <div id="fetch-panel" role="tabpanel" aria-labelledby="fetch-tab" aria-hidden="true">
+            <h2>Fetch from URL</h2>
+            <form id="fetch-form">
+                <input type="url" id="url-input" placeholder="https://example.com/calendar.ics" required aria-label="Calendar URL">
+                <button type="submit" class="btn">Fetch & Anonymize</button>
+            </form>
+            <div class="result" id="fetch-result" hidden></div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <p class="footer-copyright">&copy; <span id="copyright-year">2025</span> icalendar-anonymizer contributors</p>
+            <p class="footer-links">
+                <a href="https://github.com/mergecal/icalendar-anonymizer?tab=AGPL-3.0-1-ov-file#readme">AGPL-3.0</a>
+                <span class="separator">•</span>
+                <a href="https://github.com/mergecal/icalendar-anonymizer">GitHub</a>
+                <span class="separator">•</span>
+                <a href="https://icalendar-anonymizer.readthedocs.io/stable/">Documentation</a>
+            </p>
+        </div>
+    </footer>
+
+    <noscript>
+        <div class="notice">JavaScript disabled. File upload still works via direct form submission.</div>
+    </noscript>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

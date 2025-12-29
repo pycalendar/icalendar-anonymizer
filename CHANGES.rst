@@ -50,6 +50,7 @@ Change log
 New features
 ''''''''''''
 
+- Added frontend interface with file upload, paste, and URL fetch capabilities. Implemented drag and drop file upload with visual feedback. Added progressive enhancement for no-JavaScript environments. Provided WCAG AA compliant accessibility features (keyboard navigation, screen readers). Included mobile-responsive design for all device sizes. Zero external dependencies (vanilla HTML/CSS/JS). See `Issue 5 <https://github.com/mergecal/icalendar-anonymizer/issues/5>`_.
 - Added FastAPI web service with three endpoints: ``POST /anonymize`` (JSON), ``POST /upload`` (file), ``GET /fetch`` (URL). SSRF protection blocks private IPs, localhost, and invalid schemes. 10s timeout, 10MB limit. Install: ``pip install icalendar-anonymizer[web]``. See `Issue 4 <https://github.com/mergecal/icalendar-anonymizer/issues/4>`_.
 
 .. _v0.1.2-minor-changes:
