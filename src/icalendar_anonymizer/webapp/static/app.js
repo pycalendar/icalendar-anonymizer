@@ -202,7 +202,7 @@ function showResult(section, type, message, withDownload = false) {
         result.innerHTML = `
             <div class="result-content">
                 <span><strong>Success!</strong> Your calendar has been anonymized.</span>
-                <button class="download-btn" onclick="download('${section}')" aria-label="Download anonymized calendar">
+                <button class="download-btn" data-section="${section}" aria-label="Download anonymized calendar">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M8 11L4 7h2.5V2h3v5H12L8 11z" fill="currentColor"/>
                         <path d="M14 13v1H2v-1h12z" fill="currentColor"/>
@@ -210,6 +210,10 @@ function showResult(section, type, message, withDownload = false) {
                 </button>
             </div>
         `;
+
+        // Add event listener to the download button
+        const downloadBtn = result.querySelector('.download-btn');
+        downloadBtn.addEventListener('click', () => download(section));
     } else {
         result.textContent = message;
     }
@@ -227,9 +231,6 @@ function download(section) {
     a.click();
     URL.revokeObjectURL(url);
 }
-
-// Make download globally accessible
-window.download = download;
 
 // Update copyright year
 function updateCopyrightYear() {
