@@ -222,9 +222,12 @@ async def fetch_endpoint(url: str) -> Response:
     _validate_url(url)
 
     # Fetch URL with timeout and size limit
+    # Note: Known TOCTOU vulnerability with DNS rebinding - see Issue #70
+    # URL validation occurs before DNS resolution, attacker could use DNS rebinding
+    # to bypass private IP checks. Requires custom DNS resolver to fully mitigate.
     try:
         async with httpx.AsyncClient(follow_redirects=True, timeout=FETCH_TIMEOUT) as client:
-            response = await client.get(url)
+            response = await client.get(url)  # lgtm[py/full-ssrf]
 
             # Check final URL after redirects
             final_url = str(response.url)
