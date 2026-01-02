@@ -444,10 +444,12 @@ License
 
 The project is licensed under **AGPL-3.0-or-later**.
 
-SPDX Headers
-------------
+SPDX Headers and REUSE.toml
+----------------------------
 
-All files must include SPDX headers:
+**All new source files must include SPDX headers.** Auto-generated files that cannot have persistent headers may instead rely on entries in ``REUSE.toml`` as a fallback.
+
+**In-file headers** (required for all source files):
 
 Python Files
 ^^^^^^^^^^^^
@@ -472,6 +474,10 @@ Markdown Files
 
     <!--- SPDX-FileCopyrightText: 2025 icalendar-anonymizer contributors -->
     <!--- SPDX-License-Identifier: AGPL-3.0-or-later -->
+
+**REUSE.toml** (fallback only):
+
+Use ``REUSE.toml`` only as a fallback for auto-generated files that cannot reasonably include headers; it must not be treated as a substitute for adding headers to regular source files.
 
 Checking Compliance
 -------------------

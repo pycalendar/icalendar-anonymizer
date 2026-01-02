@@ -32,7 +32,13 @@ Strip personal data from iCalendar files while preserving technical properties f
         :link: usage/web-service
         :link-type: doc
 
-        REST API endpoints and self-hosting
+        REST API endpoints for anonymization
+
+    .. grid-item-card:: 🐳 Self-Hosting
+        :link: usage/self-hosting
+        :link-type: doc
+
+        Run locally with Docker for data privacy
 
     .. grid-item-card:: 📚 API Reference
         :link: api/index
@@ -98,6 +104,7 @@ Documentation
     usage/python-api
     usage/cli
     usage/web-service
+    usage/self-hosting
     api/index
 
 .. toctree::

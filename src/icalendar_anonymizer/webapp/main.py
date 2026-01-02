@@ -8,6 +8,7 @@ file upload, and URL fetching with SSRF protection.
 """
 
 import ipaddress
+import os
 from pathlib import Path
 from typing import Annotated
 from urllib.parse import urlparse
@@ -21,11 +22,17 @@ from icalendar import Calendar
 from pydantic import BaseModel
 
 from icalendar_anonymizer import anonymize
+from icalendar_anonymizer.version import version
 
-# Constants
-MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+# Constants (configurable via environment variables)
+try:
+    MAX_FILE_SIZE = int(os.getenv("MAX_FILE_SIZE") or 10 * 1024 * 1024)  # Default 10MB
+except ValueError as e:
+    raise ValueError(
+        f"MAX_FILE_SIZE must be a valid integer, got: {os.getenv('MAX_FILE_SIZE')!r}"
+    ) from e
 FETCH_TIMEOUT = 10.0  # seconds
-MAX_RESPONSE_SIZE = 10 * 1024 * 1024  # 10MB
+MAX_RESPONSE_SIZE = MAX_FILE_SIZE  # Match file size limit
 
 # Private IP ranges to block for SSRF protection
 PRIVATE_IP_RANGES = [
@@ -69,6 +76,28 @@ async def root() -> FileResponse:
         FileResponse: The index.html file
     """
     return FileResponse(STATIC_DIR / "index.html")
+
+
+class HealthResponse(BaseModel):
+    """Response model for /health endpoint."""
+
+    status: str
+    version: str
+    r2_enabled: bool
+
+
+@app.get("/health")
+async def health() -> HealthResponse:
+    """Health check endpoint for Docker and monitoring.
+
+    Returns:
+        HealthResponse: Service health status, version, and feature flags
+    """
+    return HealthResponse(
+        status="healthy",
+        version=version,
+        r2_enabled=False,  # R2 support not yet implemented
+    )
 
 
 class AnonymizeRequest(BaseModel):

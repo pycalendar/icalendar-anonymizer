@@ -50,6 +50,7 @@ Change log
 New features
 ''''''''''''
 
+- Added Docker setup for self-hosting. Multi-stage :file:`Dockerfile` with Python 3.13-slim, non-root user (UID 1000), and gunicorn with uvicorn workers. Health check endpoint ``GET /health`` returns service status, version, and feature flags. :file:`docker-compose.yml` with environment variables for host, port, workers, and file size limit. Documentation at :file:`docs/usage/self-hosting.rst`. See `Issue 8 <https://github.com/mergecal/icalendar-anonymizer/issues/8>`_.
 - Added frontend interface with file upload, paste, and URL fetch capabilities. Implemented drag and drop file upload with visual feedback. Added progressive enhancement for no-JavaScript environments. Provided WCAG AA compliant accessibility features (keyboard navigation, screen readers). Included mobile-responsive design for all device sizes. Zero external dependencies (vanilla HTML/CSS/JS). See `Issue 5 <https://github.com/mergecal/icalendar-anonymizer/issues/5>`_.
 - Added FastAPI web service with three endpoints: ``POST /anonymize`` (JSON), ``POST /upload`` (file), ``GET /fetch`` (URL). SSRF protection blocks private IPs, localhost, and invalid schemes. 10s timeout, 10MB limit. Install: ``pip install icalendar-anonymizer[web]``. See `Issue 4 <https://github.com/mergecal/icalendar-anonymizer/issues/4>`_.
 
@@ -57,6 +58,8 @@ New features
 
 Minor changes
 '''''''''''''
+
+- Added :file:`REUSE.toml` for fallback licensing of files without SPDX headers (auto-generated :file:`_version.py`). In-file headers remain preferred. See `Issue 58 <https://github.com/mergecal/icalendar-anonymizer/issues/58>`_.
 
 .. _v0.1.2-bug-fixes:
 
