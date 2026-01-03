@@ -9,15 +9,13 @@ file upload, and URL fetching with SSRF protection.
 
 import ipaddress
 import os
-from pathlib import Path
 from typing import Annotated
 from urllib.parse import urlparse
 
 import httpx
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, Response
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import Response
 from icalendar import Calendar
 from pydantic import BaseModel
 
@@ -61,21 +59,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Get static files directory
-STATIC_DIR = Path(__file__).parent / "static"
-
-# Mount static files
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
-
-
-@app.get("/", include_in_schema=False)
-async def root() -> FileResponse:
-    """Serve the frontend HTML page.
-
-    Returns:
-        FileResponse: The index.html file
-    """
-    return FileResponse(STATIC_DIR / "index.html")
+# Note: Static files are served by Cloudflare Workers static assets
+# The frontend HTML, CSS, and JS files are configured in wrangler.jsonc
 
 
 class HealthResponse(BaseModel):
