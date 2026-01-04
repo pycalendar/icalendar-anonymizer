@@ -182,6 +182,7 @@ minversion = "7.0"
 testpaths = ["src/icalendar_anonymizer/tests"]
 norecursedirs = ["build", "dist", ".eggs"]
 filterwarnings = ["ignore::DeprecationWarning"]
+asyncio_mode = "auto"
 
 [tool.coverage.run]
 source = ["src"]
