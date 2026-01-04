@@ -15,8 +15,9 @@ mkdir -p python_modules
 # This makes icalendar_anonymizer importable in the Workers environment
 cp -r src/icalendar_anonymizer python_modules/
 
-# Remove test files and pycache from deployment
+# Remove test files, static files, and pycache from deployment
 find python_modules/icalendar_anonymizer -type d -name "tests" -exec rm -rf {} + 2>/dev/null || true
+find python_modules/icalendar_anonymizer -type d -name "static" -exec rm -rf {} + 2>/dev/null || true
 find python_modules/icalendar_anonymizer -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 find python_modules/icalendar_anonymizer -name "*.pyc" -delete 2>/dev/null || true
 
