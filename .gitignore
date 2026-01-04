@@ -43,6 +43,9 @@ venv/
 ENV/
 env/
 
+# Cloudflare Workers build artifacts
+python_modules/
+
 # Environment variables
 .env
 
