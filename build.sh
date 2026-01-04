@@ -6,6 +6,7 @@ set -euxo pipefail
 
 # Remove previous build artifacts
 rm -rf python_modules/icalendar_anonymizer
+rm -rf src/icalendar_anonymizer/webapp/assets
 
 # Ensure python_modules directory exists
 mkdir -p python_modules
@@ -19,4 +20,11 @@ find python_modules/icalendar_anonymizer -type d -name "tests" -exec rm -rf {} +
 find python_modules/icalendar_anonymizer -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 find python_modules/icalendar_anonymizer -name "*.pyc" -delete 2>/dev/null || true
 
-echo "Build completed: icalendar_anonymizer package copied to python_modules/"
+# Build assets directory structure for Cloudflare Workers
+# Assets are served at root level, but we need /static prefix to match local dev
+mkdir -p src/icalendar_anonymizer/webapp/assets/static
+cp src/icalendar_anonymizer/webapp/static/index.html src/icalendar_anonymizer/webapp/assets/
+cp src/icalendar_anonymizer/webapp/static/style.css src/icalendar_anonymizer/webapp/assets/static/
+cp src/icalendar_anonymizer/webapp/static/app.js src/icalendar_anonymizer/webapp/assets/static/
+
+echo "Build completed: icalendar_anonymizer package and assets prepared for Workers"

@@ -45,6 +45,7 @@ env/
 
 # Cloudflare Workers build artifacts
 python_modules/
+src/icalendar_anonymizer/webapp/assets/
 
 # Environment variables
 .env
