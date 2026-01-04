@@ -48,6 +48,10 @@ jobs:
           rm -rf .venv-workers
           # Remove other development directories if they exist
           rm -rf .venv node_modules
+          # Remove src/ to prevent duplicate uploads (python_modules has the built version)
+          rm -rf src
+          # Remove other files not needed for deployment
+          rm -rf docs .git .github tests *.md build.sh
 
       - name: Deploy to Cloudflare Workers
         env:
