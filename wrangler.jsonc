@@ -17,6 +17,8 @@
     "directory": "./src/icalendar_anonymizer/webapp/static"
   },
 
-  // Workers.dev subdomain (temporary - configure custom domain in Cloudflare Dashboard)
-  "workers_dev": true
+  // Custom domain routing
+  "routes": [
+    { "pattern": "icalendar-anonymizer.com", "custom_domain": true }
+  ]
 }
