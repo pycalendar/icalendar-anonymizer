@@ -35,6 +35,9 @@ jobs:
       - name: Install workers-py (pywrangler)
         run: uv tool install workers-py
 
+      - name: Build package for Workers
+        run: bash build.sh
+
       - name: Deploy to Cloudflare Workers
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
