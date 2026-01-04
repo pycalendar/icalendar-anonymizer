@@ -61,10 +61,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Get static files directory
+# Static files directory
 STATIC_DIR = Path(__file__).parent / "static"
 
-# Mount static files
+# Mount static files (for local dev/testing - Cloudflare Workers overrides in production)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
