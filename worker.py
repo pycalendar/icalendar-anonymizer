@@ -5,6 +5,8 @@
 
 This module provides the Worker entry point that integrates the FastAPI application
 with Cloudflare Workers runtime using Pyodide (Python WebAssembly).
+
+This file must be at the root level so that python_modules/ is in the import path.
 """
 
 import os
@@ -35,4 +37,4 @@ class Default(WorkerEntrypoint):
         """
         import asgi
 
-        return await asgi.handle_fetch(app, request)
+        return await asgi.fetch(app, request, self.env)

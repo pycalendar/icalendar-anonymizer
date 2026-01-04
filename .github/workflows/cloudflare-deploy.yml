@@ -26,6 +26,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.9.21"
+          cache-dependency-glob: "pyproject.toml"
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -40,6 +41,20 @@ jobs:
 
       - name: Build package for Workers
         run: bash build.sh
+
+      - name: Clean up build artifacts
+        run: |
+          # Remove .venv-workers created by pywrangler to prevent upload
+          rm -rf .venv-workers
+          # Remove other development directories if they exist
+          rm -rf .venv node_modules
+          # Remove src/ EXCEPT assets (which are needed for deployment)
+          # Keep only src/icalendar_anonymizer/webapp/assets
+          find src -mindepth 1 -not -path "src/icalendar_anonymizer" -not -path "src/icalendar_anonymizer/webapp" -not -path "src/icalendar_anonymizer/webapp/assets" -not -path "src/icalendar_anonymizer/webapp/assets/*" -delete
+          find src/icalendar_anonymizer -mindepth 1 -maxdepth 1 -not -name "webapp" -delete
+          find src/icalendar_anonymizer/webapp -mindepth 1 -maxdepth 1 -not -name "assets" -delete
+          # Remove other files/dirs not needed for deployment (keep worker.py, python_modules, LICENSES, wrangler.jsonc)
+          rm -rf docs .git .github tests *.md build.sh .gitignore .pre-commit-config.yaml pyproject.toml .reuse uv.lock .wranglerignore
 
       - name: Deploy to Cloudflare Workers
         env:
