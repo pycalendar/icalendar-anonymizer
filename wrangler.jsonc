@@ -5,8 +5,8 @@
   // Worker name
   "name": "icalendar-anonymizer",
 
-  // Worker entry point
-  "main": "python_modules/icalendar_anonymizer/worker.py",
+  // Worker entry point (must be at root so python_modules is in import path)
+  "main": "worker.py",
 
   // Compatibility settings
   "compatibility_date": "2026-01-03",
