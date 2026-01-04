@@ -48,8 +48,11 @@ jobs:
           rm -rf .venv-workers
           # Remove other development directories if they exist
           rm -rf .venv node_modules
-          # Remove src/ to prevent duplicate uploads (python_modules has the built version)
-          rm -rf src
+          # Remove src/ EXCEPT assets (which are needed for deployment)
+          # Keep only src/icalendar_anonymizer/webapp/assets
+          find src -mindepth 1 -not -path "src/icalendar_anonymizer" -not -path "src/icalendar_anonymizer/webapp" -not -path "src/icalendar_anonymizer/webapp/assets" -not -path "src/icalendar_anonymizer/webapp/assets/*" -delete
+          find src/icalendar_anonymizer -mindepth 1 -maxdepth 1 -not -name "webapp" -delete
+          find src/icalendar_anonymizer/webapp -mindepth 1 -maxdepth 1 -not -name "assets" -delete
           # Remove other files not needed for deployment
           rm -rf docs .git .github tests *.md build.sh
 
