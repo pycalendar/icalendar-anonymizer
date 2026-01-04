@@ -6,7 +6,7 @@
   "name": "icalendar-anonymizer",
 
   // Worker entry point
-  "main": "src/icalendar_anonymizer/worker.py",
+  "main": "python_modules/icalendar_anonymizer/worker.py",
 
   // Compatibility settings
   "compatibility_date": "2026-01-03",

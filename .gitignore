@@ -66,3 +66,4 @@ src/icalendar_anonymizer/_version.py
 # uv lock file
 uv.lock
 docs/_build/
+node_modules/
