@@ -13,6 +13,8 @@ on:
 
 jobs:
   deploy:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     name: Deploy to Cloudflare Workers
 
@@ -32,7 +34,7 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Install pywrangler
+      - name: Install workers-py (pywrangler)
         run: uv tool install workers-py
 
       - name: Deploy to Cloudflare Workers
