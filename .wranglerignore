@@ -2,18 +2,22 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 # Wrangler ignore file - excludes files from Workers deployment
-.venv/
-.venv-workers/
-node_modules/
-src/
-docs/
-.git/
-.github/
-tests/
+# Use gitignore syntax
+
+.venv
+.venv-workers
+node_modules
+src
+docs
+.git
+.github
+tests
 *.md
 .gitignore
 .pre-commit-config.yaml
 pyproject.toml
 LICENSE
-LICENSES/
-.reuse/
+LICENSES
+.reuse
+build.sh
+uv.lock
