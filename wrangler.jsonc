@@ -8,6 +8,9 @@
   // Worker entry point (must be at root so python_modules is in import path)
   "main": "worker.py",
 
+  // Include only necessary files for deployment
+  "find_additional_modules": false,
+
   // Compatibility settings
   "compatibility_date": "2026-01-03",
   "compatibility_flags": ["python_workers"],

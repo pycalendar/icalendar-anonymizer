@@ -42,6 +42,13 @@ jobs:
       - name: Build package for Workers
         run: bash build.sh
 
+      - name: Clean up build artifacts
+        run: |
+          # Remove .venv-workers created by pywrangler to prevent upload
+          rm -rf .venv-workers
+          # Remove other development directories if they exist
+          rm -rf .venv node_modules
+
       - name: Deploy to Cloudflare Workers
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
