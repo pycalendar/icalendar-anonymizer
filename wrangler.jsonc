@@ -15,13 +15,5 @@
   // Static assets configuration
   "assets": {
     "directory": "./src/icalendar_anonymizer/webapp/static"
-  },
-
-  // Custom domain routing
-  "routes": [
-    {
-      "pattern": "icalendar-anonymizer.com/*",
-      "custom_domain": true
-    }
-  ]
+  }
 }
