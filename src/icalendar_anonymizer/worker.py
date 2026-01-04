@@ -7,7 +7,13 @@ This module provides the Worker entry point that integrates the FastAPI applicat
 with Cloudflare Workers runtime using Pyodide (Python WebAssembly).
 """
 
+import os
+
 from workers import WorkerEntrypoint
+
+# Set environment marker before importing app to disable static file mounting
+# In Cloudflare Workers, static files are served via Assets, not FastAPI
+os.environ["CLOUDFLARE_WORKERS"] = "true"
 
 from icalendar_anonymizer.webapp.main import app
 
