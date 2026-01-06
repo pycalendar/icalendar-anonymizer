@@ -39,7 +39,7 @@ class TestWorkerModule:
 
     @pytest.mark.asyncio
     async def test_worker_fetch_method(self):
-        """Test worker fetch method integrates with asgi.handle_fetch."""
+        """Test worker fetch method integrates with asgi.fetch."""
         import sys
 
         from icalendar_anonymizer.worker import Default
@@ -48,18 +48,22 @@ class TestWorkerModule:
         mock_response = "test_response"
         mock_request = "test_request"
 
-        # Create mock asgi module with handle_fetch
+        # Create mock asgi module with fetch
         mock_asgi = AsyncMock()
-        mock_asgi.handle_fetch = AsyncMock(return_value=mock_response)
+        mock_asgi.fetch = AsyncMock(return_value=mock_response)
 
         # Patch asgi in sys.modules (since it's imported inside fetch method)
         with patch.dict(sys.modules, {"asgi": mock_asgi}):
             # Create worker instance and call fetch
             worker = Default()
+            worker.env = "test_env"  # Mock the env attribute
             result = await worker.fetch(mock_request)
 
-            # Verify asgi.handle_fetch was called
-            mock_asgi.handle_fetch.assert_called_once()
+            # Verify asgi.fetch was called with app, request, and env
+            mock_asgi.fetch.assert_called_once()
+            call_args = mock_asgi.fetch.call_args[0]
+            assert call_args[1] == mock_request  # Second arg is request
+            assert call_args[2] == "test_env"  # Third arg is env
 
             # Verify result
             assert result == mock_response
