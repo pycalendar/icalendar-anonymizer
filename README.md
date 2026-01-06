@@ -16,13 +16,15 @@ Calendar bugs are hard to reproduce without actual calendar data, but people can
 [![License: AGPL-3.0-or-later](https://img.shields.io/badge/License-AGPL%203.0--or--later-blue.svg)](https://github.com/mergecal/icalendar-anonymizer?tab=AGPL-3.0-1-ov-file#readme)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
-## Documentation
+## Usage
 
-The documentation is available at https://icalendar-anonymizer.readthedocs.io/stable/.
+**Web Service:** https://icalendar-anonymizer.com
+
+For installation and other usage options, see the [documentation](https://docs.icalendar-anonymizer.com/stable/).
 
 ## Contributing
 
-See the contributing guide at https://icalendar-anonymizer.readthedocs.io/stable/contributing.html.
+See the contributing guide at https://docs.icalendar-anonymizer.com/stable/contributing.html.
 
 ## License
 
