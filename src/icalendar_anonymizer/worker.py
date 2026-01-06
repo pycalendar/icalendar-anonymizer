@@ -35,4 +35,4 @@ class Default(WorkerEntrypoint):
         """
         import asgi
 
-        return await asgi.handle_fetch(app, request)
+        return await asgi.fetch(app, request, self.env)
