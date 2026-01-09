@@ -15,10 +15,18 @@
   "compatibility_date": "2026-01-03",
   "compatibility_flags": ["python_workers"],
 
+  // R2 bucket binding for shareable links
+  "r2_buckets": [
+    {
+      "binding": "CALENDAR_SHARE_BUCKET",
+      "bucket_name": "icalendar-anonymizer"
+    }
+  ],
+
   // Static assets configuration
   "assets": {
     "directory": "./src/icalendar_anonymizer/webapp/assets",
-    "run_worker_first": ["/api/*", "/upload", "/docs", "/openapi.json", "/health"]
+    "run_worker_first": ["/api/*", "/upload", "/share", "/s/*", "/docs", "/openapi.json", "/health"]
   },
 
   // Custom domain routing

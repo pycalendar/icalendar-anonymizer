@@ -281,6 +281,69 @@ input[type="url"]::placeholder {
     outline-offset: 2px;
 }
 
+.share-checkbox {
+    display: block;
+    margin: 1rem 0;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    user-select: none;
+}
+
+.share-checkbox input[type="checkbox"] {
+    margin-right: 0.5rem;
+    cursor: pointer;
+}
+
+.share-url-container {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.share-url-container input[type="text"] {
+    flex: 1;
+    padding: 0.625rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: ui-monospace, 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
+    font-size: 0.8125rem;
+    background: var(--surface);
+    color: var(--text);
+}
+
+.share-url-container input[type="text"]:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: var(--bg);
+}
+
+.share-url-container .copy-btn {
+    background: var(--success);
+    color: white;
+    border: none;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.share-url-container .copy-btn:hover {
+    background: var(--success-hover);
+}
+
+.share-url-container .copy-btn:active {
+    transform: scale(0.98);
+}
+
+.share-url-container .copy-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
 .result {
     margin-top: 1.25rem;
     padding: 0.875rem 1rem;

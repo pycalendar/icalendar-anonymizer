@@ -64,6 +64,10 @@
                         <span class="dropzone-hint">Max 10 MB</span>
                     </label>
                 </div>
+                <label class="share-checkbox">
+                    <input type="checkbox" id="upload-share" aria-label="Generate shareable link">
+                    Generate shareable link (30-day expiry)
+                </label>
                 <button type="submit" class="btn">Anonymize</button>
             </form>
             <div class="result" id="upload-result" hidden></div>
@@ -75,6 +79,10 @@
                 <textarea id="ics-textarea" rows="10"
                     placeholder="BEGIN:VCALENDAR&#10;VERSION:2.0&#10;...&#10;END:VCALENDAR" spellcheck="false"
                     aria-label="Calendar content"></textarea>
+                <label class="share-checkbox">
+                    <input type="checkbox" id="paste-share" aria-label="Generate shareable link">
+                    Generate shareable link (30-day expiry)
+                </label>
                 <button type="submit" class="btn">Anonymize</button>
             </form>
             <div class="result" id="paste-result" hidden></div>
@@ -85,6 +93,10 @@
             <form id="fetch-form">
                 <input type="url" id="url-input" placeholder="https://example.com/calendar.ics" required
                     aria-label="Calendar URL">
+                <label class="share-checkbox">
+                    <input type="checkbox" id="fetch-share" aria-label="Generate shareable link">
+                    Generate shareable link (30-day expiry)
+                </label>
                 <button type="submit" class="btn">Fetch & Anonymize</button>
             </form>
             <div class="result" id="fetch-result" hidden></div>

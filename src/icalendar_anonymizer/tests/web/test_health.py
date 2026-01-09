@@ -47,9 +47,9 @@ class TestHealthEndpoint:
 
         assert data["version"] == version
 
-    def test_health_r2_disabled_by_default(self):
-        """Test R2 is disabled by default."""
+    def test_health_r2_enabled_in_local_dev(self):
+        """Test R2 is enabled in local dev (via MockR2Client)."""
         response = client.get("/health")
         data = response.json()
 
-        assert data["r2_enabled"] is False
+        assert data["r2_enabled"] is True
