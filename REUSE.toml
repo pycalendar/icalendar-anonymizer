@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: 2025 icalendar-anonymizer contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+version = 1
+
+# Auto-generated version file (cannot have persistent headers)
+[[annotations]]
+path = "src/icalendar_anonymizer/_version.py"
+precedence = "override"
+SPDX-FileCopyrightText = "2025 icalendar-anonymizer contributors"
+SPDX-License-Identifier = "AGPL-3.0-or-later"
