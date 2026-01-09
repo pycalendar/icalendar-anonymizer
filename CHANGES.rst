@@ -50,6 +50,7 @@ Change log
 New features
 ''''''''''''
 
+- Added Cloudflare Workers deployment support with Python FastAPI via Pyodide. Configured :file:`wrangler.jsonc` for Workers Assets serving static files. Created :file:`worker.py` entry point using ``asgi.fetch()`` integration. Added :file:`build.sh` to bundle local package into ``python_modules/``. GitHub Actions workflow deploys on main branch. Custom domain configured at https://icalendar-anonymizer.com. See `Issue 19 <https://github.com/mergecal/icalendar-anonymizer/issues/19>`_ and `PR 83 <https://github.com/mergecal/icalendar-anonymizer/pull/83>`_.
 - Added Docker setup for self-hosting. Multi-stage :file:`Dockerfile` with Python 3.13-slim, non-root user (UID 1000), and gunicorn with uvicorn workers. Health check endpoint ``GET /health`` returns service status, version, and feature flags. :file:`docker-compose.yml` with environment variables for host, port, workers, and file size limit. Documentation at :file:`docs/usage/self-hosting.rst`. See `Issue 8 <https://github.com/mergecal/icalendar-anonymizer/issues/8>`_.
 - Added frontend interface with file upload, paste, and URL fetch capabilities. Implemented drag and drop file upload with visual feedback. Added progressive enhancement for no-JavaScript environments. Provided WCAG AA compliant accessibility features (keyboard navigation, screen readers). Included mobile-responsive design for all device sizes. Zero external dependencies (vanilla HTML/CSS/JS). See `Issue 5 <https://github.com/mergecal/icalendar-anonymizer/issues/5>`_.
 - Added FastAPI web service with three endpoints: ``POST /anonymize`` (JSON), ``POST /upload`` (file), ``GET /fetch`` (URL). SSRF protection blocks private IPs, localhost, and invalid schemes. 10s timeout, 10MB limit. Install: ``pip install icalendar-anonymizer[web]``. See `Issue 4 <https://github.com/mergecal/icalendar-anonymizer/issues/4>`_.
@@ -60,11 +61,14 @@ Minor changes
 '''''''''''''
 
 - Added :file:`REUSE.toml` for fallback licensing of files without SPDX headers (auto-generated :file:`_version.py`). In-file headers remain preferred. See `Issue 58 <https://github.com/mergecal/icalendar-anonymizer/issues/58>`_.
+- Improved test coverage for Cloudflare Workers integration. See `PR 90 <https://github.com/mergecal/icalendar-anonymizer/pull/90>`_.
 
 .. _v0.1.2-bug-fixes:
 
 Bug fixes
 '''''''''
+
+- Fixed Cloudflare Workers deployment issues including module bundling, build order, static asset serving, and wrangler configuration. See `PR 84 <https://github.com/mergecal/icalendar-anonymizer/pull/84>`_, `PR 85 <https://github.com/mergecal/icalendar-anonymizer/pull/85>`_, `PR 86 <https://github.com/mergecal/icalendar-anonymizer/pull/86>`_, `PR 87 <https://github.com/mergecal/icalendar-anonymizer/pull/87>`_, `PR 88 <https://github.com/mergecal/icalendar-anonymizer/pull/88>`_.
 
 0.1.1 (2025-12-25)
 ------------------

@@ -61,21 +61,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Get static files directory
-STATIC_DIR = Path(__file__).parent / "static"
+# Static files directory (only used in local dev, not in Cloudflare Workers)
+# In Cloudflare Workers, static files are served via Assets, not FastAPI
+if not os.getenv("CLOUDFLARE_WORKERS"):
+    STATIC_DIR = Path(__file__).parent / "static"
 
-# Mount static files
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+    # Mount static files (for local dev/testing - Cloudflare Workers handles via Assets)
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
+    @app.get("/", include_in_schema=False)
+    async def root() -> FileResponse:
+        """Serve the frontend HTML page.
 
-@app.get("/", include_in_schema=False)
-async def root() -> FileResponse:
-    """Serve the frontend HTML page.
-
-    Returns:
-        FileResponse: The index.html file
-    """
-    return FileResponse(STATIC_DIR / "index.html")
+        Returns:
+            FileResponse: The index.html file
+        """
+        return FileResponse(STATIC_DIR / "index.html")
 
 
 class HealthResponse(BaseModel):

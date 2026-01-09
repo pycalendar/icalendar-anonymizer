@@ -51,21 +51,27 @@ classifiers = [
     "Topic :: Office/Business :: Scheduling",
 ]
 
-dependencies = ["icalendar>=6.3.0"]
+dependencies = [
+    "icalendar>=6.3.0",
+    "fastapi>=0.128.0",
+    "httpx>=0.28.1",
+    "python-multipart>=0.0.18",
+]
 
 [project.optional-dependencies]
 cli = ["click>=8.3.1"]
 
 web = [
-    "fastapi>=0.125.0",
+    "fastapi>=0.128.0",
     "uvicorn>=0.38.0",
     "python-multipart>=0.0.18",
-    "httpx>=0.28.0",
+    "httpx>=0.28.1",
 ]
 
 dev = [
     "pytest>=9.0",
     "pytest-cov>=6.0",
+    "pytest-asyncio>=1.3.0",
     "coverage>=7.11",
     "ruff>=0.14.0",
     "reuse>=6.2",
@@ -85,6 +91,7 @@ doc = [
 test = [
     "pytest>=9.0",
     "pytest-cov>=6.0",
+    "pytest-asyncio>=1.3.0",
     "coverage>=7.11",
     "hypothesis>=6.147",
     "click>=8.3.1",
@@ -182,6 +189,7 @@ minversion = "7.0"
 testpaths = ["src/icalendar_anonymizer/tests"]
 norecursedirs = ["build", "dist", ".eggs"]
 filterwarnings = ["ignore::DeprecationWarning"]
+asyncio_mode = "auto"
 
 [tool.coverage.run]
 source = ["src"]

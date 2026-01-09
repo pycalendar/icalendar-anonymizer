@@ -1,0 +1,43 @@
+// SPDX-FileCopyrightText: 2025 icalendar-anonymizer contributors
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+{
+  // Worker name
+  "name": "icalendar-anonymizer",
+
+  // Worker entry point (must be at root so python_modules is in import path)
+  "main": "worker.py",
+
+  // Include only necessary files for deployment
+  "find_additional_modules": false,
+
+  // Compatibility settings
+  "compatibility_date": "2026-01-03",
+  "compatibility_flags": ["python_workers"],
+
+  // Static assets configuration
+  "assets": {
+    "directory": "./src/icalendar_anonymizer/webapp/assets",
+    "run_worker_first": ["/api/*", "/upload", "/docs", "/openapi.json", "/health"]
+  },
+
+  // Custom domain routing
+  "routes": [
+    { "pattern": "icalendar-anonymizer.com", "custom_domain": true }
+  ],
+
+  // Logging configuration
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "invocation_logs": true,
+      "persist": true
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "persist": true
+    }
+  }
+}

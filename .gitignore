@@ -38,9 +38,14 @@ htmlcov/
 
 # Virtual environments
 .venv
+.venv-workers/
 venv/
 ENV/
 env/
+
+# Cloudflare Workers build artifacts
+python_modules/
+src/icalendar_anonymizer/webapp/assets/
 
 # Environment variables
 .env
@@ -61,3 +66,4 @@ src/icalendar_anonymizer/_version.py
 # uv lock file
 uv.lock
 docs/_build/
+node_modules/

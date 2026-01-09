@@ -1,0 +1,69 @@
+# SPDX-FileCopyrightText: 2025 icalendar-anonymizer contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+name: Deploy to Cloudflare Workers
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    name: Deploy to Cloudflare Workers
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history for version detection
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.9.21"
+          cache-dependency-glob: "pyproject.toml"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install workers-py (pywrangler)
+        run: uv tool install workers-py
+
+      - name: Sync dependencies with pywrangler
+        run: uvx --from workers-py pywrangler sync
+
+      - name: Build package for Workers
+        run: bash build.sh
+
+      - name: Clean up build artifacts
+        run: |
+          # Remove .venv-workers created by pywrangler to prevent upload
+          rm -rf .venv-workers
+          # Remove other development directories if they exist
+          rm -rf .venv node_modules
+          # Remove src/ EXCEPT assets (which are needed for deployment)
+          # Keep only src/icalendar_anonymizer/webapp/assets
+          find src -mindepth 1 -not -path "src/icalendar_anonymizer" -not -path "src/icalendar_anonymizer/webapp" -not -path "src/icalendar_anonymizer/webapp/assets" -not -path "src/icalendar_anonymizer/webapp/assets/*" -delete
+          find src/icalendar_anonymizer -mindepth 1 -maxdepth 1 -not -name "webapp" -delete
+          find src/icalendar_anonymizer/webapp -mindepth 1 -maxdepth 1 -not -name "assets" -delete
+          # Remove other files/dirs not needed for deployment (keep worker.py, python_modules, LICENSES, wrangler.jsonc)
+          rm -rf docs .git .github tests *.md build.sh .gitignore .pre-commit-config.yaml pyproject.toml .reuse uv.lock .wranglerignore
+
+      - name: Deploy to Cloudflare Workers
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          npx wrangler deploy
+
+      - name: Deployment summary
+        run: |
+          echo "✅ Deployed to Cloudflare Workers"
+          echo "🌐 Primary domain: https://icalendar-anonymizer.com"

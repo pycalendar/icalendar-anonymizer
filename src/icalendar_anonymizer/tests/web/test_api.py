@@ -360,3 +360,20 @@ class TestResponseFormat:
         assert response.status_code == 400
         assert "detail" in response.json()
         assert isinstance(response.json()["detail"], str)
+
+
+class TestCloudflareWorkersEnvironment:
+    """Tests for Cloudflare Workers-specific behavior."""
+
+    def test_static_files_mounted_in_local_dev(self):
+        """Test static files are mounted when CLOUDFLARE_WORKERS is not set."""
+        # In local dev mode (default), root endpoint should serve index.html
+        response = client.get("/")
+        assert response.status_code == 200
+
+    def test_cloudflare_workers_env_check(self):
+        """Test CLOUDFLARE_WORKERS environment variable detection."""
+        import os
+
+        # Verify the env var is not set by default in tests
+        assert os.getenv("CLOUDFLARE_WORKERS") is None
