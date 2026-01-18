@@ -7,7 +7,7 @@ Strip personal data from iCalendar files while preserving technical properties f
 
 Calendar bugs are hard to reproduce without actual calendar data, but people can't share their calendars publicly due to privacy concerns. This tool uses hash-based anonymization to remove sensitive information (names, emails, locations, descriptions) while keeping all date/time, recurrence, and timezone data intact.
 
-[![Documentation](https://readthedocs.org/projects/icalendar-anonymizer/badge/?version=stable)](https://icalendar-anonymizer.readthedocs.io/stable/)
+[![Documentation](https://readthedocs.org/projects/icalendar-anonymizer/badge/?version=stable)](https://docs.icalendar-anonymizer.com/stable/)
 [![Tests](https://github.com/mergecal/icalendar-anonymizer/actions/workflows/tests.yml/badge.svg)](https://github.com/mergecal/icalendar-anonymizer/actions/workflows/tests.yml)
 [![codecov](https://codecov.io/gh/mergecal/icalendar-anonymizer/graph/badge.svg?token=6tcJpy0th3)](https://codecov.io/gh/mergecal/icalendar-anonymizer)
 [![PyPI version](https://img.shields.io/pypi/v/icalendar-anonymizer.svg)](https://pypi.org/project/icalendar-anonymizer/)
@@ -18,11 +18,11 @@ Calendar bugs are hard to reproduce without actual calendar data, but people can
 
 ## Documentation
 
-The documentation is available at https://icalendar-anonymizer.readthedocs.io/stable/.
+The documentation is available at https://docs.icalendar-anonymizer.com/stable/.
 
 ## Contributing
 
-See the contributing guide at https://icalendar-anonymizer.readthedocs.io/stable/contributing.html.
+See the contributing guide at https://docs.icalendar-anonymizer.com/stable/contributing.html.
 
 ## License
 

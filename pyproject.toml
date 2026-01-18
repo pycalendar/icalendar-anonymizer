@@ -121,10 +121,10 @@ local_scheme = "no-local-version"
 version-file = "src/icalendar_anonymizer/_version.py"
 
 [tool.hatch.metadata.hooks.vcs.urls]
-Homepage = "https://icalendar-anonymizer.readthedocs.io"
-Documentation = "https://icalendar-anonymizer.readthedocs.io"
+Homepage = "https://docs.icalendar-anonymizer.com"
+Documentation = "https://docs.icalendar-anonymizer.com"
 Repository = "https://github.com/mergecal/icalendar-anonymizer"
-Changelog = "https://icalendar-anonymizer.readthedocs.io/stable/changelog.html"
+Changelog = "https://docs.icalendar-anonymizer.com/stable/changelog.html"
 Issues = "https://github.com/mergecal/icalendar-anonymizer/issues"
 Discussions = "https://github.com/mergecal/icalendar-anonymizer/discussions"
 source_archive = "https://github.com/mergecal/icalendar-anonymizer/archive/{commit_hash}.zip"
