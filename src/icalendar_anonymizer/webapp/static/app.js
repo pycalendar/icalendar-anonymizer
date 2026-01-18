@@ -318,14 +318,19 @@ function showResult(section, type, message, withDownload = false) {
 // Show share result with URL
 function showShareResult(section, url) {
     const result = document.getElementById(`${section}-result`);
-    result.className = 'result success';
+    result.className = 'result success share-result';
     result.hidden = false;
 
     result.innerHTML = `
-        <div class="result-content">
-            <p><strong>Shareable link generated!</strong> Expires in 30 days.</p>
-            <div class="share-url-container">
-                <input type="text" readonly value="${url}" id="${section}-share-url" aria-label="Shareable link">
+        <div class="share-result-content">
+            <div class="share-result-header">
+                <svg class="share-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10 0C4.477 0 0 4.477 0 10c0 5.523 4.477 10 10 10 5.523 0 10-4.477 10-10 0-5.523-4.477-10-10-10zm-1 15l-5-5 1.41-1.41L9 12.17l6.59-6.59L17 7l-8 8z" fill="currentColor"/>
+                </svg>
+                <span><strong>Shareable link generated!</strong> Expires in 30 days.</span>
+            </div>
+            <div class="share-url-box">
+                <a href="${url}" target="_blank" rel="noopener noreferrer" class="share-url-link" id="${section}-share-url">${url}</a>
                 <button class="copy-btn" data-section="${section}" aria-label="Copy link">Copy</button>
             </div>
         </div>
@@ -338,11 +343,11 @@ function showShareResult(section, url) {
 
 // Copy share URL to clipboard
 async function copyShareUrl(section) {
-    const input = document.getElementById(`${section}-share-url`);
+    const link = document.getElementById(`${section}-share-url`);
     const copyBtn = document.querySelector(`[data-section="${section}"].copy-btn`);
 
     try {
-        await navigator.clipboard.writeText(input.value);
+        await navigator.clipboard.writeText(link.href);
 
         // Show feedback
         const originalText = copyBtn.textContent;
@@ -355,8 +360,11 @@ async function copyShareUrl(section) {
         }, 2000);
     } catch (err) {
         // Fallback: select text for manual copy
-        input.select();
-        input.setSelectionRange(0, 99999); // For mobile
+        const range = document.createRange();
+        range.selectNodeContents(link);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
     }
 }
 
