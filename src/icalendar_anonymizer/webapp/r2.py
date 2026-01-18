@@ -94,6 +94,9 @@ class WorkersR2Client:
 
     Wraps the Cloudflare Workers R2 bucket binding to match our R2Client interface.
     Only works in Cloudflare Workers runtime with R2 binding configured.
+
+    Note: Pyodide requires conversion between Python bytes and JavaScript
+    ArrayBuffer/Uint8Array using to_js() and to_py().
     """
 
     def __init__(self, bucket):
@@ -111,7 +114,11 @@ class WorkersR2Client:
             key: Object key/identifier
             data: Binary data to store
         """
-        await self._bucket.put(key, data)
+        from pyodide.ffi import to_js
+
+        # Convert Python bytes to JavaScript Uint8Array for R2
+        js_data = to_js(data)
+        await self._bucket.put(key, js_data)
 
     async def get(self, key: str) -> bytes | None:
         """Retrieve data from R2.
@@ -123,7 +130,11 @@ class WorkersR2Client:
             Binary data if found, None otherwise
         """
         obj = await self._bucket.get(key)
-        return await obj.arrayBuffer() if obj else None
+        if obj is None:
+            return None
+        # Get the ArrayBuffer and convert to Python bytes
+        array_buffer = await obj.arrayBuffer()
+        return array_buffer.to_bytes()
 
     async def exists(self, key: str) -> bool:
         """Check if key exists in R2.
