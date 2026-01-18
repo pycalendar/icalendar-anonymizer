@@ -168,14 +168,15 @@ class TestGetSharedCalendar:
 class TestHealthEndpointR2:
     """Tests for /health endpoint R2 detection."""
 
-    def test_health_r2_enabled(self):
-        """Test health endpoint reports R2 enabled in local dev."""
+    def test_health_r2_disabled_in_local(self):
+        """Test health endpoint reports R2 disabled in local dev."""
         response = client.get("/health")
 
         assert response.status_code == 200
         data = response.json()
 
-        # In local dev (TestClient), MockR2Client is injected
-        assert data["r2_enabled"] is True
+        # r2_enabled is False in local dev because shareable links
+        # only make sense with persistent R2 storage (Cloudflare Workers)
+        assert data["r2_enabled"] is False
         assert data["status"] == "healthy"
         assert "version" in data
