@@ -129,8 +129,11 @@ class WorkersR2Client:
         Returns:
             Binary data if found, None otherwise
         """
+        from pyodide.ffi import JsProxy
+
         obj = await self._bucket.get(key)
-        if obj is None:
+        # R2 returns JavaScript null when not found, check with isinstance
+        if not isinstance(obj, JsProxy):
             return None
         # Get the ArrayBuffer and convert to Python bytes
         array_buffer = await obj.arrayBuffer()
@@ -145,8 +148,12 @@ class WorkersR2Client:
         Returns:
             True if object exists, False otherwise
         """
+        from pyodide.ffi import JsProxy
+
         obj = await self._bucket.head(key)
-        return obj is not None
+        # R2 returns JavaScript null when not found
+        # In Pyodide, JS null becomes jsnull (not Python None)
+        return isinstance(obj, JsProxy)
 
 
 def generate_share_id() -> str:
