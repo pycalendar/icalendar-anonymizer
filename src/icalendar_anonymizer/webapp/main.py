@@ -87,13 +87,14 @@ async def inject_r2_client(request: Request, call_next):
     # Check if running in Cloudflare Workers
     if os.getenv("CLOUDFLARE_WORKERS"):
         # Access env from ASGI scope (passed by worker.py via asgi.fetch)
-        # The env is available in scope["cloudflare"]["env"]
+        # Per Cloudflare docs: env is available directly at scope["env"]
         scope = request.scope
-        cloudflare_env = scope.get("cloudflare", {}).get("env", {})
-        if "CALENDAR_SHARE_BUCKET" in cloudflare_env:
+        cloudflare_env = scope.get("env", {})
+        if cloudflare_env and hasattr(cloudflare_env, "CALENDAR_SHARE_BUCKET"):
             from icalendar_anonymizer.webapp.r2 import WorkersR2Client
 
-            r2_client = WorkersR2Client(cloudflare_env["CALENDAR_SHARE_BUCKET"])
+            # env is a JsProxy object, access with attribute notation
+            r2_client = WorkersR2Client(cloudflare_env.CALENDAR_SHARE_BUCKET)
     else:
         # Local development: use shared mock instance
         if _local_r2_client is None:
