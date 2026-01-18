@@ -159,13 +159,14 @@ class WorkersR2Client:
 def generate_share_id() -> str:
     """Generate URL-safe random 8-character ID.
 
-    Uses secrets.token_urlsafe() for cryptographically strong randomness.
+    Uses secrets.token_urlsafe(6) which produces exactly 8 characters
+    with cryptographically strong randomness.
     Characters are URL-safe (alphanumeric, hyphen, underscore).
 
     Returns:
         8-character random string suitable for URLs
     """
-    return secrets.token_urlsafe(8)[:8]
+    return secrets.token_urlsafe(6)
 
 
 async def generate_unique_id(r2_client: R2Client, max_attempts: int = 5) -> str:
