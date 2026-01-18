@@ -52,7 +52,8 @@ classifiers = [
 ]
 
 dependencies = [
-    "icalendar>=6.3.0",
+    # Pin to git main for lazy init fix (PR #1086) until next release
+    "icalendar @ git+https://github.com/collective/icalendar.git@main",
     "fastapi>=0.128.0",
     "httpx>=0.28.1",
     "python-multipart>=0.0.18",
