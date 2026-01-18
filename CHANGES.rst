@@ -61,6 +61,7 @@ New features
 Minor changes
 '''''''''''''
 
+- Added :file:`REUSE.toml` for fallback licensing of files without SPDX headers (auto-generated :file:`_version.py`). In-file headers remain preferred. See `Issue 58 <https://github.com/mergecal/icalendar-anonymizer/issues/58>`_.
 - Improved test coverage for Cloudflare Workers integration. See `PR 90 <https://github.com/mergecal/icalendar-anonymizer/pull/90>`_.
 
 .. _v0.1.2-bug-fixes:
