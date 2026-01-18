@@ -394,11 +394,33 @@ function updateCopyrightYear() {
     }
 }
 
+// Check if shareable links are available
+async function checkShareableLinks() {
+    try {
+        const response = await fetch('/health');
+        if (response.ok) {
+            const data = await response.json();
+            if (!data.r2_enabled) {
+                // Hide all share checkboxes when R2 is not available
+                document.querySelectorAll('.share-checkbox').forEach(el => {
+                    el.hidden = true;
+                });
+            }
+        }
+    } catch {
+        // If health check fails, hide share options to be safe
+        document.querySelectorAll('.share-checkbox').forEach(el => {
+            el.hidden = true;
+        });
+    }
+}
+
 // Init
 document.addEventListener('DOMContentLoaded', () => {
     initTabs();
     initDragDrop();
     updateCopyrightYear();
+    checkShareableLinks();
     document.getElementById('upload-form').addEventListener('submit', handleUpload);
     document.getElementById('paste-form').addEventListener('submit', handlePaste);
     document.getElementById('fetch-form').addEventListener('submit', handleFetch);

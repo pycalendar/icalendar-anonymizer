@@ -143,8 +143,10 @@ async def health(request: Request) -> HealthResponse:
     Returns:
         HealthResponse: Service health status, version, and feature flags
     """
-    r2_enabled = False
-    if hasattr(request.state, "r2_client"):
+    # R2 is only truly enabled in Cloudflare Workers with real R2 bucket
+    # Local dev uses MockR2Client which is in-memory and non-persistent
+    r2_enabled = bool(os.getenv("CLOUDFLARE_WORKERS"))
+    if r2_enabled and hasattr(request.state, "r2_client"):
         r2_enabled = request.state.r2_client is not None
 
     return HealthResponse(

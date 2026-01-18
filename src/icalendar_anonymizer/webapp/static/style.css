@@ -290,6 +290,10 @@ input[type="url"]::placeholder {
     user-select: none;
 }
 
+.share-checkbox[hidden] {
+    display: none;
+}
+
 .share-checkbox input[type="checkbox"] {
     margin-right: 0.5rem;
     cursor: pointer;
