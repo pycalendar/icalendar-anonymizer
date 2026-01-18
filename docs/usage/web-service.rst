@@ -5,7 +5,22 @@
 Web Service
 ===========
 
-REST API service for anonymizing iCalendar files. Three endpoints for different input methods.
+REST API service for anonymizing iCalendar files. Multiple endpoints for different input methods,
+plus shareable links for easy collaboration.
+
+Hosted Service
+==============
+
+A public instance is available at https://icalendar-anonymizer.com - no installation required.
+
+Features of the hosted service:
+
+- **Shareable links**: Generate URLs to share anonymized calendars (30-day expiry)
+- **R2 storage**: Calendars stored on Cloudflare R2 for reliable access
+- **Global edge network**: Fast response times worldwide via Cloudflare Workers
+- **No account required**: Use immediately without signup
+
+For self-hosting options, see the :doc:`self-hosting` guide.
 
 Installation
 ============
@@ -69,6 +84,27 @@ Paste Content
 Fetch from URL
     Enter a URL to fetch and anonymize a remote calendar.
     Subject to SSRF protection (see security considerations).
+
+Shareable Links
+---------------
+
+Each input method has a "Generate shareable link" checkbox. When enabled:
+
+1. The calendar is anonymized as usual
+2. Instead of downloading, you get a shareable URL (e.g., ``https://icalendar-anonymizer.com/s/Kml529qs``)
+3. Anyone with the link can download the anonymized calendar
+4. Links expire after 30 days
+
+This is useful for:
+
+- Sharing anonymized calendars in bug reports
+- Collaborating on calendar issues without file attachments
+- Quick sharing via chat or email
+
+.. note::
+
+    Shareable links are only available on the hosted service (https://icalendar-anonymizer.com).
+    Self-hosted instances use in-memory storage, so links only persist during a single session.
 
 Accessibility
 -------------
@@ -242,6 +278,103 @@ This endpoint includes SSRF (Server-Side Request Forgery) protection:
 
 The SSRF protection has a Time-of-Check-Time-of-Use (TOCTOU) vulnerability to DNS rebinding attacks.
 See `Issue #70 <https://github.com/mergecal/icalendar-anonymizer/issues/70>`_ for future enhancements.
+
+POST /share
+-----------
+
+Anonymize a calendar and generate a shareable link. Only available on the hosted service.
+
+**Request**
+
+.. code-block:: http
+
+    POST /share HTTP/1.1
+    Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+
+    ------WebKitFormBoundary
+    Content-Disposition: form-data; name="file"; filename="calendar.ics"
+    Content-Type: text/calendar
+
+    BEGIN:VCALENDAR
+    VERSION:2.0
+    ...
+
+**Response (200 OK)**
+
+.. code-block:: json
+
+    {
+      "url": "https://icalendar-anonymizer.com/s/Kml529qs"
+    }
+
+**Error Responses**
+
+- ``400 Bad Request`` - Invalid ICS format, empty file, or non-UTF-8 encoding
+- ``413 Payload Too Large`` - File exceeds size limit
+- ``500 Internal Server Error`` - Anonymization or storage failed
+- ``503 Service Unavailable`` - R2 storage not configured (self-hosted instances)
+
+**Example with curl**
+
+.. code-block:: shell
+
+    curl -X POST https://icalendar-anonymizer.com/share \
+      -F "file=@calendar.ics"
+
+    # Response: {"url":"https://icalendar-anonymizer.com/s/Kml529qs"}
+
+GET /s/{share_id}
+-----------------
+
+Retrieve a shared calendar by its ID.
+
+**Request**
+
+.. code-block:: http
+
+    GET /s/Kml529qs HTTP/1.1
+
+**Response (200 OK)**
+
+.. code-block:: http
+
+    HTTP/1.1 200 OK
+    Content-Type: text/calendar
+    Content-Disposition: attachment; filename="calendar-Kml529qs.ics"
+    Cache-Control: public, max-age=86400
+
+    BEGIN:VCALENDAR
+    VERSION:2.0
+    ...
+
+**Error Responses**
+
+- ``400 Bad Request`` - Invalid share ID format (must be 8 characters, alphanumeric with hyphen/underscore)
+- ``404 Not Found`` - Share ID not found or expired
+- ``503 Service Unavailable`` - R2 storage not configured
+
+**Example with curl**
+
+.. code-block:: shell
+
+    curl https://icalendar-anonymizer.com/s/Kml529qs -o calendar.ics
+
+GET /health
+-----------
+
+Health check endpoint for monitoring.
+
+**Response (200 OK)**
+
+.. code-block:: json
+
+    {
+      "status": "healthy",
+      "version": "0.2.0",
+      "r2_enabled": true
+    }
+
+The ``r2_enabled`` field indicates whether shareable links are available.
 
 Error Responses
 ===============
