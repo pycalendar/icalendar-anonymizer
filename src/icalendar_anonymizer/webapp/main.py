@@ -14,7 +14,7 @@ from typing import Annotated
 from urllib.parse import urlparse
 
 import httpx
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -61,6 +61,52 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+# Shared R2 client for local dev (singleton pattern)
+_local_r2_client = None
+
+
+# R2 client injection middleware
+@app.middleware("http")
+async def inject_r2_client(request: Request, call_next):
+    """Inject R2 client into request state.
+
+    In Cloudflare Workers, uses native R2 bindings from env.
+    In local dev, uses shared in-memory MockR2Client.
+
+    Args:
+        request: FastAPI request object
+        call_next: Next middleware/route handler
+
+    Returns:
+        Response from next handler
+    """
+    global _local_r2_client  # noqa: PLW0603
+    r2_client = None
+
+    # Check if running in Cloudflare Workers
+    if os.getenv("CLOUDFLARE_WORKERS"):
+        # Access env from ASGI scope (passed by worker.py via asgi.fetch)
+        # Per Cloudflare docs: env is available directly at scope["env"]
+        scope = request.scope
+        cloudflare_env = scope.get("env", {})
+        if cloudflare_env and hasattr(cloudflare_env, "CALENDAR_SHARE_BUCKET"):
+            from icalendar_anonymizer.webapp.r2 import WorkersR2Client
+
+            # env is a JsProxy object, access with attribute notation
+            r2_client = WorkersR2Client(cloudflare_env.CALENDAR_SHARE_BUCKET)
+    else:
+        # Local development: use shared mock instance
+        if _local_r2_client is None:
+            from icalendar_anonymizer.webapp.r2 import MockR2Client
+
+            _local_r2_client = MockR2Client()
+        r2_client = _local_r2_client
+
+    request.state.r2_client = r2_client
+    return await call_next(request)
+
+
 # Static files directory (only used in local dev, not in Cloudflare Workers)
 # In Cloudflare Workers, static files are served via Assets, not FastAPI
 if not os.getenv("CLOUDFLARE_WORKERS"):
@@ -88,16 +134,25 @@ class HealthResponse(BaseModel):
 
 
 @app.get("/health")
-async def health() -> HealthResponse:
+async def health(request: Request) -> HealthResponse:
     """Health check endpoint for Docker and monitoring.
+
+    Args:
+        request: FastAPI request object (used to check R2 client availability)
 
     Returns:
         HealthResponse: Service health status, version, and feature flags
     """
+    # R2 is only truly enabled in Cloudflare Workers with real R2 bucket
+    # Local dev uses MockR2Client which is in-memory and non-persistent
+    r2_enabled = bool(os.getenv("CLOUDFLARE_WORKERS"))
+    if r2_enabled and hasattr(request.state, "r2_client"):
+        r2_enabled = request.state.r2_client is not None
+
     return HealthResponse(
         status="healthy",
         version=version,
-        r2_enabled=False,  # R2 support not yet implemented
+        r2_enabled=r2_enabled,
     )
 
 
@@ -162,14 +217,14 @@ def _validate_url(url: str) -> None:
         )
 
 
-def _anonymize_calendar(ics_content: str) -> bytes:
+def _anonymize_calendar(ics_content: str) -> Calendar:
     """Anonymize iCalendar content.
 
     Args:
         ics_content: Raw iCalendar content as string
 
     Returns:
-        Anonymized iCalendar content as bytes
+        Anonymized Calendar object
 
     Raises:
         HTTPException: If ICS content is invalid
@@ -183,43 +238,19 @@ def _anonymize_calendar(ics_content: str) -> bytes:
         raise HTTPException(status_code=400, detail=f"Invalid ICS format: {e}") from e
 
     try:
-        anonymized = anonymize(cal)
-        return anonymized.to_ical()
+        return anonymize(cal)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Anonymization failed: {e}") from e
 
 
-@app.post("/anonymize")
-async def anonymize_endpoint(request: AnonymizeRequest) -> Response:
-    """Anonymize iCalendar content provided as JSON.
-
-    Args:
-        request: Request containing ICS content
-
-    Returns:
-        Response with anonymized ICS file
-
-    Raises:
-        HTTPException: If ICS content is invalid or anonymization fails
-    """
-    anonymized_ics = _anonymize_calendar(request.ics)
-
-    return Response(
-        content=anonymized_ics,
-        media_type="text/calendar",
-        headers={"Content-Disposition": 'attachment; filename="anonymized.ics"'},
-    )
-
-
-@app.post("/upload")
-async def upload_endpoint(file: Annotated[UploadFile, File()]) -> Response:
-    """Anonymize uploaded iCalendar file.
+async def _anonymize_from_upload(file: UploadFile) -> Calendar:
+    """Read and anonymize uploaded iCalendar file.
 
     Args:
         file: Uploaded ICS file
 
     Returns:
-        Response with anonymized ICS file
+        Anonymized Calendar object
 
     Raises:
         HTTPException: If file is too large, invalid format, or anonymization fails
@@ -244,10 +275,48 @@ async def upload_endpoint(file: Annotated[UploadFile, File()]) -> Response:
             detail="Uploaded file is not valid UTF-8 encoded text",
         ) from e
 
-    anonymized_ics = _anonymize_calendar(ics_content)
+    return _anonymize_calendar(ics_content)
+
+
+@app.post("/anonymize")
+async def anonymize_endpoint(request: AnonymizeRequest) -> Response:
+    """Anonymize iCalendar content provided as JSON.
+
+    Args:
+        request: Request containing ICS content
+
+    Returns:
+        Response with anonymized ICS file
+
+    Raises:
+        HTTPException: If ICS content is invalid or anonymization fails
+    """
+    anonymized_cal = _anonymize_calendar(request.ics)
 
     return Response(
-        content=anonymized_ics,
+        content=anonymized_cal.to_ical(),
+        media_type="text/calendar",
+        headers={"Content-Disposition": 'attachment; filename="anonymized.ics"'},
+    )
+
+
+@app.post("/upload")
+async def upload_endpoint(file: Annotated[UploadFile, File()]) -> Response:
+    """Anonymize uploaded iCalendar file.
+
+    Args:
+        file: Uploaded ICS file
+
+    Returns:
+        Response with anonymized ICS file
+
+    Raises:
+        HTTPException: If file is too large, invalid format, or anonymization fails
+    """
+    anonymized_cal = await _anonymize_from_upload(file)
+
+    return Response(
+        content=anonymized_cal.to_ical(),
         media_type="text/calendar",
         headers={"Content-Disposition": 'attachment; filename="anonymized.ics"'},
     )
@@ -303,10 +372,106 @@ async def fetch_endpoint(url: str) -> Response:
     except httpx.RequestError as e:
         raise HTTPException(status_code=400, detail=f"Failed to fetch URL: {e}") from e
 
-    anonymized_ics = _anonymize_calendar(ics_content)
+    anonymized_cal = _anonymize_calendar(ics_content)
 
     return Response(
-        content=anonymized_ics,
+        content=anonymized_cal.to_ical(),
         media_type="text/calendar",
         headers={"Content-Disposition": 'attachment; filename="anonymized.ics"'},
+    )
+
+
+class ShareResponse(BaseModel):
+    """Response model for /share endpoint."""
+
+    url: str
+
+
+@app.post("/share")
+async def share_calendar(
+    request: Request,
+    file: Annotated[UploadFile, File()],
+) -> ShareResponse:
+    """Anonymize calendar and generate shareable link.
+
+    Anonymizes the uploaded calendar file and stores it in R2 storage,
+    returning a shareable URL with 30-day expiry.
+
+    Args:
+        request: FastAPI request object (provides R2 client)
+        file: Uploaded ICS file
+
+    Returns:
+        ShareResponse with shareable URL
+
+    Raises:
+        HTTPException: If R2 unavailable, file invalid, or storage fails
+    """
+    # Check R2 availability
+    if not hasattr(request.state, "r2_client") or request.state.r2_client is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Shareable links are not available",
+        )
+
+    # Validate and anonymize
+    anonymized_cal = await _anonymize_from_upload(file)
+
+    # Generate unique ID and store
+    from icalendar_anonymizer.webapp.r2 import generate_unique_id
+
+    share_id = await generate_unique_id(request.state.r2_client)
+    await request.state.r2_client.put(share_id, anonymized_cal.to_ical())
+
+    # Return shareable URL
+    base_url = str(request.base_url).rstrip("/")
+    share_url = f"{base_url}/s/{share_id}"
+
+    return ShareResponse(url=share_url)
+
+
+@app.get("/s/{share_id}")
+async def get_shared_calendar(
+    request: Request,
+    share_id: str,
+) -> Response:
+    """Retrieve shared calendar file.
+
+    Args:
+        request: FastAPI request object (provides R2 client)
+        share_id: 8-character share ID
+
+    Returns:
+        Response with calendar file
+
+    Raises:
+        HTTPException: If R2 unavailable, ID invalid, or file not found
+    """
+    # Check R2 availability
+    if not hasattr(request.state, "r2_client") or request.state.r2_client is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Shareable links are not available",
+        )
+
+    # Validate ID format (8 chars, URL-safe)
+    if len(share_id) != 8 or not share_id.replace("-", "").replace("_", "").isalnum():
+        raise HTTPException(status_code=400, detail="Invalid share ID")
+
+    # Retrieve from R2
+    data = await request.state.r2_client.get(share_id)
+    if data is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Shared calendar not found or expired",
+        )
+
+    # Return with caching headers
+    return Response(
+        content=data,
+        media_type="text/calendar",
+        headers={
+            "Content-Disposition": f'attachment; filename="calendar-{share_id}.ics"',
+            "Cache-Control": "public, max-age=86400",  # 24-hour CDN cache
+        },
     )

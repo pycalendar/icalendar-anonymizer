@@ -101,6 +101,7 @@ function updateDropzoneText(filename) {
 async function handleUpload(e) {
     e.preventDefault();
     const fileInput = document.getElementById('file-input');
+    const shareCheckbox = document.getElementById('upload-share');
 
     if (!fileInput.files.length) {
         showResult('upload', 'error', 'Select a file');
@@ -116,12 +117,17 @@ async function handleUpload(e) {
     const formData = new FormData();
     formData.append('file', file);
 
-    await submit('upload', '/upload', formData);
+    if (shareCheckbox.checked) {
+        await shareFile('upload', formData);
+    } else {
+        await submit('upload', '/upload', formData);
+    }
 }
 
 async function handlePaste(e) {
     e.preventDefault();
     const content = document.getElementById('ics-textarea').value.trim();
+    const shareCheckbox = document.getElementById('paste-share');
 
     if (!content) {
         showResult('paste', 'error', 'Enter iCalendar content');
@@ -133,12 +139,21 @@ async function handlePaste(e) {
         return;
     }
 
-    await submit('paste', '/anonymize', JSON.stringify({ ics: content }), 'application/json');
+    if (shareCheckbox.checked) {
+        // Convert content to file for /share endpoint
+        const blob = new Blob([content], { type: 'text/calendar' });
+        const formData = new FormData();
+        formData.append('file', blob, 'calendar.ics');
+        await shareFile('paste', formData);
+    } else {
+        await submit('paste', '/anonymize', JSON.stringify({ ics: content }), 'application/json');
+    }
 }
 
 async function handleFetch(e) {
     e.preventDefault();
     const url = document.getElementById('url-input').value.trim();
+    const shareCheckbox = document.getElementById('fetch-share');
 
     if (!url) {
         showResult('fetch', 'error', 'Enter a URL');
@@ -152,7 +167,88 @@ async function handleFetch(e) {
         return;
     }
 
-    await submit('fetch', `/fetch?url=${encodeURIComponent(url)}`);
+    if (shareCheckbox.checked) {
+        // Fetch and share workflow
+        await fetchAndShare('fetch', url);
+    } else {
+        await submit('fetch', `/fetch?url=${encodeURIComponent(url)}`);
+    }
+}
+
+// Share file (upload to R2)
+async function shareFile(section, formData) {
+    showResult(section, 'loading', 'Generating shareable link...');
+
+    try {
+        const response = await fetch('/share', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            let msg = `Error ${response.status}`;
+            try {
+                const data = await response.json();
+                if (data.detail) msg = data.detail;
+            } catch {}
+            throw new Error(msg);
+        }
+
+        const { url } = await response.json();
+        showShareResult(section, url);
+    } catch (err) {
+        const msg = err.message.includes('Failed to fetch')
+            ? 'Network error'
+            : err.message;
+        showResult(section, 'error', msg);
+    }
+}
+
+// Fetch URL then share
+async function fetchAndShare(section, url) {
+    showResult(section, 'loading', 'Fetching and generating shareable link...');
+
+    try {
+        // First fetch the calendar
+        const fetchResponse = await fetch(`/fetch?url=${encodeURIComponent(url)}`);
+
+        if (!fetchResponse.ok) {
+            let msg = `Error ${fetchResponse.status}`;
+            try {
+                const data = await fetchResponse.json();
+                if (data.detail) msg = data.detail;
+            } catch {}
+            throw new Error(msg);
+        }
+
+        // Convert response to file
+        const blob = await fetchResponse.blob();
+        const formData = new FormData();
+        formData.append('file', blob, 'calendar.ics');
+
+        // Share it
+        const shareResponse = await fetch('/share', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!shareResponse.ok) {
+            let msg = `Error ${shareResponse.status}`;
+            try {
+                const data = await shareResponse.json();
+                if (data.detail) msg = data.detail;
+            } catch {}
+            throw new Error(msg);
+        }
+
+        const { url: shareUrl } = await shareResponse.json();
+        showShareResult(section, shareUrl);
+    } catch (err) {
+        const msg = err.message.includes('Failed to fetch')
+            ? 'Network error'
+            : err.message;
+        showResult(section, 'error', msg);
+    }
 }
 
 // Generic submit
@@ -219,6 +315,59 @@ function showResult(section, type, message, withDownload = false) {
     }
 }
 
+// Show share result with URL
+function showShareResult(section, url) {
+    const result = document.getElementById(`${section}-result`);
+    result.className = 'result success share-result';
+    result.hidden = false;
+
+    result.innerHTML = `
+        <div class="share-result-content">
+            <div class="share-result-header">
+                <svg class="share-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10 0C4.477 0 0 4.477 0 10c0 5.523 4.477 10 10 10 5.523 0 10-4.477 10-10 0-5.523-4.477-10-10-10zm-1 15l-5-5 1.41-1.41L9 12.17l6.59-6.59L17 7l-8 8z" fill="currentColor"/>
+                </svg>
+                <span><strong>Shareable link generated!</strong> Expires in 30 days.</span>
+            </div>
+            <div class="share-url-box">
+                <a href="${url}" target="_blank" rel="noopener noreferrer" class="share-url-link" id="${section}-share-url">${url}</a>
+                <button class="copy-btn" data-section="${section}" aria-label="Copy link">Copy</button>
+            </div>
+        </div>
+    `;
+
+    // Add event listener to the copy button
+    const copyBtn = result.querySelector('.copy-btn');
+    copyBtn.addEventListener('click', () => copyShareUrl(section));
+}
+
+// Copy share URL to clipboard
+async function copyShareUrl(section) {
+    const link = document.getElementById(`${section}-share-url`);
+    const copyBtn = document.querySelector(`[data-section="${section}"].copy-btn`);
+
+    try {
+        await navigator.clipboard.writeText(link.href);
+
+        // Show feedback
+        const originalText = copyBtn.textContent;
+        copyBtn.textContent = 'Copied!';
+        copyBtn.disabled = true;
+
+        setTimeout(() => {
+            copyBtn.textContent = originalText;
+            copyBtn.disabled = false;
+        }, 2000);
+    } catch (err) {
+        // Fallback: select text for manual copy
+        const range = document.createRange();
+        range.selectNodeContents(link);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
+}
+
 // Download
 function download(section) {
     const blob = blobs[section];
@@ -245,11 +394,33 @@ function updateCopyrightYear() {
     }
 }
 
+// Check if shareable links are available
+async function checkShareableLinks() {
+    try {
+        const response = await fetch('/health');
+        if (response.ok) {
+            const data = await response.json();
+            if (!data.r2_enabled) {
+                // Hide all share checkboxes when R2 is not available
+                document.querySelectorAll('.share-checkbox').forEach(el => {
+                    el.hidden = true;
+                });
+            }
+        }
+    } catch {
+        // If health check fails, hide share options to be safe
+        document.querySelectorAll('.share-checkbox').forEach(el => {
+            el.hidden = true;
+        });
+    }
+}
+
 // Init
 document.addEventListener('DOMContentLoaded', () => {
     initTabs();
     initDragDrop();
     updateCopyrightYear();
+    checkShareableLinks();
     document.getElementById('upload-form').addEventListener('submit', handleUpload);
     document.getElementById('paste-form').addEventListener('submit', handlePaste);
     document.getElementById('fetch-form').addEventListener('submit', handleFetch);

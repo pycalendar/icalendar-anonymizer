@@ -47,9 +47,11 @@ class TestHealthEndpoint:
 
         assert data["version"] == version
 
-    def test_health_r2_disabled_by_default(self):
-        """Test R2 is disabled by default."""
+    def test_health_r2_disabled_in_local_dev(self):
+        """Test R2 is disabled in local dev (no CLOUDFLARE_WORKERS env)."""
         response = client.get("/health")
         data = response.json()
 
+        # r2_enabled is False in local dev because shareable links
+        # only make sense with persistent R2 storage (Cloudflare Workers)
         assert data["r2_enabled"] is False
