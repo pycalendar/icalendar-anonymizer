@@ -154,6 +154,8 @@ async function handleFetch(e) {
     e.preventDefault();
     const url = document.getElementById('url-input').value.trim();
     const shareCheckbox = document.getElementById('fetch-share');
+    const shareTypeRadio = document.querySelector('input[name="fetch-share-type"]:checked');
+    const shareType = shareTypeRadio?.value;
 
     if (!url) {
         showResult('fetch', 'error', 'Enter a URL');
@@ -168,8 +170,16 @@ async function handleFetch(e) {
     }
 
     if (shareCheckbox.checked) {
-        // Fetch and share workflow
-        await fetchAndShare('fetch', url);
+        if (!shareType) {
+            showResult('fetch', 'error', 'Select a share option');
+            return;
+        }
+        if (shareType === 'fernet') {
+            await fetchAndShareFernet('fetch', url);
+        } else {
+            // R2 workflow
+            await fetchAndShare('fetch', url);
+        }
     } else {
         await submit('fetch', `/fetch?url=${encodeURIComponent(url)}`);
     }
@@ -204,7 +214,37 @@ async function shareFile(section, formData) {
     }
 }
 
-// Fetch URL then share
+// Fetch URL then share via Fernet (live proxy)
+async function fetchAndShareFernet(section, url) {
+    showResult(section, 'loading', 'Generating live proxy link...');
+
+    try {
+        const response = await fetch('/fernet-generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url })
+        });
+
+        if (!response.ok) {
+            let msg = `Error ${response.status}`;
+            try {
+                const data = await response.json();
+                if (data.detail) msg = data.detail;
+            } catch {}
+            throw new Error(msg);
+        }
+
+        const { url: shareUrl } = await response.json();
+        showFernetShareResult(section, shareUrl);
+    } catch (err) {
+        const msg = err.message.includes('Failed to fetch')
+            ? 'Network error'
+            : err.message;
+        showResult(section, 'error', msg);
+    }
+}
+
+// Fetch URL then share via R2 (static snapshot)
 async function fetchAndShare(section, url) {
     showResult(section, 'loading', 'Fetching and generating shareable link...');
 
@@ -315,7 +355,7 @@ function showResult(section, type, message, withDownload = false) {
     }
 }
 
-// Show share result with URL
+// Show share result with URL (R2 static snapshot)
 function showShareResult(section, url) {
     const result = document.getElementById(`${section}-result`);
     result.className = 'result success share-result';
@@ -328,6 +368,32 @@ function showShareResult(section, url) {
                     <path d="M10 0C4.477 0 0 4.477 0 10c0 5.523 4.477 10 10 10 5.523 0 10-4.477 10-10 0-5.523-4.477-10-10-10zm-1 15l-5-5 1.41-1.41L9 12.17l6.59-6.59L17 7l-8 8z" fill="currentColor"/>
                 </svg>
                 <span><strong>Shareable link generated!</strong> Expires in 30 days.</span>
+            </div>
+            <div class="share-url-box">
+                <a href="${url}" target="_blank" rel="noopener noreferrer" class="share-url-link" id="${section}-share-url">${url}</a>
+                <button class="copy-btn" data-section="${section}" aria-label="Copy link">Copy</button>
+            </div>
+        </div>
+    `;
+
+    // Add event listener to the copy button
+    const copyBtn = result.querySelector('.copy-btn');
+    copyBtn.addEventListener('click', () => copyShareUrl(section));
+}
+
+// Show Fernet share result with URL (live proxy)
+function showFernetShareResult(section, url) {
+    const result = document.getElementById(`${section}-result`);
+    result.className = 'result success share-result';
+    result.hidden = false;
+
+    result.innerHTML = `
+        <div class="share-result-content">
+            <div class="share-result-header">
+                <svg class="share-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10 0C4.477 0 0 4.477 0 10c0 5.523 4.477 10 10 10 5.523 0 10-4.477 10-10 0-5.523-4.477-10-10-10zm-1 15l-5-5 1.41-1.41L9 12.17l6.59-6.59L17 7l-8 8z" fill="currentColor"/>
+                </svg>
+                <span><strong>Live proxy link generated!</strong> Always fetches latest data.</span>
             </div>
             <div class="share-url-box">
                 <a href="${url}" target="_blank" rel="noopener noreferrer" class="share-url-link" id="${section}-share-url">${url}</a>
@@ -400,11 +466,38 @@ async function checkShareableLinks() {
         const response = await fetch('/health');
         if (response.ok) {
             const data = await response.json();
+
+            // Hide upload/paste share options if R2 not available
             if (!data.r2_enabled) {
-                // Hide all share checkboxes when R2 is not available
-                document.querySelectorAll('.share-checkbox').forEach(el => {
-                    el.hidden = true;
-                });
+                const uploadShare = document.getElementById('upload-share');
+                const pasteShare = document.getElementById('paste-share');
+                if (uploadShare?.closest('.share-checkbox')) {
+                    uploadShare.closest('.share-checkbox').hidden = true;
+                }
+                if (pasteShare?.closest('.share-checkbox')) {
+                    pasteShare.closest('.share-checkbox').hidden = true;
+                }
+            }
+
+            // For fetch tab, hide entire share checkbox if neither R2 nor Fernet available
+            if (!data.r2_enabled && !data.fernet_enabled) {
+                const fetchShare = document.getElementById('fetch-share');
+                if (fetchShare?.closest('.share-checkbox')) {
+                    fetchShare.closest('.share-checkbox').hidden = true;
+                }
+            } else {
+                // Show/hide R2 option based on availability
+                const r2Option = document.getElementById('fetch-r2-option');
+                const r2Radio = document.getElementById('fetch-share-r2');
+                const fernetRadio = document.getElementById('fetch-share-fernet');
+
+                if (r2Option && !data.r2_enabled) {
+                    r2Option.hidden = true;
+                    // If R2 was selected, switch to Fernet
+                    if (r2Radio?.checked && fernetRadio) {
+                        fernetRadio.checked = true;
+                    }
+                }
             }
         }
     } catch {
@@ -415,12 +508,24 @@ async function checkShareableLinks() {
     }
 }
 
+// Toggle share options visibility when checkbox changes
+function initShareOptionsToggle() {
+    const fetchShareCheckbox = document.getElementById('fetch-share');
+    const shareOptions = document.getElementById('fetch-share-options');
+
+    fetchShareCheckbox.addEventListener('change', () => {
+        const isChecked = fetchShareCheckbox.checked;
+        shareOptions.hidden = !isChecked;
+    });
+}
+
 // Init
 document.addEventListener('DOMContentLoaded', () => {
     initTabs();
     initDragDrop();
     updateCopyrightYear();
     checkShareableLinks();
+    initShareOptionsToggle();
     document.getElementById('upload-form').addEventListener('submit', handleUpload);
     document.getElementById('paste-form').addEventListener('submit', handlePaste);
     document.getElementById('fetch-form').addEventListener('submit', handleFetch);
