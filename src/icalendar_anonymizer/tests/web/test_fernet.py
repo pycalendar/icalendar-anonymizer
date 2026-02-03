@@ -192,6 +192,75 @@ class TestFernetFetch:
             assert response.status_code == 400
             assert "missing" in response.json()["detail"].lower()
 
+    def test_fetch_with_missing_salt(self, httpx_mock):
+        """Test error handling for token missing salt field."""
+        key = Fernet.generate_key().decode()
+        cipher = Fernet(key.encode())
+        calendar_url = "https://example.com/calendar.ics"
+
+        httpx_mock.add_response(url=calendar_url, text=VALID_ICS)
+
+        payload = {"url": calendar_url}
+        token = cipher.encrypt(json.dumps(payload).encode()).decode()
+
+        with patch.dict(os.environ, {"FERNET_KEY": key}):
+            response = client.get(f"/fernet/{token}")
+
+            assert response.status_code == 400
+            assert "missing salt" in response.json()["detail"].lower()
+
+    def test_fetch_with_invalid_salt_encoding(self, httpx_mock):
+        """Test error handling for token with non-base64 salt."""
+        key = Fernet.generate_key().decode()
+        cipher = Fernet(key.encode())
+        calendar_url = "https://example.com/calendar.ics"
+
+        httpx_mock.add_response(url=calendar_url, text=VALID_ICS)
+
+        payload = {"url": calendar_url, "salt": "!!!not-base64!!!"}
+        token = cipher.encrypt(json.dumps(payload).encode()).decode()
+
+        with patch.dict(os.environ, {"FERNET_KEY": key}):
+            response = client.get(f"/fernet/{token}")
+
+            assert response.status_code == 400
+            assert "salt" in response.json()["detail"].lower()
+
+    def test_fetch_with_wrong_salt_length(self, httpx_mock):
+        """Test error handling for token with salt of incorrect length."""
+        key = Fernet.generate_key().decode()
+        cipher = Fernet(key.encode())
+        calendar_url = "https://example.com/calendar.ics"
+
+        httpx_mock.add_response(url=calendar_url, text=VALID_ICS)
+
+        payload = {
+            "url": calendar_url,
+            "salt": base64.b64encode(b"short").decode(),
+        }
+        token = cipher.encrypt(json.dumps(payload).encode()).decode()
+
+        with patch.dict(os.environ, {"FERNET_KEY": key}):
+            response = client.get(f"/fernet/{token}")
+
+            assert response.status_code == 400
+            assert "salt length" in response.json()["detail"].lower()
+
+    def test_fetch_request_error(self, httpx_mock):
+        """Test handling of network-level request errors."""
+        key = Fernet.generate_key().decode()
+        calendar_url = "https://example.com/unreachable.ics"
+
+        httpx_mock.add_exception(httpx.ConnectError("Connection refused"), url=calendar_url)
+
+        token = _generate_fernet_token(key, calendar_url)
+
+        with patch.dict(os.environ, {"FERNET_KEY": key}):
+            response = client.get(f"/fernet/{token}")
+
+            assert response.status_code == 400
+            assert "failed to fetch" in response.json()["detail"].lower()
+
     def test_fetch_success(self, httpx_mock):
         """Test successful fetch and anonymization via Fernet token."""
         key = Fernet.generate_key().decode()
