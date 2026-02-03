@@ -7,8 +7,11 @@ Provides REST API endpoints for anonymizing iCalendar files through JSON input,
 file upload, and URL fetching with SSRF protection.
 """
 
+import base64
 import ipaddress
+import json
 import os
+import secrets
 from pathlib import Path
 from typing import Annotated
 from urllib.parse import urlparse
@@ -33,6 +36,7 @@ except ValueError as e:
     ) from e
 FETCH_TIMEOUT = 10.0  # seconds
 MAX_RESPONSE_SIZE = MAX_FILE_SIZE  # Match file size limit
+SALT_SIZE_BYTES = 32  # Size of salt for anonymization (32 bytes = 256 bits)
 
 # Private IP ranges to block for SSRF protection
 PRIVATE_IP_RANGES = [
@@ -131,6 +135,7 @@ class HealthResponse(BaseModel):
     status: str
     version: str
     r2_enabled: bool
+    fernet_enabled: bool
 
 
 @app.get("/health")
@@ -153,6 +158,7 @@ async def health(request: Request) -> HealthResponse:
         status="healthy",
         version=version,
         r2_enabled=r2_enabled,
+        fernet_enabled=bool(os.getenv("FERNET_KEY")),
     )
 
 
@@ -387,6 +393,18 @@ class ShareResponse(BaseModel):
     url: str
 
 
+class FernetGenerateRequest(BaseModel):
+    """Request model for /fernet-generate endpoint."""
+
+    url: str
+
+
+class FernetShareResponse(BaseModel):
+    """Response model for /fernet-generate endpoint."""
+
+    url: str
+
+
 @app.post("/share")
 async def share_calendar(
     request: Request,
@@ -473,5 +491,182 @@ async def get_shared_calendar(
         headers={
             "Content-Disposition": f'attachment; filename="calendar-{share_id}.ics"',
             "Cache-Control": "public, max-age=86400",  # 24-hour CDN cache
+        },
+    )
+
+
+@app.post("/fernet-generate")
+async def generate_fernet_token(
+    request: Request,
+    body: FernetGenerateRequest,
+) -> FernetShareResponse:
+    """Generate encrypted token for live calendar proxy.
+
+    Encrypts the source calendar URL and a random salt into a Fernet token.
+    The token can be used with /fernet/{token} to fetch and anonymize
+    the calendar on-the-fly.
+
+    Args:
+        request: FastAPI request object
+        body: Request containing calendar URL
+
+    Returns:
+        FernetShareResponse with shareable URL
+
+    Raises:
+        HTTPException: If Fernet not configured or URL invalid
+    """
+    from cryptography.fernet import Fernet
+
+    fernet_key = os.getenv("FERNET_KEY")
+    if not fernet_key:
+        raise HTTPException(
+            status_code=503,
+            detail="Encrypted sharing is not configured",
+        )
+
+    # Validate URL for SSRF protection
+    _validate_url(body.url)
+
+    # Create payload with URL and random salt
+    payload = {
+        "url": body.url,
+        "salt": base64.b64encode(secrets.token_bytes(SALT_SIZE_BYTES)).decode(),
+    }
+
+    # Encrypt payload
+    cipher = Fernet(fernet_key.encode())
+    token = cipher.encrypt(json.dumps(payload).encode()).decode()
+
+    # Build shareable URL
+    base_url = str(request.base_url).rstrip("/")
+    share_url = f"{base_url}/fernet/{token}"
+
+    return FernetShareResponse(url=share_url)
+
+
+@app.get("/fernet/{token}")
+async def fernet_fetch(token: str) -> Response:
+    """Fetch and anonymize calendar using encrypted token.
+
+    Decrypts the Fernet token to retrieve the source URL and salt,
+    fetches the calendar, anonymizes it with the stored salt, and returns it.
+
+    This provides live calendar proxying - the source is fetched each time,
+    ensuring the anonymized calendar stays up-to-date.
+
+    Args:
+        token: Fernet-encrypted token containing URL and salt
+
+    Returns:
+        Response with anonymized calendar
+
+    Raises:
+        HTTPException: If Fernet not configured, token invalid, or fetch fails
+    """
+    from cryptography.fernet import Fernet, InvalidToken
+
+    fernet_key = os.getenv("FERNET_KEY")
+    if not fernet_key:
+        raise HTTPException(
+            status_code=503,
+            detail="Encrypted sharing is not configured",
+        )
+
+    # Decrypt token
+    cipher = Fernet(fernet_key.encode())
+    try:
+        decrypted = cipher.decrypt(token.encode())
+        payload = json.loads(decrypted.decode())
+    except InvalidToken:
+        raise HTTPException(status_code=400, detail="Invalid token") from None
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Malformed token payload") from None
+
+    # Validate URL (defense in depth - Fernet authenticates payload preventing tampering)
+    url = payload.get("url")
+    if not url:
+        raise HTTPException(status_code=400, detail="Token missing URL")
+
+    _validate_url(url)
+
+    # Fetch calendar from source
+    try:
+        # Create event hook to validate redirect URLs before following them
+        # Note: Initial URL validated above (line 591), this hook validates redirect targets
+        async def validate_redirect(request: httpx.Request) -> None:
+            """Validate redirect URLs for SSRF protection (defense in depth)."""
+            _validate_url(str(request.url))
+
+        async with httpx.AsyncClient(
+            follow_redirects=True,
+            timeout=FETCH_TIMEOUT,
+            event_hooks={"request": [validate_redirect]},
+        ) as client:
+            response = await client.get(url)
+            response.raise_for_status()
+
+            # Check content size
+            if len(response.content) > MAX_RESPONSE_SIZE:
+                raise HTTPException(
+                    status_code=413,
+                    detail=f"Response too large (max {MAX_RESPONSE_SIZE} bytes)",
+                )
+
+            ics_content = response.text
+
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(
+            status_code=e.response.status_code,
+            detail=f"Failed to fetch calendar: {e}",
+        ) from e
+    except httpx.TimeoutException as e:
+        raise HTTPException(
+            status_code=408,
+            detail=f"Request timeout after {FETCH_TIMEOUT}s",
+        ) from e
+    except httpx.RequestError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Failed to fetch calendar: {e}",
+        ) from e
+
+    # Parse and anonymize with stored salt
+    if not ics_content.strip():
+        raise HTTPException(status_code=400, detail="Calendar source returned empty content")
+
+    try:
+        cal = Calendar.from_ical(ics_content.encode("utf-8"))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid ICS format: {e}") from e
+
+    # Validate and decode salt
+    salt_b64 = payload.get("salt")
+    if not salt_b64:
+        raise HTTPException(status_code=400, detail="Token missing salt")
+
+    try:
+        salt = base64.b64decode(salt_b64)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Invalid salt encoding") from e
+
+    if len(salt) != SALT_SIZE_BYTES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid salt length (expected {SALT_SIZE_BYTES} bytes)",
+        )
+
+    try:
+        anonymized_cal = anonymize(cal, salt=salt)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Anonymization failed: {e}") from e
+
+    return Response(
+        content=anonymized_cal.to_ical(),
+        media_type="text/calendar",
+        headers={
+            "Content-Disposition": 'attachment; filename="anonymized.ics"',
+            # No caching - live data should be fresh
+            "Cache-Control": "no-cache",
         },
     )
