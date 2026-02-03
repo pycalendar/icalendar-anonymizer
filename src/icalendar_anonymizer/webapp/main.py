@@ -223,11 +223,12 @@ def _validate_url(url: str) -> None:
         )
 
 
-def _anonymize_calendar(ics_content: str) -> Calendar:
+def _anonymize_calendar(ics_content: str, salt: bytes | None = None) -> Calendar:
     """Anonymize iCalendar content.
 
     Args:
         ics_content: Raw iCalendar content as string
+        salt: Optional salt for deterministic anonymization
 
     Returns:
         Anonymized Calendar object
@@ -244,7 +245,8 @@ def _anonymize_calendar(ics_content: str) -> Calendar:
         raise HTTPException(status_code=400, detail=f"Invalid ICS format: {e}") from e
 
     try:
-        return anonymize(cal)
+        kwargs = {"salt": salt} if salt is not None else {}
+        return anonymize(cal, **kwargs)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Anonymization failed: {e}") from e
 
@@ -631,15 +633,6 @@ async def fernet_fetch(token: str) -> Response:
             detail=f"Failed to fetch calendar: {e}",
         ) from e
 
-    # Parse and anonymize with stored salt
-    if not ics_content.strip():
-        raise HTTPException(status_code=400, detail="Calendar source returned empty content")
-
-    try:
-        cal = Calendar.from_ical(ics_content.encode("utf-8"))
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Invalid ICS format: {e}") from e
-
     # Validate and decode salt
     salt_b64 = payload.get("salt")
     if not salt_b64:
@@ -656,10 +649,7 @@ async def fernet_fetch(token: str) -> Response:
             detail=f"Invalid salt length (expected {SALT_SIZE_BYTES} bytes)",
         )
 
-    try:
-        anonymized_cal = anonymize(cal, salt=salt)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Anonymization failed: {e}") from e
+    anonymized_cal = _anonymize_calendar(ics_content, salt=salt)
 
     return Response(
         content=anonymized_cal.to_ical(),
