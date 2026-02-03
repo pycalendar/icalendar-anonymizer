@@ -594,8 +594,7 @@ async def fernet_fetch(token: str) -> Response:
 
     # Fetch calendar from source
     try:
-        # Create event hook to validate redirect URLs before following them
-        # Note: Initial URL validated above (line 591), this hook validates redirect targets
+        # Validate redirect targets for SSRF protection (defense in depth)
         async def validate_redirect(request: httpx.Request) -> None:
             """Validate redirect URLs for SSRF protection (defense in depth)."""
             _validate_url(str(request.url))

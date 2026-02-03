@@ -305,6 +305,24 @@ class TestFernetFetch:
             content = fetch_response.content.decode("utf-8")
             assert "BEGIN:VCALENDAR" in content
 
+    def test_fetch_redirect_to_private_ip_blocked(self, httpx_mock):
+        """Test that redirects to private IPs are blocked by the event hook."""
+        key = Fernet.generate_key().decode()
+        original_url = "https://example.com/redirect"
+        private_url = "http://127.0.0.1/calendar.ics"
+
+        httpx_mock.add_response(
+            url=original_url, status_code=302, headers={"Location": private_url}
+        )
+
+        token = _generate_fernet_token(key, original_url)
+
+        with patch.dict(os.environ, {"FERNET_KEY": key}):
+            response = client.get(f"/fernet/{token}")
+
+            assert response.status_code == 400
+            assert "private" in response.json()["detail"].lower()
+
     def test_fetch_timeout(self, httpx_mock):
         """Test timeout handling when fetching calendar."""
         key = Fernet.generate_key().decode()
