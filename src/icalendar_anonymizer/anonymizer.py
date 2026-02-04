@@ -184,7 +184,10 @@ def _anonymize_component(
                 uid_counter[0] += 1
                 placeholder = f"redacted-{uid_counter[0]}@anonymous.local"
             elif prop_name in ("ATTENDEE", "ORGANIZER"):
-                placeholder = _create_placeholder_caladdress(value, prop_name)
+                if isinstance(value, vCalAddress):
+                    placeholder = _create_placeholder_caladdress(value, prop_name)
+                else:
+                    placeholder = DEFAULT_PLACEHOLDERS.get(prop_name, "[Redacted]")
             else:
                 placeholder = DEFAULT_PLACEHOLDERS.get(prop_name, "[Redacted]")
             new_component.add(key, placeholder)
