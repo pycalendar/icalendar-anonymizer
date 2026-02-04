@@ -176,10 +176,8 @@ def _anonymize_component(
         if mode == AnonymizeMode.KEEP:
             new_component.add(key, value)
         elif mode == AnonymizeMode.REMOVE:
-            # Don't add property - skip
             continue
         elif mode == AnonymizeMode.REPLACE:
-            # Use placeholder
             if prop_name == "UID":
                 uid_counter[0] += 1
                 placeholder = f"redacted-{uid_counter[0]}@anonymous.local"
@@ -191,7 +189,7 @@ def _anonymize_component(
             else:
                 placeholder = DEFAULT_PLACEHOLDERS.get(prop_name, "[Redacted]")
             new_component.add(key, placeholder)
-        # Existing anonymization logic
+        # RANDOMIZE (default): hash to deterministic random value
         elif prop_name == "UID":
             new_component.add(key, hash_uid(str(value), salt, uid_map))
         elif prop_name in ("ATTENDEE", "ORGANIZER"):
