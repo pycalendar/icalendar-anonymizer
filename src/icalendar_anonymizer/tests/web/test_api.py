@@ -377,3 +377,217 @@ class TestCloudflareWorkersEnvironment:
 
         # Verify the env var is not set by default in tests
         assert os.getenv("CLOUDFLARE_WORKERS") is None
+
+
+class TestAnonymizeWithConfig:
+    """Integration tests for /anonymize endpoint with field configuration."""
+
+    def test_config_summary_keep(self):
+        """Test config with summary=keep preserves summary."""
+        response = client.post(
+            "/anonymize",
+            json={"ics": VALID_ICS, "config": {"summary": "keep"}},
+        )
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert "Test Event" in content
+        assert "Test description" not in content  # Other fields still anonymized
+
+    def test_config_location_remove(self):
+        """Test config with location=remove strips location."""
+        response = client.post(
+            "/anonymize",
+            json={"ics": VALID_ICS, "config": {"location": "remove"}},
+        )
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert "LOCATION" not in content
+        assert "BEGIN:VEVENT" in content  # Event still valid
+
+    def test_config_description_replace(self):
+        """Test config with description=replace uses placeholder."""
+        response = client.post(
+            "/anonymize",
+            json={"ics": VALID_ICS, "config": {"description": "replace"}},
+        )
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert "[Content removed]" in content
+        assert "Test description" not in content
+
+    def test_config_mixed_modes(self):
+        """Test config with multiple field modes."""
+        response = client.post(
+            "/anonymize",
+            json={
+                "ics": VALID_ICS,
+                "config": {
+                    "summary": "keep",
+                    "location": "remove",
+                    "description": "replace",
+                },
+            },
+        )
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert "Test Event" in content  # kept
+        assert "LOCATION" not in content  # removed
+        assert "[Content removed]" in content  # replaced
+
+    def test_config_uid_keep(self):
+        """Test config with uid=keep preserves UID."""
+        response = client.post(
+            "/anonymize",
+            json={"ics": VALID_ICS, "config": {"uid": "keep"}},
+        )
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert "test@example.com" in content
+
+    def test_config_uid_replace(self):
+        """Test config with uid=replace uses placeholder."""
+        response = client.post(
+            "/anonymize",
+            json={"ics": VALID_ICS, "config": {"uid": "replace"}},
+        )
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert "redacted-" in content
+        assert "@anonymous.local" in content
+        assert "test@example.com" not in content
+
+    def test_config_no_config_defaults_to_randomize(self):
+        """Test that no config results in randomize behavior."""
+        response = client.post("/anonymize", json={"ics": VALID_ICS})
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert "Test Event" not in content
+        assert "Test description" not in content
+        assert "Test location" not in content
+
+    def test_config_invalid_field_rejected(self):
+        """Test that invalid field names are rejected."""
+        response = client.post(
+            "/anonymize",
+            json={"ics": VALID_ICS, "config": {"invalid_field": "keep"}},
+        )
+        # Pydantic validation should fail with 422
+        assert response.status_code == 422
+
+    def test_config_invalid_mode_rejected(self):
+        """Test that invalid mode values are rejected."""
+        response = client.post(
+            "/anonymize",
+            json={"ics": VALID_ICS, "config": {"summary": "invalid_mode"}},
+        )
+        # Pydantic validation should fail with 422
+        assert response.status_code == 422
+
+
+class TestFetchWithConfig:
+    """Integration tests for /fetch endpoint with field configuration via query params."""
+
+    def test_fetch_with_summary_keep(self, httpx_mock):
+        """Test /fetch with summary=keep query param."""
+        test_url = "https://example.com/cal.ics"
+        httpx_mock.add_response(url=test_url, text=VALID_ICS)
+
+        response = client.get(f"/fetch?url={test_url}&summary=keep")
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert "Test Event" in content
+
+    def test_fetch_with_location_remove(self, httpx_mock):
+        """Test /fetch with location=remove query param."""
+        test_url = "https://example.com/cal.ics"
+        httpx_mock.add_response(url=test_url, text=VALID_ICS)
+
+        response = client.get(f"/fetch?url={test_url}&location=remove")
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert "LOCATION" not in content
+
+    def test_fetch_with_description_replace(self, httpx_mock):
+        """Test /fetch with description=replace query param."""
+        test_url = "https://example.com/cal.ics"
+        httpx_mock.add_response(url=test_url, text=VALID_ICS)
+
+        response = client.get(f"/fetch?url={test_url}&description=replace")
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert "[Content removed]" in content
+        assert "Test description" not in content
+
+    def test_fetch_with_multiple_params(self, httpx_mock):
+        """Test /fetch with multiple field config query params."""
+        test_url = "https://example.com/cal.ics"
+        httpx_mock.add_response(url=test_url, text=VALID_ICS)
+
+        response = client.get(
+            f"/fetch?url={test_url}&summary=keep&location=remove&description=replace"
+        )
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert "Test Event" in content  # kept
+        assert "LOCATION" not in content  # removed
+        assert "[Content removed]" in content  # replaced
+
+    def test_fetch_with_uid_keep(self, httpx_mock):
+        """Test /fetch with uid=keep query param."""
+        test_url = "https://example.com/cal.ics"
+        httpx_mock.add_response(url=test_url, text=VALID_ICS)
+
+        response = client.get(f"/fetch?url={test_url}&uid=keep")
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert "test@example.com" in content
+
+
+class TestUploadWithConfig:
+    """Integration tests for /upload endpoint with field configuration."""
+
+    def test_upload_with_config_summary_keep(self):
+        """Test /upload with config form field (summary=keep)."""
+        files = {"file": ("test.ics", VALID_ICS.encode(), "text/calendar")}
+        data = {"config": '{"summary": "keep"}'}
+        response = client.post("/upload", files=files, data=data)
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert "Test Event" in content
+
+    def test_upload_with_config_location_remove(self):
+        """Test /upload with config form field (location=remove)."""
+        files = {"file": ("test.ics", VALID_ICS.encode(), "text/calendar")}
+        data = {"config": '{"location": "remove"}'}
+        response = client.post("/upload", files=files, data=data)
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert "LOCATION" not in content
+
+    def test_upload_with_config_mixed_modes(self):
+        """Test /upload with multiple field modes in config."""
+        files = {"file": ("test.ics", VALID_ICS.encode(), "text/calendar")}
+        data = {"config": '{"summary": "keep", "location": "remove", "description": "replace"}'}
+        response = client.post("/upload", files=files, data=data)
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert "Test Event" in content  # kept
+        assert "LOCATION" not in content  # removed
+        assert "[Content removed]" in content  # replaced
+
+    def test_upload_with_invalid_config_json(self):
+        """Test /upload with malformed config JSON."""
+        files = {"file": ("test.ics", VALID_ICS.encode(), "text/calendar")}
+        data = {"config": "not valid json"}
+        response = client.post("/upload", files=files, data=data)
+        assert response.status_code == 400
+        assert "Invalid config" in response.json()["detail"]
+
+    def test_upload_without_config_uses_defaults(self):
+        """Test /upload without config uses default randomize behavior."""
+        files = {"file": ("test.ics", VALID_ICS.encode(), "text/calendar")}
+        response = client.post("/upload", files=files)
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert "Test Event" not in content
+        assert "Test description" not in content

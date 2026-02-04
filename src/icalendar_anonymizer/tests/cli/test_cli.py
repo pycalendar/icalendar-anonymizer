@@ -310,3 +310,161 @@ def test_output_to_file(cli_runner, sample_ics, tmp_path):
     # Verify output file is valid ICS
     output_cal = Calendar.from_ical(output_file.read_bytes())
     assert output_cal is not None
+
+
+# Field Mode Integration Tests
+
+
+class TestFieldModeFlags:
+    """Integration tests for per-field CLI flags."""
+
+    def test_summary_keep(self, cli_runner, sample_ics, tmp_path):
+        """Test --summary keep preserves summary value."""
+        from icalendar_anonymizer.cli import main
+
+        input_file = tmp_path / "input.ics"
+        input_file.write_bytes(sample_ics)
+
+        result = cli_runner.invoke(main, [str(input_file), "--summary", "keep"])
+        assert result.exit_code == 0
+
+        output_cal = Calendar.from_ical(result.output_bytes)
+        event = next(iter(output_cal.walk("VEVENT")))
+        assert event["summary"] == "Secret Meeting"
+
+    def test_location_remove(self, cli_runner, sample_ics, tmp_path):
+        """Test --location remove strips location property."""
+        from icalendar_anonymizer.cli import main
+
+        input_file = tmp_path / "input.ics"
+        input_file.write_bytes(sample_ics)
+
+        result = cli_runner.invoke(main, [str(input_file), "--location", "remove"])
+        assert result.exit_code == 0
+
+        output_cal = Calendar.from_ical(result.output_bytes)
+        event = next(iter(output_cal.walk("VEVENT")))
+        assert "location" not in event
+
+    def test_description_replace(self, cli_runner, sample_ics, tmp_path):
+        """Test --description replace uses placeholder."""
+        from icalendar_anonymizer.cli import main
+
+        input_file = tmp_path / "input.ics"
+        input_file.write_bytes(sample_ics)
+
+        result = cli_runner.invoke(main, [str(input_file), "--description", "replace"])
+        assert result.exit_code == 0
+
+        output_cal = Calendar.from_ical(result.output_bytes)
+        event = next(iter(output_cal.walk("VEVENT")))
+        assert event["description"] == "[Content removed]"
+
+    def test_summary_randomize_default(self, cli_runner, sample_ics, tmp_path):
+        """Test --summary randomize produces hashed value."""
+        from icalendar_anonymizer.cli import main
+
+        input_file = tmp_path / "input.ics"
+        input_file.write_bytes(sample_ics)
+
+        result = cli_runner.invoke(main, [str(input_file), "--summary", "randomize"])
+        assert result.exit_code == 0
+
+        output_cal = Calendar.from_ical(result.output_bytes)
+        event = next(iter(output_cal.walk("VEVENT")))
+        # Randomize should hash the value (different from original)
+        assert event["summary"] != "Secret Meeting"
+        assert len(str(event["summary"])) > 0
+
+    def test_combined_flags(self, cli_runner, sample_ics, tmp_path):
+        """Test multiple field flags work together."""
+        from icalendar_anonymizer.cli import main
+
+        input_file = tmp_path / "input.ics"
+        input_file.write_bytes(sample_ics)
+
+        result = cli_runner.invoke(
+            main,
+            [
+                str(input_file),
+                "--summary",
+                "keep",
+                "--location",
+                "remove",
+                "--description",
+                "replace",
+            ],
+        )
+        assert result.exit_code == 0
+
+        output_cal = Calendar.from_ical(result.output_bytes)
+        event = next(iter(output_cal.walk("VEVENT")))
+
+        # Verify each mode applied correctly
+        assert event["summary"] == "Secret Meeting"  # kept
+        assert "location" not in event  # removed
+        assert event["description"] == "[Content removed]"  # replaced
+
+    def test_uid_keep(self, cli_runner, sample_ics, tmp_path):
+        """Test --uid keep preserves UID."""
+        from icalendar_anonymizer.cli import main
+
+        input_file = tmp_path / "input.ics"
+        input_file.write_bytes(sample_ics)
+
+        result = cli_runner.invoke(main, [str(input_file), "--uid", "keep"])
+        assert result.exit_code == 0
+
+        output_cal = Calendar.from_ical(result.output_bytes)
+        event = next(iter(output_cal.walk("VEVENT")))
+        assert str(event["uid"]) == "test-event-uid@example.com"
+
+    def test_uid_replace(self, cli_runner, sample_ics, tmp_path):
+        """Test --uid replace uses placeholder."""
+        from icalendar_anonymizer.cli import main
+
+        input_file = tmp_path / "input.ics"
+        input_file.write_bytes(sample_ics)
+
+        result = cli_runner.invoke(main, [str(input_file), "--uid", "replace"])
+        assert result.exit_code == 0
+
+        output_cal = Calendar.from_ical(result.output_bytes)
+        event = next(iter(output_cal.walk("VEVENT")))
+        uid = str(event["uid"])
+        assert "redacted-" in uid
+        assert "@anonymous.local" in uid
+
+    def test_uid_randomize(self, cli_runner, sample_ics, tmp_path):
+        """Test --uid randomize produces hashed UID."""
+        from icalendar_anonymizer.cli import main
+
+        input_file = tmp_path / "input.ics"
+        input_file.write_bytes(sample_ics)
+
+        result = cli_runner.invoke(main, [str(input_file), "--uid", "randomize"])
+        assert result.exit_code == 0
+
+        output_cal = Calendar.from_ical(result.output_bytes)
+        event = next(iter(output_cal.walk("VEVENT")))
+        uid = str(event["uid"])
+        assert uid != "test-event-uid@example.com"
+        assert len(uid) > 0
+
+    def test_no_flags_uses_defaults(self, cli_runner, sample_ics, tmp_path):
+        """Test that no flags results in default randomize behavior."""
+        from icalendar_anonymizer.cli import main
+
+        input_file = tmp_path / "input.ics"
+        input_file.write_bytes(sample_ics)
+
+        result = cli_runner.invoke(main, [str(input_file)])
+        assert result.exit_code == 0
+
+        output_cal = Calendar.from_ical(result.output_bytes)
+        event = next(iter(output_cal.walk("VEVENT")))
+
+        # All fields should be randomized by default
+        assert event["summary"] != "Secret Meeting"
+        assert event["description"] != "Confidential discussion"
+        assert str(event["uid"]) != "test-event-uid@example.com"
