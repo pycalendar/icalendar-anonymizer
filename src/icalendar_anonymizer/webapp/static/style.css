@@ -34,6 +34,7 @@ body {
     flex-direction: column;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-y: scroll;
 }
 
 header {
@@ -279,6 +280,112 @@ input[type="url"]::placeholder {
 .btn:focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
+}
+
+.advanced-options {
+    margin-top: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.advanced-options summary {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    background: var(--surface);
+    font-weight: 500;
+    list-style: none;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.advanced-options summary::-webkit-details-marker {
+    display: none;
+}
+
+.advanced-options summary::before {
+    content: '▶';
+    display: inline-block;
+    font-size: 0.75rem;
+    transition: transform 0.2s ease;
+    color: var(--text-muted);
+}
+
+.advanced-options[open] summary::before {
+    transform: rotate(90deg);
+}
+
+.advanced-options summary:hover {
+    background: #f0f0f0; /* Fallback for older browsers */
+    background: color-mix(in srgb, var(--surface) 90%, var(--primary));
+}
+
+.advanced-options summary:focus {
+    outline: 2px solid var(--primary);
+    outline-offset: -2px;
+}
+
+.advanced-options .options-help,
+.advanced-options .field-config-grid {
+    animation: slideDown 0.2s ease;
+    overflow: hidden;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+    }
+    to {
+        opacity: 1;
+        max-height: 1000px;
+    }
+}
+
+.options-help {
+    margin: 0.5rem 1rem;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+.field-config-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.75rem;
+    padding: 1rem;
+}
+
+.field-option {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.field-option label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.field-option select {
+    padding: 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg);
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
+.field-option select:hover {
+    border-color: var(--primary);
+}
+
+.field-option select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
 }
 
 .share-checkbox {

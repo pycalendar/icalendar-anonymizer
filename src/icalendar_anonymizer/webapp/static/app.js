@@ -97,6 +97,30 @@ function updateDropzoneText(filename) {
     text.textContent = filename;
 }
 
+/**
+ * Extract field configuration from the Advanced Options form for a specific section.
+ * Uses DOM queries to discover all field selects, avoiding hardcoded field lists.
+ *
+ * @param {string} section - The section identifier ('upload', 'paste', or 'fetch')
+ * @returns {Object|null} Object mapping field names to their modes, or null if all fields use default (randomize)
+ */
+function getFieldConfig(section) {
+    const config = {};
+
+    // Query all select elements within the field-config-grid for this section
+    const selects = document.querySelectorAll(`#${section}-panel .field-config-grid select`);
+
+    for (const select of selects) {
+        // Extract field name from select ID (format: "{section}-{field}")
+        const fieldName = select.id.replace(`${section}-`, '');
+        if (select.value && select.value !== 'randomize') {
+            config[fieldName] = select.value;
+        }
+    }
+
+    return Object.keys(config).length > 0 ? config : null;
+}
+
 // Form handlers
 async function handleUpload(e) {
     e.preventDefault();
@@ -116,6 +140,11 @@ async function handleUpload(e) {
 
     const formData = new FormData();
     formData.append('file', file);
+
+    const config = getFieldConfig('upload');
+    if (config) {
+        formData.append('config', JSON.stringify(config));
+    }
 
     if (shareCheckbox.checked) {
         await shareFile('upload', formData);
@@ -139,14 +168,23 @@ async function handlePaste(e) {
         return;
     }
 
+    const config = getFieldConfig('paste');
+
     if (shareCheckbox.checked) {
         // Convert content to file for /share endpoint
         const blob = new Blob([content], { type: 'text/calendar' });
         const formData = new FormData();
         formData.append('file', blob, 'calendar.ics');
+        if (config) {
+            formData.append('config', JSON.stringify(config));
+        }
         await shareFile('paste', formData);
     } else {
-        await submit('paste', '/anonymize', JSON.stringify({ ics: content }), 'application/json');
+        const payload = { ics: content };
+        if (config) {
+            payload.config = config;
+        }
+        await submit('paste', '/anonymize', JSON.stringify(payload), 'application/json');
     }
 }
 
@@ -167,11 +205,19 @@ async function handleFetch(e) {
         return;
     }
 
+    const config = getFieldConfig('fetch');
+
     if (shareCheckbox.checked) {
         // Fetch and share workflow
-        await fetchAndShare('fetch', url);
+        await fetchAndShare('fetch', url, config);
     } else {
-        await submit('fetch', `/fetch?url=${encodeURIComponent(url)}`);
+        let fetchUrl = `/fetch?url=${encodeURIComponent(url)}`;
+        if (config) {
+            for (const [field, mode] of Object.entries(config)) {
+                fetchUrl += `&${field}=${mode}`;
+            }
+        }
+        await submit('fetch', fetchUrl);
     }
 }
 
@@ -205,12 +251,18 @@ async function shareFile(section, formData) {
 }
 
 // Fetch URL then share
-async function fetchAndShare(section, url) {
+async function fetchAndShare(section, url, config) {
     showResult(section, 'loading', 'Fetching and generating shareable link...');
 
     try {
         // First fetch the calendar
-        const fetchResponse = await fetch(`/fetch?url=${encodeURIComponent(url)}`);
+        let fetchUrl = `/fetch?url=${encodeURIComponent(url)}`;
+        if (config) {
+            for (const [field, mode] of Object.entries(config)) {
+                fetchUrl += `&${field}=${mode}`;
+            }
+        }
+        const fetchResponse = await fetch(fetchUrl);
 
         if (!fetchResponse.ok) {
             let msg = `Error ${fetchResponse.status}`;
@@ -226,7 +278,7 @@ async function fetchAndShare(section, url) {
         const formData = new FormData();
         formData.append('file', blob, 'calendar.ics');
 
-        // Share it
+        // Share it (already anonymized, so no config needed)
         const shareResponse = await fetch('/share', {
             method: 'POST',
             body: formData
