@@ -15,7 +15,6 @@ class AnonymizeMode(StrEnum):
     REPLACE = "replace"
 
 
-# Fields that can be configured (from ANONYMIZED_PROPERTIES)
 CONFIGURABLE_FIELDS = frozenset(
     {
         "SUMMARY",
@@ -30,8 +29,12 @@ CONFIGURABLE_FIELDS = frozenset(
         "UID",
     }
 )
+"""Set of field names that can be configured with field_modes parameter.
 
-# Default placeholders for REPLACE mode
+Contains 10 fields: SUMMARY, DESCRIPTION, LOCATION, COMMENT, CONTACT,
+RESOURCES, CATEGORIES, ATTENDEE, ORGANIZER, and UID.
+"""
+
 DEFAULT_PLACEHOLDERS = {
     "SUMMARY": "[Redacted]",
     "DESCRIPTION": "[Content removed]",
@@ -42,8 +45,12 @@ DEFAULT_PLACEHOLDERS = {
     "CATEGORIES": "REDACTED",
     "ATTENDEE": "mailto:redacted@example.local",
     "ORGANIZER": "mailto:redacted@example.local",
-    # UID handled specially with counter
 }
+"""Default placeholder values used in REPLACE mode.
+
+Maps field names to their placeholder strings. UID uses a counter for
+uniqueness: redacted-1@anonymous.local, redacted-2@anonymous.local, etc.
+"""
 
 
 def validate_field_modes(
