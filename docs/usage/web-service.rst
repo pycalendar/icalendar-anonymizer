@@ -85,6 +85,26 @@ Fetch from URL
     Enter a URL to fetch and anonymize a remote calendar.
     Subject to SSRF protection (see security considerations).
 
+Advanced Options
+----------------
+
+All three input methods include an "Advanced Options" collapsible section for granular field control.
+
+Configure how each field is anonymized:
+
+- **keep** - Preserve original value
+- **remove** - Strip property entirely
+- **randomize** (default) - Hash to deterministic random value
+- **replace** - Replace with fixed placeholder
+
+Configurable fields (10 total):
+
+- Summary, Description, Location
+- Comment, Contact, Resources, Categories
+- Attendee, Organizer, UID
+
+The UID field cannot use ``remove`` mode (would break recurring events).
+
 Shareable Links
 ---------------
 
@@ -198,7 +218,7 @@ No ``Content-Disposition`` header, allowing direct piping to files.
 POST /anonymize
 ---------------
 
-Anonymize iCalendar content provided as JSON.
+Anonymize iCalendar content provided as JSON. Optionally configure per-field anonymization.
 
 **Request**
 
@@ -208,8 +228,15 @@ Anonymize iCalendar content provided as JSON.
     Content-Type: application/json
 
     {
-      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\n..."
+      "ics": "BEGIN:VCALENDAR\nVERSION:2.0\n...",
+      "config": {
+        "summary": "keep",
+        "location": "remove",
+        "description": "replace"
+      }
     }
+
+The ``config`` field is optional. If omitted, all fields use default randomize behavior.
 
 **Response (200 OK)**
 
@@ -226,21 +253,29 @@ Anonymize iCalendar content provided as JSON.
 **Error Responses**
 
 - ``400 Bad Request`` - Invalid ICS format or empty input
+- ``422 Unprocessable Entity`` - Invalid field config (invalid field name, invalid mode, or UID set to remove)
 - ``500 Internal Server Error`` - Anonymization failed
 
 **Example with curl**
 
 .. code-block:: shell
 
+    # Basic anonymization
     curl -X POST http://localhost:8000/anonymize \
       -H "Content-Type: application/json" \
       -d '{"ics": "BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR"}' \
       -o anonymized.ics
 
+    # With field configuration
+    curl -X POST http://localhost:8000/anonymize \
+      -H "Content-Type: application/json" \
+      -d '{"ics": "BEGIN:VCALENDAR\n...", "config": {"summary": "keep", "location": "remove"}}' \
+      -o anonymized.ics
+
 POST /upload
 ------------
 
-Anonymize an uploaded iCalendar file.
+Anonymize an uploaded iCalendar file. Optionally configure per-field anonymization.
 
 **Request**
 
@@ -256,6 +291,12 @@ Anonymize an uploaded iCalendar file.
     BEGIN:VCALENDAR
     VERSION:2.0
     ...
+    ------WebKitFormBoundary
+    Content-Disposition: form-data; name="config"
+
+    {"summary": "keep", "location": "remove"}
+
+The ``config`` field is optional JSON string. If omitted, all fields use default randomize behavior.
 
 **Response (200 OK)**
 
@@ -271,22 +312,30 @@ Anonymize an uploaded iCalendar file.
 
 **Error Responses**
 
-- ``400 Bad Request`` - Invalid ICS format, empty file, or non-UTF-8 encoding
+- ``400 Bad Request`` - Invalid ICS format, empty file, non-UTF-8 encoding, or invalid config JSON
 - ``413 Payload Too Large`` - File exceeds size limit
+- ``422 Unprocessable Entity`` - Invalid field config
 - ``500 Internal Server Error`` - Anonymization failed
 
 **Example with curl**
 
 .. code-block:: shell
 
+    # Basic upload
     curl -X POST http://localhost:8000/upload \
       -F "file=@calendar.ics" \
+      -o anonymized.ics
+
+    # With field configuration
+    curl -X POST http://localhost:8000/upload \
+      -F "file=@calendar.ics" \
+      -F 'config={"summary": "keep", "location": "remove"}' \
       -o anonymized.ics
 
 GET /fetch
 ----------
 
-Fetch an iCalendar file from a URL and anonymize it.
+Fetch an iCalendar file from a URL and anonymize it. Optionally configure per-field anonymization via query parameters.
 
 **Security Features**
 
@@ -304,7 +353,15 @@ This endpoint includes SSRF (Server-Side Request Forgery) protection:
 
 .. code-block:: http
 
-    GET /fetch?url=https://example.com/calendar.ics HTTP/1.1
+    GET /fetch?url=https://example.com/calendar.ics&summary=keep&location=remove HTTP/1.1
+
+Field configuration parameters (all optional):
+
+- ``summary``, ``description``, ``location``, ``comment``
+- ``contact``, ``resources``, ``categories``
+- ``attendee``, ``organizer``, ``uid``
+
+Each accepts: ``keep``, ``remove``, ``randomize``, ``replace``
 
 **Response (200 OK)**
 
@@ -323,6 +380,7 @@ This endpoint includes SSRF (Server-Side Request Forgery) protection:
 - ``400 Bad Request`` - Invalid URL, private IP, invalid ICS format, or connection failed
 - ``408 Request Timeout`` - Request exceeded 10-second timeout
 - ``413 Payload Too Large`` - Response exceeds 10 MB size limit
+- ``422 Unprocessable Entity`` - Invalid field config
 - ``Various HTTP status codes`` - Returns the actual HTTP status code from the upstream server (e.g., 404 Not Found, 500 Internal Server Error, 503 Service Unavailable)
 - ``500 Internal Server Error`` - Anonymization failed
 
@@ -330,7 +388,12 @@ This endpoint includes SSRF (Server-Side Request Forgery) protection:
 
 .. code-block:: shell
 
+    # Basic fetch
     curl "http://localhost:8000/fetch?url=https://example.com/calendar.ics" \
+      -o anonymized.ics
+
+    # With field configuration
+    curl "http://localhost:8000/fetch?url=https://example.com/calendar.ics&summary=keep&location=remove" \
       -o anonymized.ics
 
 **Known Limitations**

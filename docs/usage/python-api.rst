@@ -54,18 +54,106 @@ Provide your own salt for reproducible output:
 .. warning::
     Keep your custom salt secret if you need to prevent others from testing potential matches against the hashed values.
 
-Preserving Additional Properties
-================================
+Configurable Field Anonymization
+=================================
 
-Use the ``preserve`` parameter to keep specific properties beyond the default preserved set:
+Control how each field is anonymized using the ``field_modes`` parameter. Four modes available:
+
+**keep**
+    Preserve the original value unchanged
+
+**remove**
+    Strip the property entirely from the output
+
+**randomize** (default)
+    Hash to a deterministic random value
+
+**replace**
+    Replace with a fixed placeholder text
 
 .. code-block:: python
 
-    # Preserve CATEGORIES and LOCATION for debugging
+    # Keep SUMMARY, remove LOCATION, replace DESCRIPTION
+    anonymized_cal = anonymize(cal, field_modes={
+        "SUMMARY": "keep",
+        "LOCATION": "remove",
+        "DESCRIPTION": "replace"
+    })
+
+**Configurable fields (10 total):**
+
+- Text: ``SUMMARY``, ``DESCRIPTION``, ``LOCATION``, ``COMMENT``, ``CONTACT``, ``RESOURCES``, ``CATEGORIES``
+- Email: ``ATTENDEE``, ``ORGANIZER``
+- ID: ``UID``
+
+.. code-block:: python
+
+    # Example: Preserve summaries, remove locations, randomize everything else
+    anonymized_cal = anonymize(cal, field_modes={
+        "SUMMARY": "keep",
+        "LOCATION": "remove"
+    })
+
+**Important notes:**
+
+- Field names are case-insensitive: ``{"summary": "keep"}`` and ``{"SUMMARY": "keep"}`` are equivalent
+- Mode values are case-insensitive: ``"Keep"``, ``"KEEP"``, and ``"keep"`` all work
+- Only configured fields are affected - others use the default randomize behavior
+- Applies recursively to all components (VEVENT, VTODO, VJOURNAL, VALARM)
+- **UID constraint**: Cannot use ``remove`` mode (would break recurring events)
+
+Replace Mode Placeholders
+-------------------------
+
+When using ``replace`` mode, these placeholders are used:
+
+.. code-block:: python
+
+    SUMMARY: "[Redacted]"
+    DESCRIPTION: "[Content removed]"
+    LOCATION: "[Location removed]"
+    COMMENT: "[Comment removed]"
+    CONTACT: "[Contact removed]"
+    RESOURCES: "[Resources removed]"
+    CATEGORIES: "REDACTED"
+    ATTENDEE: "mailto:redacted@example.local"
+    ORGANIZER: "mailto:redacted@example.local"
+    UID: "redacted-N@anonymous.local"  # N = counter for uniqueness
+
+.. code-block:: python
+
+    # Example: Replace sensitive fields with placeholders
+    anonymized_cal = anonymize(cal, field_modes={
+        "DESCRIPTION": "replace",
+        "LOCATION": "replace",
+        "ATTENDEE": "replace"
+    })
+
+Preserving Additional Properties (Legacy)
+==========================================
+
+The ``preserve`` parameter is still supported for backward compatibility:
+
+.. code-block:: python
+
+    # Legacy method - still works
     anonymized_cal = anonymize(cal, preserve={"CATEGORIES", "LOCATION"})
 
-    # Preserve multiple properties
-    anonymized_cal = anonymize(cal, preserve={"SUMMARY", "DESCRIPTION", "COMMENT"})
+    # Equivalent using field_modes
+    anonymized_cal = anonymize(cal, field_modes={
+        "CATEGORIES": "keep",
+        "LOCATION": "keep"
+    })
+
+**Mutual exclusion:** Cannot specify both ``preserve`` and ``field_modes`` in the same call.
+
+.. code-block:: python
+
+    # ❌ Error: cannot use both
+    anonymized_cal = anonymize(cal,
+        preserve={"SUMMARY"},
+        field_modes={"LOCATION": "keep"}
+    )
 
 **Important notes:**
 
@@ -397,6 +485,38 @@ TypeError for Invalid Preserve
 
     # Correct: use a set
     anonymized = anonymize(cal, preserve={"SUMMARY", "DESCRIPTION"})
+
+TypeError/ValueError for Invalid field_modes
+--------------------------------------------
+
+.. code-block:: python
+
+    # Wrong: passing a list instead of dict
+    try:
+        anonymized = anonymize(cal, field_modes=["SUMMARY"])
+    except TypeError as e:
+        print(e)  # "field_modes must be dict or None"
+
+    # Wrong: invalid field name
+    try:
+        anonymized = anonymize(cal, field_modes={"INVALID": "keep"})
+    except ValueError as e:
+        print(e)  # "Unknown field 'INVALID'. Valid: ..."
+
+    # Wrong: invalid mode
+    try:
+        anonymized = anonymize(cal, field_modes={"SUMMARY": "invalid"})
+    except ValueError as e:
+        print(e)  # "Invalid mode 'invalid'. Valid: ..."
+
+    # Wrong: trying to remove UID
+    try:
+        anonymized = anonymize(cal, field_modes={"UID": "remove"})
+    except ValueError as e:
+        print(e)  # "UID cannot be removed (would break recurring events)"
+
+    # Correct: valid field_modes
+    anonymized = anonymize(cal, field_modes={"SUMMARY": "keep"})
 
 Best Practices
 ==============
