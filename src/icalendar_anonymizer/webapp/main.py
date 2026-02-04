@@ -512,9 +512,7 @@ async def fetch_endpoint(
     except httpx.RequestError as e:
         raise HTTPException(status_code=400, detail=f"Failed to fetch URL: {e}") from e
 
-    anonymized_cal = _anonymize_calendar(
-        ics_content, field_modes=field_modes if field_modes else None
-    )
+    anonymized_cal = _anonymize_calendar(ics_content, field_modes=field_modes or None)
 
     return Response(
         content=anonymized_cal.to_ical(),

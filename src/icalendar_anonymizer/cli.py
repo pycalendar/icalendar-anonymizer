@@ -168,7 +168,7 @@ def main(
 
         # Anonymize (uses random salt by default)
         try:
-            anonymized_cal = anonymize(cal, field_modes=field_modes if field_modes else None)
+            anonymized_cal = anonymize(cal, field_modes=field_modes or None)
         except (TypeError, ValueError) as e:
             click.echo(f"Error: Anonymization failed - {e}", err=True)
             sys.exit(1)

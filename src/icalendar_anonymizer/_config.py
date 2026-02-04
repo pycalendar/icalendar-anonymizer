@@ -3,10 +3,10 @@
 
 """Configuration types for anonymization."""
 
-from enum import Enum
+from enum import StrEnum
 
 
-class AnonymizeMode(str, Enum):
+class AnonymizeMode(StrEnum):
     """Anonymization mode for a configurable field."""
 
     KEEP = "keep"
