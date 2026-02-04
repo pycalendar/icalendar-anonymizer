@@ -26,7 +26,7 @@
   // Static assets configuration
   "assets": {
     "directory": "./src/icalendar_anonymizer/webapp/assets",
-    "run_worker_first": ["/api/*", "/upload", "/share", "/s/*", "/docs", "/openapi.json", "/health"]
+    "run_worker_first": ["/api/*", "/upload", "/share", "/s/*", "/docs", "/openapi.json", "/health", "/anonymized", "/anonymize", "/fetch"]
   },
 
   // Custom domain routing
