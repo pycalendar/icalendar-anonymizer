@@ -10,11 +10,11 @@ file upload, and URL fetching with SSRF protection.
 import ipaddress
 import os
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 from urllib.parse import urlparse
 
 import httpx
-from fastapi import FastAPI, File, HTTPException, Request, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -22,6 +22,7 @@ from icalendar import Calendar
 from pydantic import BaseModel
 
 from icalendar_anonymizer import anonymize
+from icalendar_anonymizer._config import CONFIGURABLE_FIELDS
 from icalendar_anonymizer.version import version
 
 # Constants (configurable via environment variables)
@@ -133,6 +134,23 @@ class HealthResponse(BaseModel):
     r2_enabled: bool
 
 
+class FieldConfig(BaseModel):
+    """Per-field anonymization configuration."""
+
+    model_config = {"extra": "forbid"}
+
+    summary: Literal["keep", "remove", "randomize", "replace"] | None = None
+    description: Literal["keep", "remove", "randomize", "replace"] | None = None
+    location: Literal["keep", "remove", "randomize", "replace"] | None = None
+    comment: Literal["keep", "remove", "randomize", "replace"] | None = None
+    contact: Literal["keep", "remove", "randomize", "replace"] | None = None
+    resources: Literal["keep", "remove", "randomize", "replace"] | None = None
+    categories: Literal["keep", "remove", "randomize", "replace"] | None = None
+    attendee: Literal["keep", "remove", "randomize", "replace"] | None = None
+    organizer: Literal["keep", "remove", "randomize", "replace"] | None = None
+    uid: Literal["keep", "randomize", "replace"] | None = None  # No "remove"
+
+
 @app.get("/health")
 async def health(request: Request) -> HealthResponse:
     """Health check endpoint for Docker and monitoring.
@@ -160,6 +178,27 @@ class AnonymizeRequest(BaseModel):
     """Request model for /anonymize endpoint."""
 
     ics: str
+    config: FieldConfig | None = None
+
+
+def _build_field_modes(config: FieldConfig | None) -> dict[str, str] | None:
+    """Convert FieldConfig to field_modes dict.
+
+    Args:
+        config: Optional field configuration
+
+    Returns:
+        Dict mapping field names to modes, or None if no config
+    """
+    if not config:
+        return None
+    modes = {}
+    # Iterate over CONFIGURABLE_FIELDS to avoid duplication
+    for field in CONFIGURABLE_FIELDS:
+        val = getattr(config, field.lower(), None)
+        if val:
+            modes[field] = val
+    return modes or None
 
 
 def _is_private_ip(hostname: str) -> bool:
@@ -217,11 +256,12 @@ def _validate_url(url: str) -> None:
         )
 
 
-def _anonymize_calendar(ics_content: str) -> Calendar:
+def _anonymize_calendar(ics_content: str, field_modes: dict[str, str] | None = None) -> Calendar:
     """Anonymize iCalendar content.
 
     Args:
         ics_content: Raw iCalendar content as string
+        field_modes: Optional dict mapping field names to anonymization modes
 
     Returns:
         Anonymized Calendar object
@@ -238,16 +278,19 @@ def _anonymize_calendar(ics_content: str) -> Calendar:
         raise HTTPException(status_code=400, detail=f"Invalid ICS format: {e}") from e
 
     try:
-        return anonymize(cal)
+        return anonymize(cal, field_modes=field_modes)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Anonymization failed: {e}") from e
 
 
-async def _anonymize_from_upload(file: UploadFile) -> Calendar:
+async def _anonymize_from_upload(
+    file: UploadFile, field_modes: dict[str, str] | None = None
+) -> Calendar:
     """Read and anonymize uploaded iCalendar file.
 
     Args:
         file: Uploaded ICS file
+        field_modes: Optional dict mapping field names to anonymization modes
 
     Returns:
         Anonymized Calendar object
@@ -275,7 +318,7 @@ async def _anonymize_from_upload(file: UploadFile) -> Calendar:
             detail="Uploaded file is not valid UTF-8 encoded text",
         ) from e
 
-    return _anonymize_calendar(ics_content)
+    return _anonymize_calendar(ics_content, field_modes=field_modes)
 
 
 @app.post("/anonymize")
@@ -283,7 +326,7 @@ async def anonymize_endpoint(request: AnonymizeRequest) -> Response:
     """Anonymize iCalendar content provided as JSON.
 
     Args:
-        request: Request containing ICS content
+        request: Request containing ICS content and optional field configuration
 
     Returns:
         Response with anonymized ICS file
@@ -291,7 +334,8 @@ async def anonymize_endpoint(request: AnonymizeRequest) -> Response:
     Raises:
         HTTPException: If ICS content is invalid or anonymization fails
     """
-    anonymized_cal = _anonymize_calendar(request.ics)
+    field_modes = _build_field_modes(request.config)
+    anonymized_cal = _anonymize_calendar(request.ics, field_modes=field_modes)
 
     return Response(
         content=anonymized_cal.to_ical(),
@@ -301,11 +345,15 @@ async def anonymize_endpoint(request: AnonymizeRequest) -> Response:
 
 
 @app.post("/upload")
-async def upload_endpoint(file: Annotated[UploadFile, File()]) -> Response:
+async def upload_endpoint(
+    file: Annotated[UploadFile, File()],
+    config: Annotated[str | None, Form()] = None,
+) -> Response:
     """Anonymize uploaded iCalendar file.
 
     Args:
         file: Uploaded ICS file
+        config: Optional JSON string with field configuration
 
     Returns:
         Response with anonymized ICS file
@@ -313,7 +361,15 @@ async def upload_endpoint(file: Annotated[UploadFile, File()]) -> Response:
     Raises:
         HTTPException: If file is too large, invalid format, or anonymization fails
     """
-    anonymized_cal = await _anonymize_from_upload(file)
+    field_modes = None
+    if config:
+        try:
+            parsed = FieldConfig.model_validate_json(config)
+            field_modes = _build_field_modes(parsed)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid config: {e}") from e
+
+    anonymized_cal = await _anonymize_from_upload(file, field_modes=field_modes)
 
     return Response(
         content=anonymized_cal.to_ical(),
@@ -323,11 +379,33 @@ async def upload_endpoint(file: Annotated[UploadFile, File()]) -> Response:
 
 
 @app.get("/fetch")
-async def fetch_endpoint(url: str) -> Response:
+async def fetch_endpoint(
+    url: str,
+    summary: Literal["keep", "remove", "randomize", "replace"] | None = None,
+    description: Literal["keep", "remove", "randomize", "replace"] | None = None,
+    location: Literal["keep", "remove", "randomize", "replace"] | None = None,
+    comment: Literal["keep", "remove", "randomize", "replace"] | None = None,
+    contact: Literal["keep", "remove", "randomize", "replace"] | None = None,
+    resources: Literal["keep", "remove", "randomize", "replace"] | None = None,
+    categories: Literal["keep", "remove", "randomize", "replace"] | None = None,
+    attendee: Literal["keep", "remove", "randomize", "replace"] | None = None,
+    organizer: Literal["keep", "remove", "randomize", "replace"] | None = None,
+    uid: Literal["keep", "randomize", "replace"] | None = None,
+) -> Response:
     """Fetch and anonymize iCalendar from URL.
 
     Args:
         url: URL to fetch ICS file from
+        summary: Mode for SUMMARY field
+        description: Mode for DESCRIPTION field
+        location: Mode for LOCATION field
+        comment: Mode for COMMENT field
+        contact: Mode for CONTACT field
+        resources: Mode for RESOURCES field
+        categories: Mode for CATEGORIES field
+        attendee: Mode for ATTENDEE field
+        organizer: Mode for ORGANIZER field
+        uid: Mode for UID field (remove not allowed)
 
     Returns:
         Response with anonymized ICS file
@@ -335,6 +413,22 @@ async def fetch_endpoint(url: str) -> Response:
     Raises:
         HTTPException: If URL is invalid, blocked, unreachable, or content is invalid
     """
+    # Build field_modes from query params
+    field_modes = {}
+    params = {
+        "SUMMARY": summary,
+        "DESCRIPTION": description,
+        "LOCATION": location,
+        "COMMENT": comment,
+        "CONTACT": contact,
+        "RESOURCES": resources,
+        "CATEGORIES": categories,
+        "ATTENDEE": attendee,
+        "ORGANIZER": organizer,
+        "UID": uid,
+    }
+    field_modes = {field: val for field, val in params.items() if val}
+
     # Validate URL for SSRF protection
     _validate_url(url)
 
@@ -372,7 +466,9 @@ async def fetch_endpoint(url: str) -> Response:
     except httpx.RequestError as e:
         raise HTTPException(status_code=400, detail=f"Failed to fetch URL: {e}") from e
 
-    anonymized_cal = _anonymize_calendar(ics_content)
+    anonymized_cal = _anonymize_calendar(
+        ics_content, field_modes=field_modes if field_modes else None
+    )
 
     return Response(
         content=anonymized_cal.to_ical(),
@@ -391,6 +487,7 @@ class ShareResponse(BaseModel):
 async def share_calendar(
     request: Request,
     file: Annotated[UploadFile, File()],
+    config: Annotated[str | None, Form()] = None,
 ) -> ShareResponse:
     """Anonymize calendar and generate shareable link.
 
@@ -400,6 +497,7 @@ async def share_calendar(
     Args:
         request: FastAPI request object (provides R2 client)
         file: Uploaded ICS file
+        config: Optional JSON string with field configuration
 
     Returns:
         ShareResponse with shareable URL
@@ -414,8 +512,17 @@ async def share_calendar(
             detail="Shareable links are not available",
         )
 
+    # Parse config if provided
+    field_modes = None
+    if config:
+        try:
+            parsed = FieldConfig.model_validate_json(config)
+            field_modes = _build_field_modes(parsed)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid config: {e}") from e
+
     # Validate and anonymize
-    anonymized_cal = await _anonymize_from_upload(file)
+    anonymized_cal = await _anonymize_from_upload(file, field_modes=field_modes)
 
     # Generate unique ID and store
     from icalendar_anonymizer.webapp.r2 import generate_unique_id
