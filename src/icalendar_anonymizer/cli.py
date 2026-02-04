@@ -46,8 +46,72 @@ from .version import __version__
     default=False,
     help="Show processing information",
 )
+@click.option(
+    "--summary",
+    type=click.Choice(["keep", "remove", "randomize", "replace"]),
+    help="Mode for SUMMARY field",
+)
+@click.option(
+    "--description",
+    type=click.Choice(["keep", "remove", "randomize", "replace"]),
+    help="Mode for DESCRIPTION field",
+)
+@click.option(
+    "--location",
+    type=click.Choice(["keep", "remove", "randomize", "replace"]),
+    help="Mode for LOCATION field",
+)
+@click.option(
+    "--comment",
+    type=click.Choice(["keep", "remove", "randomize", "replace"]),
+    help="Mode for COMMENT field",
+)
+@click.option(
+    "--contact",
+    type=click.Choice(["keep", "remove", "randomize", "replace"]),
+    help="Mode for CONTACT field",
+)
+@click.option(
+    "--resources",
+    type=click.Choice(["keep", "remove", "randomize", "replace"]),
+    help="Mode for RESOURCES field",
+)
+@click.option(
+    "--categories",
+    type=click.Choice(["keep", "remove", "randomize", "replace"]),
+    help="Mode for CATEGORIES field",
+)
+@click.option(
+    "--attendee",
+    type=click.Choice(["keep", "remove", "randomize", "replace"]),
+    help="Mode for ATTENDEE field",
+)
+@click.option(
+    "--organizer",
+    type=click.Choice(["keep", "remove", "randomize", "replace"]),
+    help="Mode for ORGANIZER field",
+)
+@click.option(
+    "--uid",
+    type=click.Choice(["keep", "randomize", "replace"]),
+    help="Mode for UID field (remove not allowed)",
+)
 @click.version_option(version=__version__, prog_name="icalendar-anonymizer")
-def main(input: BinaryIO, output: BinaryIO, verbose: bool) -> None:  # noqa: A002, FBT001
+def main(
+    input: BinaryIO,  # noqa: A002
+    output: BinaryIO,
+    verbose: bool,  # noqa: FBT001
+    summary: str | None,
+    description: str | None,
+    location: str | None,
+    comment: str | None,
+    contact: str | None,
+    resources: str | None,
+    categories: str | None,
+    attendee: str | None,
+    organizer: str | None,
+    uid: str | None,
+) -> None:
     """Anonymize an iCalendar file.
 
     Reads an ICS file, anonymizes personal data, and writes the result.
@@ -86,11 +150,26 @@ def main(input: BinaryIO, output: BinaryIO, verbose: bool) -> None:  # noqa: A00
         if verbose:
             click.echo("Anonymizing calendar...", err=True)
 
+        # Build field_modes from CLI flags
+        field_modes = {}
+        field_mapping = {
+            "SUMMARY": summary,
+            "DESCRIPTION": description,
+            "LOCATION": location,
+            "COMMENT": comment,
+            "CONTACT": contact,
+            "RESOURCES": resources,
+            "CATEGORIES": categories,
+            "ATTENDEE": attendee,
+            "ORGANIZER": organizer,
+            "UID": uid,
+        }
+        field_modes = {field: value for field, value in field_mapping.items() if value}
+
         # Anonymize (uses random salt by default)
         try:
-            anonymized_cal = anonymize(cal)
-        except TypeError as e:
-            # This shouldn't happen with valid Calendar object, but catch it anyway
+            anonymized_cal = anonymize(cal, field_modes=field_modes if field_modes else None)
+        except (TypeError, ValueError) as e:
             click.echo(f"Error: Anonymization failed - {e}", err=True)
             sys.exit(1)
 
