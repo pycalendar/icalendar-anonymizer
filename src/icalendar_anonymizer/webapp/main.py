@@ -14,7 +14,7 @@ from typing import Annotated, Literal
 from urllib.parse import urlparse
 
 import httpx
-from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -341,6 +341,52 @@ async def anonymize_endpoint(request: AnonymizeRequest) -> Response:
         content=anonymized_cal.to_ical(),
         media_type="text/calendar",
         headers={"Content-Disposition": 'attachment; filename="anonymized.ics"'},
+    )
+
+
+@app.api_route("/anonymized", methods=["GET", "POST"])
+async def anonymized_endpoint(
+    request: Request,
+    ics: str | None = Query(
+        default=None,
+        description="ICS content as query parameter for GET requests; ignored for POST requests",
+    ),
+) -> Response:
+    """Anonymize iCalendar content via curl-friendly interface.
+
+    Supports two methods for easy scripting and testing:
+    - GET with query param: curl "http://server/anonymized?ics=BEGIN:VCALENDAR..."
+    - POST with raw body: curl -X POST --data-binary @file.ics http://server/anonymized
+
+    Args:
+        request: FastAPI request object
+        ics: ICS content as query parameter for GET requests; ignored for POST
+
+    Returns:
+        Anonymized ICS with text/calendar content type (no Content-Disposition)
+
+    Raises:
+        HTTPException: If no content provided or invalid ICS
+    """
+    if request.method == "GET":
+        if not ics:
+            raise HTTPException(status_code=400, detail="Missing 'ics' query parameter")
+        content = ics
+    else:  # POST
+        body = await request.body()
+        if not body:
+            raise HTTPException(status_code=400, detail="Empty request body")
+        try:
+            content = body.decode("utf-8")
+        except UnicodeDecodeError as e:
+            raise HTTPException(status_code=400, detail="Invalid UTF-8 encoding") from e
+
+    anonymized_cal = _anonymize_calendar(content)
+
+    return Response(
+        content=anonymized_cal.to_ical(),
+        media_type="text/calendar",
+        # No Content-Disposition header - allows piping output directly
     )
 
 

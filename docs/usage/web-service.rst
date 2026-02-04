@@ -136,6 +136,65 @@ If JavaScript is disabled, file upload still works via direct form submission to
 API Endpoints
 =============
 
+GET/POST /anonymized
+--------------------
+
+curl-friendly endpoint for scripting and testing. Returns raw ICS without JSON wrapper.
+
+**GET with query parameter**
+
+.. code-block:: http
+
+    GET /anonymized?ics=BEGIN:VCALENDAR... HTTP/1.1
+
+**POST with raw body**
+
+.. code-block:: http
+
+    POST /anonymized HTTP/1.1
+    Content-Type: text/plain
+
+    BEGIN:VCALENDAR
+    VERSION:2.0
+    ...
+
+**Response (200 OK)**
+
+.. code-block:: http
+
+    HTTP/1.1 200 OK
+    Content-Type: text/calendar; charset=utf-8
+
+    BEGIN:VCALENDAR
+    VERSION:2.0
+    ...
+
+No ``Content-Disposition`` header, allowing direct piping to files.
+
+**Error Responses**
+
+- ``400 Bad Request`` - Missing ``ics`` parameter (GET), empty body (POST), invalid UTF-8, or invalid ICS format
+
+**Examples with curl**
+
+.. code-block:: shell
+
+    # POST with file (primary use case)
+    curl -X POST --data-binary @calendar.ics https://icalendar-anonymizer.com/anonymized
+
+    # Pipe to output file
+    curl -X POST --data-binary @calendar.ics https://icalendar-anonymizer.com/anonymized > anonymized.ics
+
+    # Pipe from stdin
+    cat calendar.ics | curl -X POST --data-binary @- https://icalendar-anonymizer.com/anonymized
+
+    # GET with small test calendar (URL-encoded)
+    curl "https://icalendar-anonymizer.com/anonymized?ics=BEGIN:VCALENDAR%0AVERSION:2.0%0AEND:VCALENDAR"
+
+.. note::
+
+    GET requests have URL length limits (~2KB). Use POST for anything beyond tiny test calendars.
+
 POST /anonymize
 ---------------
 
