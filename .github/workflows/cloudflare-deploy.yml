@@ -36,6 +36,38 @@ jobs:
       - name: Install workers-py (pywrangler)
         run: uv tool install workers-py
 
+      - name: Add web deps for pywrangler
+        run: |
+          # pywrangler only reads core dependencies, not extras
+          # Extract web deps from [project.optional-dependencies].web and inject into dependencies
+          python3 << 'EOF'
+          import tomllib
+          import re
+
+          with open('pyproject.toml', 'rb') as f:
+              config = tomllib.load(f)
+
+          web_deps = config['project']['optional-dependencies']['web']
+          # Filter out uvicorn (not needed for Workers, they use their own runtime)
+          web_deps = [dep for dep in web_deps if not dep.startswith('uvicorn')]
+
+          with open('pyproject.toml', 'r') as f:
+              content = f.read()
+
+          # Insert web deps after the opening of dependencies array
+          deps_to_add = ',\n    '.join(f'"{dep}"' for dep in web_deps)
+          content = re.sub(
+              r'(dependencies = \[\n)',
+              f'\\1    {deps_to_add},\n',
+              content
+          )
+
+          with open('pyproject.toml', 'w') as f:
+              f.write(content)
+
+          print(f"Injected web deps: {web_deps}")
+          EOF
+
       - name: Sync dependencies with pywrangler
         run: uvx --from workers-py pywrangler sync
 

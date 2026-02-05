@@ -64,6 +64,8 @@ Minor changes
 
 - Added :file:`REUSE.toml` for fallback licensing of files without SPDX headers (auto-generated :file:`_version.py`). In-file headers remain preferred. See `Issue 58 <https://github.com/mergecal/icalendar-anonymizer/issues/58>`_.
 - Improved test coverage for Cloudflare Workers integration. See `PR 90 <https://github.com/mergecal/icalendar-anonymizer/pull/90>`_.
+- Moved ``fastapi``, ``httpx``, and ``python-multipart`` from core dependencies to ``[web]`` extras. Base installation now only requires ``icalendar``. See `Issue 23 <https://github.com/mergecal/icalendar-anonymizer/issues/23>`_.
+- Updated documentation to use ``python -m pip`` per best practices.
 
 .. _v0.1.2-bug-fixes:
 
