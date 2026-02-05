@@ -15,13 +15,18 @@ Requirements
 Basic Installation
 ==================
 
-Install the core package with pip:
+Install the core package:
 
 .. code-block:: shell
 
-    pip install icalendar-anonymizer
+    python -m pip install icalendar-anonymizer
 
-This installs only the Python package with its core dependency, ``icalendar``.
+This installs only the Python library with its core dependency, ``icalendar``.
+
+.. tip::
+
+    Using ``python -m pip`` ensures you install to the correct Python interpreter.
+    See `Why you should use python -m pip <https://snarky.ca/why-you-should-use-python-m-pip/>`_ for details.
 
 Optional Features
 =================
@@ -35,7 +40,7 @@ Install the CLI with the following command.
 
 .. code-block:: shell
 
-    pip install icalendar-anonymizer[cli]
+    python -m pip install icalendar-anonymizer[cli]
 
 This installs the :program:`icalendar-anonymize` and :program:`ican` commands. See :doc:`usage/cli` for usage details.
 
@@ -46,7 +51,7 @@ Install the web service with the following command.
 
 .. code-block:: shell
 
-    pip install icalendar-anonymizer[web]
+    python -m pip install icalendar-anonymizer[web]
 
 This installs FastAPI, uvicorn, and dependencies for the REST API server. See :doc:`usage/web-service` for usage details.
 
@@ -57,19 +62,19 @@ Install all the foregoing optional features with the following command.
 
 .. code-block:: shell
 
-    pip install icalendar-anonymizer[all]
+    python -m pip install icalendar-anonymizer[all]
 
 Docker
 ======
 
-.. note::
-    Not yet implemented. See `Issue #8 <https://github.com/mergecal/icalendar-anonymizer/issues/8>`_.
+Pull and run the Docker image:
 
-.. When available:
-..
-.. .. code-block:: shell
-..
-..     docker pull sashankbhamidi/icalendar-anonymizer
+.. code-block:: shell
+
+    docker pull sashankbhamidi/icalendar-anonymizer
+    docker run -p 8000:8000 sashankbhamidi/icalendar-anonymizer
+
+The web service will be available at http://localhost:8000. See :doc:`usage/self-hosting` for configuration options.
 
 Verifying Installation
 ======================
@@ -81,11 +86,11 @@ Check the installation:
     import icalendar_anonymizer
     print(icalendar_anonymizer.__version__)
 
-Or check the installed version with pip:
+Or check the installed version:
 
 .. code-block:: shell
 
-    pip show icalendar-anonymizer
+    python -m pip show icalendar-anonymizer
 
 Upgrading
 =========
@@ -94,7 +99,7 @@ Upgrade to the latest version:
 
 .. code-block:: shell
 
-    pip install --upgrade icalendar-anonymizer
+    python -m pip install --upgrade icalendar-anonymizer
 
 Uninstalling
 ============
@@ -103,7 +108,7 @@ Remove the package:
 
 .. code-block:: shell
 
-    pip uninstall icalendar-anonymizer
+    python -m pip uninstall icalendar-anonymizer
 
 Troubleshooting
 ===============
@@ -145,7 +150,7 @@ If you encounter dependency conflicts with ``icalendar``, then perform the follo
 
    .. code-block:: shell
 
-       pip install --upgrade icalendar
+       python -m pip install --upgrade icalendar
 
 Getting Help
 ============

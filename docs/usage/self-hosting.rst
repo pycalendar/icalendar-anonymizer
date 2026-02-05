@@ -70,6 +70,30 @@ File Handling
 ``MAX_FILE_SIZE``
    Maximum upload size in bytes (default: ``10485760`` = 10MB)
 
+Shareable Links
+~~~~~~~~~~~~~~~
+
+``FERNET_KEY``
+   Secret key for Fernet encryption (enables live proxy shareable links)
+
+   Generate a key:
+
+   .. code-block:: python
+
+      from cryptography.fernet import Fernet
+      print(Fernet.generate_key().decode())
+
+   Or use command line:
+
+   .. code-block:: bash
+
+      python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+
+   .. warning::
+
+      Keep this key secret! Anyone with the key can decrypt shareable link tokens.
+      Store it securely (e.g., in a secrets manager or environment file with restricted permissions).
+
 Example docker-compose.yml
 --------------------------
 
@@ -85,6 +109,7 @@ Example docker-compose.yml
          - PORT=8000
          - WORKERS=4
          - MAX_FILE_SIZE=10485760
+         - FERNET_KEY=your-secret-key-here  # Optional: enables live proxy links
        restart: unless-stopped
 
 Docker Commands
@@ -152,8 +177,11 @@ The service includes a health check endpoint at ``/health`` that returns:
    {
      "status": "healthy",
      "version": "0.1.0",
-     "r2_enabled": false
+     "r2_enabled": false,
+     "fernet_enabled": false
    }
+
+The ``fernet_enabled`` field indicates whether Fernet shareable links are available (``FERNET_KEY`` environment variable is set).
 
 Docker uses this endpoint to monitor service health. You can also check it manually:
 

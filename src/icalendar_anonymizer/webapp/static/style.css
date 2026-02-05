@@ -389,7 +389,8 @@ input[type="url"]::placeholder {
 }
 
 .share-checkbox {
-    display: block;
+    display: flex;
+    align-items: center;
     margin: 1rem 0;
     font-size: 0.875rem;
     color: var(--text-muted);
@@ -404,6 +405,7 @@ input[type="url"]::placeholder {
 .share-checkbox input[type="checkbox"] {
     margin-right: 0.5rem;
     cursor: pointer;
+    flex-shrink: 0;
 }
 
 .share-url-container {
@@ -783,6 +785,75 @@ footer a:hover {
     [role="tabpanel"] {
         padding: 1.75rem;
     }
+}
+
+/* Share options (Fernet/R2 radio buttons) */
+.share-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin: 0.75rem 0;
+    padding: 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+}
+
+.share-options[hidden] {
+    display: none;
+}
+
+.share-option {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.share-option[hidden] {
+    display: none;
+}
+
+.share-option:hover {
+    border-color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 2%, transparent);
+}
+
+.share-option input[type="radio"] {
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.share-option input[type="radio"]:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+    border-radius: 50%;
+}
+
+.share-option > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+}
+
+.share-option-label {
+    display: block;
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: var(--text);
+}
+
+.share-option-desc {
+    display: block;
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    line-height: 1.4;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -33,10 +33,11 @@ Install the web service dependencies:
 
 This installs:
 
-- ``fastapi>=0.125.0`` - Web framework
-- ``uvicorn[standard]>=0.38.0`` - ASGI server
+- ``fastapi>=0.128.0`` - Web framework
+- ``uvicorn>=0.38.0`` - ASGI server
 - ``python-multipart>=0.0.18`` - File upload support
-- ``httpx>=0.28.0`` - Async HTTP client for URL fetching
+- ``httpx>=0.28.1`` - Async HTTP client for URL fetching
+- ``cryptography>=46.0.0`` - Fernet encryption for shareable links
 
 Running the Server
 ==================
@@ -108,12 +109,26 @@ The UID field cannot use ``remove`` mode (would break recurring events).
 Shareable Links
 ---------------
 
-Each input method has a "Generate shareable link" checkbox. When enabled:
+The **Upload File** and **Paste Content** tabs have a "Generate shareable link" checkbox that uses R2 storage mode.
 
-1. The calendar is anonymized as usual
-2. Instead of downloading, you get a shareable URL (e.g., ``https://icalendar-anonymizer.com/s/Kml529qs``)
-3. Anyone with the link can download the anonymized calendar
-4. Links expire after 30 days
+The **Fetch from URL** tab offers two sharing modes via radio buttons:
+
+**Live Proxy (Fernet)**
+    Generates an encrypted URL that fetches the latest calendar data each time it's accessed.
+    The source URL and anonymization salt are encrypted in the shareable link itself.
+
+    - No storage backend required
+    - Always fetches latest data from source
+    - No built-in expiration
+    - Available on self-hosted instances (requires ``FERNET_KEY`` environment variable)
+
+**Static Snapshot (R2)**
+    Fetches calendar once, stores anonymized snapshot on Cloudflare R2, generates shareable URL.
+
+    - 30-day expiration
+    - Frozen snapshot of calendar at time of generation
+    - Only available on hosted service (Cloudflare Workers)
+    - Self-hosted instances without Cloudflare use in-memory storage (session-only)
 
 This is useful for:
 
@@ -123,8 +138,9 @@ This is useful for:
 
 .. note::
 
-    Shareable links are only available on the hosted service (https://icalendar-anonymizer.com).
-    Self-hosted instances use in-memory storage, so links only persist during a single session.
+    **Hosted service** (https://icalendar-anonymizer.com): Upload/paste tabs use R2 storage. Fetch tab defaults to Fernet live proxy (R2 snapshot also available).
+
+    **Self-hosted instances**: Upload/paste shareable links available only if R2 configured. Fetch tab supports Fernet if ``FERNET_KEY`` environment variable is set.
 
 Accessibility
 -------------
@@ -445,10 +461,107 @@ Anonymize a calendar and generate a shareable link. Only available on the hosted
 
     # Response: {"url":"https://icalendar-anonymizer.com/s/Kml529qs"}
 
+POST /fernet-generate
+---------------------
+
+Generate an encrypted Fernet token for live calendar proxying. Only available when ``FERNET_KEY`` environment variable is set.
+
+**Request**
+
+.. code-block:: http
+
+    POST /fernet-generate HTTP/1.1
+    Content-Type: application/json
+
+    {
+      "url": "https://example.com/calendar.ics"
+    }
+
+**Response (200 OK)**
+
+.. code-block:: json
+
+    {
+      "url": "https://icalendar-anonymizer.com/fernet/gAAAAABl..."
+    }
+
+The returned URL contains an encrypted token with the source calendar URL and a random salt.
+Anyone with this URL can fetch the calendar, which will be fetched from the source and anonymized on-the-fly.
+
+**Error Responses**
+
+- ``400 Bad Request`` - Invalid URL scheme, localhost, or private IP
+- ``503 Service Unavailable`` - Fernet not configured (``FERNET_KEY`` not set)
+
+**Example with curl**
+
+.. code-block:: shell
+
+    curl -X POST http://localhost:8000/fernet-generate \
+      -H "Content-Type: application/json" \
+      -d '{"url": "https://example.com/calendar.ics"}'
+
+    # Response: {"url":"http://localhost:8000/fernet/gAAAAABl..."}
+
+**Security Features**
+
+- Source URL validated for SSRF protection (same rules as ``/fetch``)
+- Token encrypted with Fernet symmetric encryption
+- Unique random salt per token ensures different anonymization
+- Token contains authenticated data preventing tampering
+
+GET /fernet/{token}
+-------------------
+
+Fetch and anonymize a calendar using an encrypted Fernet token.
+
+**Request**
+
+.. code-block:: http
+
+    GET /fernet/gAAAAABl... HTTP/1.1
+
+**Response (200 OK)**
+
+.. code-block:: http
+
+    HTTP/1.1 200 OK
+    Content-Type: text/calendar
+    Content-Disposition: attachment; filename="anonymized.ics"
+    Cache-Control: no-cache
+
+    BEGIN:VCALENDAR
+    VERSION:2.0
+    ...
+
+**Error Responses**
+
+- ``400 Bad Request`` - Invalid token, malformed payload, missing URL/salt, or invalid ICS format
+- ``408 Request Timeout`` - Source calendar fetch exceeded 10-second timeout
+- ``413 Payload Too Large`` - Source calendar exceeds 10 MB size limit
+- ``503 Service Unavailable`` - Fernet not configured (``FERNET_KEY`` not set)
+- ``Various HTTP status codes`` - Returns the actual HTTP status code from the upstream server
+
+**Example with curl**
+
+.. code-block:: shell
+
+    curl "http://localhost:8000/fernet/gAAAAABl..." -o anonymized.ics
+
+**How It Works**
+
+1. Token is decrypted to retrieve source URL and salt
+2. Source URL is validated for SSRF protection
+3. Calendar is fetched from source (with redirect validation)
+4. Calendar is anonymized using the salt from token
+5. Anonymized calendar is returned
+
+This provides **live proxying** - the source is fetched each time, so the anonymized calendar stays up-to-date.
+
 GET /s/{share_id}
 -----------------
 
-Retrieve a shared calendar by its ID.
+Retrieve a shared calendar by its ID (R2 static snapshot mode).
 
 **Request**
 
@@ -493,10 +606,23 @@ Health check endpoint for monitoring.
     {
       "status": "healthy",
       "version": "0.2.0",
-      "r2_enabled": true
+      "r2_enabled": true,
+      "fernet_enabled": false
     }
 
-The ``r2_enabled`` field indicates whether shareable links are available.
+**Fields**
+
+``status``
+    Always ``"healthy"`` (endpoint returns 200 only when service is operational)
+
+``version``
+    Package version string
+
+``r2_enabled``
+    Whether R2 static snapshot shareable links are available (requires Cloudflare Workers environment)
+
+``fernet_enabled``
+    Whether Fernet live proxy shareable links are available (requires ``FERNET_KEY`` environment variable)
 
 Error Responses
 ===============
