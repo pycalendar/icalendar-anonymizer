@@ -97,6 +97,22 @@
                     <input type="checkbox" id="fetch-share" aria-label="Generate shareable link">
                     Generate shareable link (30-day expiry)
                 </label>
+                <div class="share-options" id="fetch-share-options" hidden>
+                    <label class="share-option" for="fetch-share-fernet">
+                        <input type="radio" id="fetch-share-fernet" name="fetch-share-type" value="fernet" checked>
+                        <div>
+                            <span class="share-option-label">Live proxy</span>
+                            <span class="share-option-desc">Always fetches latest calendar data</span>
+                        </div>
+                    </label>
+                    <label class="share-option" id="fetch-r2-option" for="fetch-share-r2">
+                        <input type="radio" id="fetch-share-r2" name="fetch-share-type" value="r2">
+                        <div>
+                            <span class="share-option-label">Static snapshot</span>
+                            <span class="share-option-desc">Stores anonymized copy, expires in 30 days</span>
+                        </div>
+                    </label>
+                </div>
                 <button type="submit" class="btn">Fetch & Anonymize</button>
             </form>
             <div class="result" id="fetch-result" hidden></div>

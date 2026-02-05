@@ -3,6 +3,9 @@
 
 """Tests for health check endpoint."""
 
+import os
+from unittest.mock import patch
+
 from fastapi.testclient import TestClient
 
 from icalendar_anonymizer.version import version
@@ -32,6 +35,7 @@ class TestHealthEndpoint:
         assert "status" in data
         assert "version" in data
         assert "r2_enabled" in data
+        assert "fernet_enabled" in data
 
     def test_health_status_is_healthy(self):
         """Test health endpoint reports healthy status."""
@@ -55,3 +59,22 @@ class TestHealthEndpoint:
         # r2_enabled is False in local dev because shareable links
         # only make sense with persistent R2 storage (Cloudflare Workers)
         assert data["r2_enabled"] is False
+
+    def test_health_fernet_disabled_without_key(self):
+        """Test Fernet is disabled when FERNET_KEY not set."""
+        with patch.dict(os.environ, {}, clear=False):
+            if "FERNET_KEY" in os.environ:
+                del os.environ["FERNET_KEY"]
+
+            response = client.get("/health")
+            data = response.json()
+
+            assert data["fernet_enabled"] is False
+
+    def test_health_fernet_enabled_with_key(self):
+        """Test Fernet is enabled when FERNET_KEY is set."""
+        with patch.dict(os.environ, {"FERNET_KEY": "test-key"}):
+            response = client.get("/health")
+            data = response.json()
+
+            assert data["fernet_enabled"] is True
