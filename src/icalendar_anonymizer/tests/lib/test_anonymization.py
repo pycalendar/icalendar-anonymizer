@@ -730,3 +730,262 @@ def test_preserve_type_validation_rejects_tuple():
 
     with pytest.raises(TypeError, match="preserve must be a set or None, got tuple"):
         anonymize(cal, preserve=("LOCATION",))
+
+
+class TestFieldModes:
+    """Tests for field_modes parameter."""
+
+    def test_keep_mode_preserves_value(self):
+        """KEEP mode preserves original value."""
+        from icalendar_anonymizer import anonymize
+
+        cal = Calendar()
+        event = Event()
+        event.add("summary", "Original Summary")
+        event.add("dtstart", datetime(2024, 1, 15, 14, 0, 0))
+        cal.add_component(event)
+
+        result = anonymize(cal, field_modes={"SUMMARY": "keep"})
+        anon_event = next(iter(result.walk("VEVENT")))
+        assert anon_event["summary"] == "Original Summary"
+
+    def test_remove_mode_strips_property(self):
+        """REMOVE mode strips property entirely."""
+        from icalendar_anonymizer import anonymize
+
+        cal = Calendar()
+        event = Event()
+        event.add("summary", "To Remove")
+        event.add("location", "Also Remove")
+        event.add("dtstart", datetime(2024, 1, 15, 14, 0, 0))
+        cal.add_component(event)
+
+        result = anonymize(cal, field_modes={"SUMMARY": "remove", "LOCATION": "remove"})
+        anon_event = next(iter(result.walk("VEVENT")))
+        assert "summary" not in anon_event
+        assert "location" not in anon_event
+
+    def test_replace_mode_uses_placeholder(self):
+        """REPLACE mode uses placeholder text."""
+        from icalendar_anonymizer import anonymize
+
+        cal = Calendar()
+        event = Event()
+        event.add("summary", "Original")
+        event.add("description", "Original Desc")
+        event.add("dtstart", datetime(2024, 1, 15, 14, 0, 0))
+        cal.add_component(event)
+
+        result = anonymize(cal, field_modes={"SUMMARY": "replace", "DESCRIPTION": "replace"})
+        anon_event = next(iter(result.walk("VEVENT")))
+        assert anon_event["summary"] == "[Redacted]"
+        assert anon_event["description"] == "[Content removed]"
+
+    def test_randomize_is_default(self):
+        """RANDOMIZE is the default mode when not specified."""
+        from icalendar_anonymizer import anonymize
+
+        cal = Calendar()
+        event = Event()
+        event.add("summary", "Test")
+        event.add("dtstart", datetime(2024, 1, 15, 14, 0, 0))
+        cal.add_component(event)
+
+        result1 = anonymize(cal)
+        result2 = anonymize(cal, field_modes={})
+        event1 = next(iter(result1.walk("VEVENT")))
+        event2 = next(iter(result2.walk("VEVENT")))
+        assert event1["summary"] != "Test"
+        assert event2["summary"] != "Test"
+
+    def test_mixed_modes(self):
+        """Different fields can use different modes simultaneously."""
+        from icalendar_anonymizer import anonymize
+
+        cal = Calendar()
+        event = Event()
+        event.add("summary", "Keep Me")
+        event.add("location", "Remove Me")
+        event.add("description", "Replace Me")
+        event.add("dtstart", datetime(2024, 1, 15, 14, 0, 0))
+        cal.add_component(event)
+
+        result = anonymize(
+            cal,
+            field_modes={
+                "SUMMARY": "keep",
+                "LOCATION": "remove",
+                "DESCRIPTION": "replace",
+            },
+        )
+        anon_event = next(iter(result.walk("VEVENT")))
+        assert anon_event["summary"] == "Keep Me"
+        assert "location" not in anon_event
+        assert anon_event["description"] == "[Content removed]"
+
+    def test_uid_replace_unique_per_event(self):
+        """UID REPLACE mode generates unique IDs for each event."""
+        from icalendar_anonymizer import anonymize
+
+        cal = Calendar()
+        for i in range(3):
+            event = Event()
+            event.add("summary", f"Event {i}")
+            event.add("dtstart", datetime(2024, 1, 15, 14, 0, 0))
+            event.add("uid", f"uid-{i}@example.com")
+            cal.add_component(event)
+
+        result = anonymize(cal, field_modes={"UID": "replace"})
+        uids = [str(e["uid"]) for e in result.walk("VEVENT")]
+        assert len(set(uids)) == 3  # All unique
+        assert all("redacted-" in uid for uid in uids)
+        assert "redacted-1@anonymous.local" in uids
+        assert "redacted-2@anonymous.local" in uids
+        assert "redacted-3@anonymous.local" in uids
+
+    def test_attendee_replace_preserves_params(self):
+        """ATTENDEE REPLACE mode preserves non-personal params."""
+        from icalendar.prop import vCalAddress
+
+        from icalendar_anonymizer import anonymize
+
+        cal = Calendar()
+        event = Event()
+        event.add("summary", "Meeting")
+        event.add("dtstart", datetime(2024, 1, 15, 14, 0, 0))
+
+        attendee = vCalAddress("mailto:john@example.com")
+        attendee.params["cn"] = "John Doe"
+        attendee.params["role"] = "REQ-PARTICIPANT"
+        attendee.params["partstat"] = "ACCEPTED"
+        event.add("attendee", attendee)
+        cal.add_component(event)
+
+        result = anonymize(cal, field_modes={"ATTENDEE": "replace"})
+        anon_event = next(iter(result.walk("VEVENT")))
+        anon_attendee = anon_event["attendee"]
+
+        assert str(anon_attendee) == "mailto:redacted@example.local"
+        assert anon_attendee.params["cn"] == "Redacted"
+        assert anon_attendee.params["role"] == "REQ-PARTICIPANT"
+        assert anon_attendee.params["partstat"] == "ACCEPTED"
+
+    def test_preserve_and_field_modes_mutual_exclusion(self):
+        """Cannot specify both preserve and field_modes."""
+        import pytest
+
+        from icalendar_anonymizer import anonymize
+
+        cal = Calendar()
+        event = Event()
+        event.add("summary", "Test")
+        event.add("dtstart", datetime(2024, 1, 15, 14, 0, 0))
+        cal.add_component(event)
+
+        with pytest.raises(ValueError, match="Cannot specify both"):
+            anonymize(cal, preserve={"LOCATION"}, field_modes={"SUMMARY": "keep"})
+
+    def test_preserve_backward_compat(self):
+        """preserve parameter still works for backward compatibility."""
+        from icalendar_anonymizer import anonymize
+
+        cal = Calendar()
+        event = Event()
+        event.add("summary", "Anonymize")
+        event.add("location", "Keep Me")
+        event.add("dtstart", datetime(2024, 1, 15, 14, 0, 0))
+        cal.add_component(event)
+
+        result = anonymize(cal, preserve={"LOCATION"})
+        anon_event = next(iter(result.walk("VEVENT")))
+        assert anon_event["location"] == "Keep Me"
+        assert anon_event["summary"] != "Anonymize"
+
+    def test_field_modes_in_subcomponents(self):
+        """field_modes applies to subcomponents like VALARM."""
+        from icalendar import Alarm
+
+        from icalendar_anonymizer import anonymize
+
+        cal = Calendar()
+        event = Event()
+        event.add("summary", "Event")
+        event.add("dtstart", datetime(2024, 1, 15, 14, 0, 0))
+
+        alarm = Alarm()
+        alarm.add("action", "DISPLAY")
+        alarm.add("description", "Alarm description to keep")
+        alarm.add("trigger", timedelta(minutes=-15))
+        event.add_component(alarm)
+        cal.add_component(event)
+
+        result = anonymize(cal, field_modes={"DESCRIPTION": "keep"})
+        anon_event = next(iter(result.walk("VEVENT")))
+        anon_alarm = next(iter(anon_event.walk("VALARM")))
+        assert anon_alarm["description"] == "Alarm description to keep"
+
+    def test_uid_remove_not_allowed(self):
+        """UID cannot be removed (would break recurring events)."""
+        import pytest
+
+        from icalendar_anonymizer import anonymize
+
+        cal = Calendar()
+        event = Event()
+        event.add("summary", "Test")
+        event.add("uid", "test@example.com")
+        event.add("dtstart", datetime(2024, 1, 15, 14, 0, 0))
+        cal.add_component(event)
+
+        with pytest.raises(ValueError, match="UID cannot be removed"):
+            anonymize(cal, field_modes={"UID": "remove"})
+
+    def test_all_configurable_fields(self):
+        """All 10 configurable fields can be set."""
+        from icalendar.prop import vCalAddress
+
+        from icalendar_anonymizer import anonymize
+
+        cal = Calendar()
+        event = Event()
+        event.add("summary", "Test Summary")
+        event.add("description", "Test Description")
+        event.add("location", "Test Location")
+        event.add("comment", "Test Comment")
+        event.add("contact", "Test Contact")
+        event.add("resources", "Test Resources")
+        event.add("categories", ["Test Category"])
+        attendee = vCalAddress("mailto:test@example.com")
+        event.add("attendee", attendee)
+        organizer = vCalAddress("mailto:org@example.com")
+        event.add("organizer", organizer)
+        event.add("uid", "test@example.com")
+        event.add("dtstart", datetime(2024, 1, 15, 14, 0, 0))
+        cal.add_component(event)
+
+        result = anonymize(
+            cal,
+            field_modes={
+                "SUMMARY": "keep",
+                "DESCRIPTION": "keep",
+                "LOCATION": "keep",
+                "COMMENT": "keep",
+                "CONTACT": "keep",
+                "RESOURCES": "keep",
+                "CATEGORIES": "keep",
+                "ATTENDEE": "keep",
+                "ORGANIZER": "keep",
+                "UID": "keep",
+            },
+        )
+        anon_event = next(iter(result.walk("VEVENT")))
+        assert anon_event["summary"] == "Test Summary"
+        assert anon_event["description"] == "Test Description"
+        assert anon_event["location"] == "Test Location"
+        assert anon_event["comment"] == "Test Comment"
+        assert anon_event["contact"] == "Test Contact"
+        assert anon_event["resources"] == "Test Resources"
+        assert anon_event["categories"].to_ical() == b"Test Category"
+        assert str(anon_event["attendee"]) == "mailto:test@example.com"
+        assert str(anon_event["organizer"]) == "mailto:org@example.com"
+        assert anon_event["uid"] == "test@example.com"

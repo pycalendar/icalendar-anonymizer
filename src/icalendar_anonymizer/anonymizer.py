@@ -11,6 +11,11 @@ from icalendar import Alarm, Calendar, Event, Journal, Todo
 from icalendar.cal import Component
 from icalendar.prop import vCalAddress
 
+from ._config import (
+    DEFAULT_PLACEHOLDERS,
+    AnonymizeMode,
+    validate_field_modes,
+)
 from ._hash import (
     generate_salt,
     hash_caladdress_cn,
@@ -24,23 +29,11 @@ from ._properties import (
 )
 
 
-def _should_preserve(prop_name: str, preserve_set: set[str]) -> bool:
-    """Check if a property should be preserved.
-
-    Args:
-        prop_name: Property name (uppercase)
-        preserve_set: Set of additional properties to preserve (uppercase)
-
-    Returns:
-        True if property should be preserved
-    """
-    return should_preserve_property(prop_name) or prop_name in preserve_set
-
-
 def anonymize(
     cal: Calendar,
     salt: bytes | None = None,
     preserve: set[str] | None = None,
+    field_modes: dict[str, str] | None = None,
 ) -> Calendar:
     """Anonymize an iCalendar object.
 
@@ -56,12 +49,20 @@ def anonymize(
         preserve: Optional set of additional property names to preserve.
                  Case-insensitive. User must ensure these don't contain
                  sensitive data. Example: {"CATEGORIES", "COMMENT"}
+                 Cannot be used with field_modes.
+        field_modes: Optional dict mapping field names to anonymization modes.
+                    Modes: "keep", "remove", "randomize", "replace".
+                    Fields: SUMMARY, DESCRIPTION, LOCATION, COMMENT, CONTACT,
+                           RESOURCES, CATEGORIES, ATTENDEE, ORGANIZER, UID.
+                    Cannot be used with preserve.
 
     Returns:
         New anonymized Calendar object
 
     Raises:
         TypeError: If cal is not a Calendar object or salt is not bytes
+        ValueError: If both preserve and field_modes are specified, or if
+                   field_modes contains invalid fields/modes
     """
     if not isinstance(cal, Calendar):
         raise TypeError(f"Expected Calendar, got {type(cal).__name__}")
@@ -74,19 +75,36 @@ def anonymize(
     if preserve is not None and not isinstance(preserve, set):
         raise TypeError(f"preserve must be a set or None, got {type(preserve).__name__}")
 
-    # Normalize preserve set to uppercase
-    preserve_upper = {p.upper() for p in preserve} if preserve else set()
+    if field_modes is not None and not isinstance(field_modes, dict):
+        raise TypeError(f"field_modes must be dict or None, got {type(field_modes).__name__}")
+
+    # Mutual exclusion check
+    if preserve is not None and field_modes is not None:
+        raise ValueError("Cannot specify both 'preserve' and 'field_modes'")
+
+    # Convert preserve to field_modes internally
+    if preserve:
+        field_modes_normalized = {p.upper(): AnonymizeMode.KEEP for p in preserve}
+    else:
+        field_modes_normalized = validate_field_modes(field_modes) or {}
 
     # UID mapping to maintain uniqueness across calendar
     uid_map: dict[str, str] = {}
+
+    # UID counter for REPLACE mode
+    uid_counter = [0]
 
     # Create new calendar to avoid modifying original
     new_cal = Calendar()
 
     # Copy calendar-level properties (applying same filtering rules)
-    for key, value in cal.property_items():
+    # Use .items() which returns only actual properties (key-value pairs)
+    # NOT .property_items() which incorrectly includes subcomponent properties,
+    # causing events/todos to be copied as regular properties and creating malformed ICS output
+    for key, value in cal.items():
         prop_name = key.upper()
-        if _should_preserve(prop_name, preserve_upper):
+        # Calendar-level properties use simple preserve logic (not configurable via field_modes)
+        if should_preserve_property(prop_name):
             new_cal.add(key, value)
         else:
             # Anonymize calendar-level properties too
@@ -102,7 +120,9 @@ def anonymize(
             continue
 
         # Anonymize component
-        new_component = _anonymize_component(component, salt, uid_map, preserve_upper)
+        new_component = _anonymize_component(
+            component, salt, uid_map, field_modes_normalized, uid_counter
+        )
         new_cal.add_component(new_component)
 
     return new_cal
@@ -112,7 +132,8 @@ def _anonymize_component(
     component: Component,
     salt: bytes,
     uid_map: dict[str, str],
-    preserve: set[str],
+    field_modes: dict[str, AnonymizeMode],
+    uid_counter: list[int],
 ) -> Component:
     """Anonymize a single component (VEVENT, VTODO, etc.).
 
@@ -120,7 +141,8 @@ def _anonymize_component(
         component: The component to anonymize
         salt: Salt for hashing
         uid_map: UID mapping for maintaining uniqueness
-        preserve: Set of additional property names to preserve (uppercase)
+        field_modes: Dict mapping field names to anonymization modes
+        uid_counter: Counter for generating unique placeholder UIDs
 
     Returns:
         New anonymized component
@@ -139,32 +161,50 @@ def _anonymize_component(
     for key, value in component.property_items():
         prop_name = key.upper()
 
-        # Check if property should be preserved
-        if _should_preserve(prop_name, preserve):
-            # Preserve as-is
+        # Skip BEGIN and END markers (structural, not properties)
+        if prop_name in ("BEGIN", "END"):
+            continue
+
+        # Check if property should be preserved (technical properties)
+        if should_preserve_property(prop_name):
             new_component.add(key, value)
-        elif prop_name == "UID":
-            # Special handling: hash but maintain uniqueness
-            original_uid = str(value)
-            hashed_uid = hash_uid(original_uid, salt, uid_map)
-            new_component.add(key, hashed_uid)
-        elif prop_name in ("ATTENDEE", "ORGANIZER"):
-            # Special handling: anonymize email + CN parameter, preserve others
-            if isinstance(value, vCalAddress):
-                new_value = _anonymize_caladdress(value, salt)
+            continue
+
+        # Get mode for this field (default: RANDOMIZE)
+        mode = field_modes.get(prop_name, AnonymizeMode.RANDOMIZE)
+
+        if mode == AnonymizeMode.KEEP:
+            new_component.add(key, value)
+        elif mode == AnonymizeMode.REMOVE:
+            continue
+        elif mode == AnonymizeMode.REPLACE:
+            if prop_name == "UID":
+                uid_counter[0] += 1
+                placeholder = f"redacted-{uid_counter[0]}@anonymous.local"
+            elif prop_name in ("ATTENDEE", "ORGANIZER"):
+                if isinstance(value, vCalAddress):
+                    placeholder = _create_placeholder_caladdress(value, prop_name)
+                else:
+                    placeholder = DEFAULT_PLACEHOLDERS.get(prop_name, "[Redacted]")
             else:
-                # Fallback for string values
-                new_value = hash_email(str(value), salt)
-            new_component.add(key, new_value)
+                placeholder = DEFAULT_PLACEHOLDERS.get(prop_name, "[Redacted]")
+            new_component.add(key, placeholder)
+        # RANDOMIZE (default): hash to deterministic random value
+        elif prop_name == "UID":
+            new_component.add(key, hash_uid(str(value), salt, uid_map))
+        elif prop_name in ("ATTENDEE", "ORGANIZER"):
+            if isinstance(value, vCalAddress):
+                new_component.add(key, _anonymize_caladdress(value, salt))
+            else:
+                new_component.add(key, hash_email(str(value), salt))
         else:
-            # Default: anonymize (includes SUMMARY, DESCRIPTION, LOCATION,
-            # COMMENT, CONTACT, CATEGORIES, and unknown properties)
-            anonymized_value = _anonymize_property_value(value, salt)
-            new_component.add(key, anonymized_value)
+            new_component.add(key, _anonymize_property_value(value, salt))
 
     # Process subcomponents (e.g., VALARM inside VEVENT)
     for subcomponent in component.subcomponents:
-        new_subcomponent = _anonymize_component(subcomponent, salt, uid_map, preserve)
+        new_subcomponent = _anonymize_component(
+            subcomponent, salt, uid_map, field_modes, uid_counter
+        )
         new_component.add_component(new_subcomponent)
 
     return new_component
@@ -190,6 +230,30 @@ def _anonymize_property_value(value, salt: bytes):
         return [hash_text(str(item), salt) for item in value]
     # For other types, convert to string and hash
     return hash_text(str(value), salt)
+
+
+def _create_placeholder_caladdress(original: vCalAddress, prop_name: str) -> vCalAddress:
+    """Create placeholder vCalAddress preserving non-personal params.
+
+    Args:
+        original: The original vCalAddress
+        prop_name: The property name (ATTENDEE or ORGANIZER)
+
+    Returns:
+        New vCalAddress with placeholder email and "Redacted" CN
+    """
+    placeholder_email = DEFAULT_PLACEHOLDERS.get(prop_name, "mailto:redacted@example.local")
+    new_addr = vCalAddress(placeholder_email)
+
+    # Copy parameters, replacing CN with "Redacted"
+    for param_key, param_value in original.params.items():
+        if param_key.upper() == "CN":
+            new_addr.params[param_key] = "Redacted"
+        else:
+            # Preserve ROLE, PARTSTAT, RSVP, CUTYPE, etc.
+            new_addr.params[param_key] = param_value
+
+    return new_addr
 
 
 def _anonymize_caladdress(caladdress: vCalAddress, salt: bytes) -> vCalAddress:

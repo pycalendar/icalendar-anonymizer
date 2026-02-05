@@ -116,6 +116,71 @@ Options Reference
        Writing to: anonymized.ics
        Done.
 
+Field Configuration Options
+----------------------------
+
+Configure how individual fields are anonymized. Four modes: ``keep``, ``remove``, ``randomize``, ``replace``.
+
+.. option:: --summary <mode>
+
+   Mode for SUMMARY field.
+
+   - **Choices**: ``keep``, ``remove``, ``randomize``, ``replace``
+   - **Default**: ``randomize``
+   - **Example**: ``ican --summary keep calendar.ics``
+
+.. option:: --description <mode>
+
+   Mode for DESCRIPTION field.
+
+.. option:: --location <mode>
+
+   Mode for LOCATION field.
+
+.. option:: --comment <mode>
+
+   Mode for COMMENT field.
+
+.. option:: --contact <mode>
+
+   Mode for CONTACT field.
+
+.. option:: --resources <mode>
+
+   Mode for RESOURCES field.
+
+.. option:: --categories <mode>
+
+   Mode for CATEGORIES field.
+
+.. option:: --attendee <mode>
+
+   Mode for ATTENDEE field.
+
+.. option:: --organizer <mode>
+
+   Mode for ORGANIZER field.
+
+.. option:: --uid <mode>
+
+   Mode for UID field. **Note:** ``remove`` mode not allowed.
+
+   - **Choices**: ``keep``, ``randomize``, ``replace``
+   - **Default**: ``randomize``
+
+**Examples:**
+
+.. code-block:: shell
+
+    # Keep summaries, remove locations
+    ican --summary keep --location remove calendar.ics
+
+    # Replace descriptions with placeholders
+    ican --description replace calendar.ics
+
+    # Combine multiple field modes
+    ican --summary keep --location remove --description replace calendar.ics
+
 .. option:: --version
 
    Display version information and exit.
@@ -200,6 +265,9 @@ Combining with Other Tools
 
     # Compress anonymized output
     ican calendar.ics | gzip > anonymized.ics.gz
+
+    # Keep summaries for debugging, pipe to file
+    ican --summary keep calendar.ics | gzip > debug-anon.ics.gz
 
 What Gets Anonymized?
 =====================
