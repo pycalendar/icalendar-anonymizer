@@ -17,6 +17,13 @@ from workers import WorkerEntrypoint
 # In Cloudflare Workers, static files are served via Assets, not FastAPI
 os.environ["CLOUDFLARE_WORKERS"] = "true"
 
+# Pyodide includes cryptography 46.0.3 as a built-in package
+# Import it here to ensure it's available before FastAPI app initialization
+import contextlib
+
+with contextlib.suppress(ImportError):
+    import cryptography  # noqa: F401
+
 from icalendar_anonymizer.webapp.main import app
 
 
