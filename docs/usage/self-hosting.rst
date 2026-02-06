@@ -80,14 +80,14 @@ Shareable Links
 
    .. code-block:: python
 
-      from cryptography.fernet import Fernet
+      from icalendar_anonymizer.webapp.vendored.fernet_compat import Fernet
       print(Fernet.generate_key().decode())
 
    Or use command line:
 
    .. code-block:: bash
 
-      python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+      python -c "from icalendar_anonymizer.webapp.vendored.fernet_compat import Fernet; print(Fernet.generate_key().decode())"
 
    .. warning::
 
