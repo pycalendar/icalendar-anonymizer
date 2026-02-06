@@ -64,7 +64,6 @@ web = [
     "uvicorn>=0.38.0",
     "python-multipart>=0.0.18",
     "httpx>=0.28.1",
-    # Fernet encryption vendored (no external crypto deps needed)
 ]
 
 dev = [
@@ -95,7 +94,6 @@ test = [
     "hypothesis>=6.147",
     "click>=8.3.1",
     "pytest-httpx>=0.30.0",
-    # Fernet encryption vendored (no external crypto deps needed)
 ]
 
 all = ["icalendar-anonymizer[cli,web,dev,doc]"]
