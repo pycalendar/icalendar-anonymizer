@@ -74,6 +74,7 @@ Minor changes
 Bug fixes
 '''''''''
 
+- Fixed Fernet encryption for Cloudflare Workers by vendoring pyaes and fernet (MIT-licensed from ``ricmoo/pyaes`` and ``oz123/python-fernet``). Pyodide requires pure-Python or wasm32 wheels; ``cryptography`` has neither on PyPI. Added ``FERNET_KEY`` env copy from Workers to ``os.environ``. See `PR 100 <https://github.com/mergecal/icalendar-anonymizer/pull/100>`_ and `PR 101 <https://github.com/mergecal/icalendar-anonymizer/pull/101>`_.
 - Fixed property iteration causing subcomponent corruption. Changed calendar property iteration from ``property_items()`` to ``items()`` to avoid copying subcomponent properties to calendar level, and added filtering of ``BEGIN``/``END`` structural markers in component property processing. This resolves malformed ICS output where event properties appeared at calendar level and were wrapped in spurious subcomponents during serialization/deserialization. See `Issue 92 <https://github.com/mergecal/icalendar-anonymizer/issues/92>`_.
 - Fixed Cloudflare Workers deployment issues including module bundling, build order, static asset serving, and wrangler configuration. See `PR 84 <https://github.com/mergecal/icalendar-anonymizer/pull/84>`_, `PR 85 <https://github.com/mergecal/icalendar-anonymizer/pull/85>`_, `PR 86 <https://github.com/mergecal/icalendar-anonymizer/pull/86>`_, `PR 87 <https://github.com/mergecal/icalendar-anonymizer/pull/87>`_, `PR 88 <https://github.com/mergecal/icalendar-anonymizer/pull/88>`_.
 
