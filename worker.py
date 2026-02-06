@@ -37,4 +37,8 @@ class Default(WorkerEntrypoint):
         """
         import asgi
 
+        # Copy secrets from Workers env to os.environ for app compatibility
+        if hasattr(self.env, "FERNET_KEY"):
+            os.environ["FERNET_KEY"] = self.env.FERNET_KEY
+
         return await asgi.fetch(app, request, self.env)
