@@ -48,10 +48,9 @@ jobs:
               config = tomllib.load(f)
 
           web_deps = config['project']['optional-dependencies']['web']
-          # Filter out packages not needed for Workers or provided by Pyodide
+          # Filter out packages not needed for Workers
           # - uvicorn: Workers provide their own runtime
-          # - cryptography: Pyodide includes cryptography 46.0.3 as built-in package
-          web_deps = [dep for dep in web_deps if not dep.startswith(('uvicorn', 'cryptography'))]
+          web_deps = [dep for dep in web_deps if not dep.startswith('uvicorn')]
 
           with open('pyproject.toml', 'r') as f:
               content = f.read()
