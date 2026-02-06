@@ -677,7 +677,7 @@ async def generate_fernet_token(
     Raises:
         HTTPException: If Fernet not configured or URL invalid
     """
-    from icalendar_anonymizer.webapp.fernet_compat import Fernet
+    from cryptography.fernet import Fernet
 
     fernet_key = os.getenv("FERNET_KEY")
     if not fernet_key:
@@ -725,7 +725,7 @@ async def fernet_fetch(token: str) -> Response:
     Raises:
         HTTPException: If Fernet not configured, token invalid, or fetch fails
     """
-    from icalendar_anonymizer.webapp.fernet_compat import Fernet, InvalidToken
+    from cryptography.fernet import Fernet, InvalidToken
 
     fernet_key = os.getenv("FERNET_KEY")
     if not fernet_key:
