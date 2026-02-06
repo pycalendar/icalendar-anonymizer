@@ -195,7 +195,10 @@ asyncio_mode = "auto"
 [tool.coverage.run]
 source = ["src"]
 branch = true
-omit = ["src/icalendar_anonymizer/_version.py"]
+omit = [
+    "src/icalendar_anonymizer/_version.py",
+    "src/icalendar_anonymizer/webapp/vendored/*",
+]
 
 [tool.coverage.report]
 exclude_lines = [
