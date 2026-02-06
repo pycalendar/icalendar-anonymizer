@@ -17,7 +17,6 @@ from typing import Annotated, Literal
 from urllib.parse import urlparse
 
 import httpx
-from cryptography.fernet import Fernet, InvalidToken
 from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
@@ -678,6 +677,8 @@ async def generate_fernet_token(
     Raises:
         HTTPException: If Fernet not configured or URL invalid
     """
+    from cryptography.fernet import Fernet
+
     fernet_key = os.getenv("FERNET_KEY")
     if not fernet_key:
         raise HTTPException(
@@ -724,6 +725,8 @@ async def fernet_fetch(token: str) -> Response:
     Raises:
         HTTPException: If Fernet not configured, token invalid, or fetch fails
     """
+    from cryptography.fernet import Fernet, InvalidToken
+
     fernet_key = os.getenv("FERNET_KEY")
     if not fernet_key:
         raise HTTPException(
