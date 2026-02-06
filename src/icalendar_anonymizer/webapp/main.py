@@ -39,6 +39,33 @@ FETCH_TIMEOUT = 10.0  # seconds
 MAX_RESPONSE_SIZE = MAX_FILE_SIZE  # Match file size limit
 SALT_SIZE_BYTES = 32  # Size of salt for anonymization (32 bytes = 256 bits)
 
+
+async def _ensure_cryptography():
+    """Ensure cryptography package is available.
+
+    In Cloudflare Workers (Pyodide), we need to load cryptography via micropip
+    since it's a Pyodide built-in package, not bundled in python_modules.
+    """
+    # Check if cryptography is already importable
+    try:
+        import cryptography  # noqa: F401
+    except ImportError:
+        # Try to load via micropip if in Pyodide environment
+        pass
+    else:
+        return  # Already available
+
+    # Load via micropip if in Pyodide environment
+    if os.getenv("CLOUDFLARE_WORKERS"):
+        try:
+            import micropip
+
+            await micropip.install("cryptography")
+        except ImportError:
+            # micropip not available - let the later import fail with clear error
+            pass
+
+
 # Private IP ranges to block for SSRF protection
 PRIVATE_IP_RANGES = [
     ipaddress.ip_network("127.0.0.0/8"),  # Loopback
@@ -677,6 +704,7 @@ async def generate_fernet_token(
     Raises:
         HTTPException: If Fernet not configured or URL invalid
     """
+    await _ensure_cryptography()
     from cryptography.fernet import Fernet
 
     fernet_key = os.getenv("FERNET_KEY")
@@ -725,6 +753,7 @@ async def fernet_fetch(token: str) -> Response:
     Raises:
         HTTPException: If Fernet not configured, token invalid, or fetch fails
     """
+    await _ensure_cryptography()
     from cryptography.fernet import Fernet, InvalidToken
 
     fernet_key = os.getenv("FERNET_KEY")
