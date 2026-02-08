@@ -48,7 +48,8 @@ jobs:
               config = tomllib.load(f)
 
           web_deps = config['project']['optional-dependencies']['web']
-          # Filter out uvicorn (not needed for Workers, they use their own runtime)
+          # Filter out packages not needed for Workers
+          # - uvicorn: Workers provide their own runtime
           web_deps = [dep for dep in web_deps if not dep.startswith('uvicorn')]
 
           with open('pyproject.toml', 'r') as f:

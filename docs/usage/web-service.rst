@@ -37,7 +37,6 @@ This installs:
 - ``uvicorn>=0.38.0`` - ASGI server
 - ``python-multipart>=0.0.18`` - File upload support
 - ``httpx>=0.28.1`` - Async HTTP client for URL fetching
-- ``cryptography>=46.0.0`` - Fernet encryption for shareable links
 
 Running the Server
 ==================

@@ -64,7 +64,6 @@ web = [
     "uvicorn>=0.38.0",
     "python-multipart>=0.0.18",
     "httpx>=0.28.1",
-    "cryptography>=46.0.0",
 ]
 
 dev = [
@@ -95,7 +94,6 @@ test = [
     "hypothesis>=6.147",
     "click>=8.3.1",
     "pytest-httpx>=0.30.0",
-    "cryptography>=46.0.0",
 ]
 
 all = ["icalendar-anonymizer[cli,web,dev,doc]"]
@@ -183,6 +181,9 @@ extend-safe-fixes = [
 "docs/*" = [
     "INP001", # implicit namespace package
 ]
+"src/icalendar_anonymizer/webapp/vendored/*" = [
+    "ALL",  # Vendored code - skip all linting
+]
 
 [tool.pytest.ini_options]
 minversion = "7.0"
@@ -194,7 +195,10 @@ asyncio_mode = "auto"
 [tool.coverage.run]
 source = ["src"]
 branch = true
-omit = ["src/icalendar_anonymizer/_version.py"]
+omit = [
+    "src/icalendar_anonymizer/_version.py",
+    "src/icalendar_anonymizer/webapp/vendored/*",
+]
 
 [tool.coverage.report]
 exclude_lines = [

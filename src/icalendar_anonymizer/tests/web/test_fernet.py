@@ -9,10 +9,10 @@ import os
 from unittest.mock import patch
 
 import httpx
-from cryptography.fernet import Fernet
 from fastapi.testclient import TestClient
 
 from icalendar_anonymizer.webapp.main import app
+from icalendar_anonymizer.webapp.vendored.fernet_compat import Fernet
 
 client = TestClient(app)
 
