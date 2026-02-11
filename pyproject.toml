@@ -52,8 +52,7 @@ classifiers = [
 ]
 
 dependencies = [
-    # Pin to git main for lazy init fix (PR #1086) until next release
-    "icalendar @ git+https://github.com/collective/icalendar.git@main",
+    "icalendar>=7.0.0",
 ]
 
 [project.optional-dependencies]
