@@ -71,8 +71,8 @@ Pull and run the Docker image:
 
 .. code-block:: shell
 
-    docker pull sashankbhamidi/icalendar-anonymizer
-    docker run -p 8000:8000 sashankbhamidi/icalendar-anonymizer
+    docker pull ghcr.io/pycalendar/icalendar-anonymizer
+    docker run -p 8000:8000 ghcr.io/pycalendar/icalendar-anonymizer
 
 The web service will be available at http://localhost:8000. See :doc:`usage/self-hosting` for configuration options.
 
@@ -157,5 +157,5 @@ Getting Help
 
 If you encounter installation issues:
 
-- Check the `Issue Tracker <https://github.com/mergecal/icalendar-anonymizer/issues>`_ for existing issues.
+- Check the `Issue Tracker <https://github.com/pycalendar/icalendar-anonymizer/issues>`_ for existing issues.
 - If there isn't an existing issue, then open a new one.

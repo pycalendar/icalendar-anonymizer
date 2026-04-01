@@ -27,8 +27,8 @@ FROM python:3.13-slim
 
 LABEL org.opencontainers.image.title="icalendar-anonymizer"
 LABEL org.opencontainers.image.description="Strip personal data from iCalendar files while preserving technical properties for bug reproduction"
-LABEL org.opencontainers.image.url="https://github.com/mergecal/icalendar-anonymizer"
-LABEL org.opencontainers.image.source="https://github.com/mergecal/icalendar-anonymizer"
+LABEL org.opencontainers.image.url="https://github.com/pycalendar/icalendar-anonymizer"
+LABEL org.opencontainers.image.source="https://github.com/pycalendar/icalendar-anonymizer"
 LABEL org.opencontainers.image.licenses="AGPL-3.0-or-later"
 
 # Create non-root user

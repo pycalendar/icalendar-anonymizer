@@ -24,7 +24,7 @@ html_theme_options = {
     "icon_links": [
         {
             "name": "GitHub",
-            "url": "https://github.com/mergecal/icalendar-anonymizer",
+            "url": "https://github.com/pycalendar/icalendar-anonymizer",
             "icon": "fa-brands fa-square-github",
             "type": "fontawesome",
         },
@@ -46,7 +46,7 @@ html_theme_options = {
 }
 
 html_context = {
-    "github_user": "mergecal",
+    "github_user": "pycalendar",
     "github_repo": "icalendar-anonymizer",
     "github_version": "main",
     "doc_path": "docs",

@@ -39,7 +39,7 @@ jobs:
 
             **Docker:**
             ```bash
-            docker pull sashankbhamidi/icalendar-anonymizer:${{ github.ref_name }}
+            docker pull ghcr.io/pycalendar/icalendar-anonymizer:${{ github.ref_name }}
             ```
 
             ## Documentation

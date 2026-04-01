@@ -408,7 +408,7 @@ Reference issues with full URLs:
 
 .. code-block:: rst
 
-    See `Issue 9 <https://github.com/mergecal/icalendar-anonymizer/issues/9>`_.
+    See `Issue 9 <https://github.com/pycalendar/icalendar-anonymizer/issues/9>`_.
 
 Verbs
 ^^^^^
@@ -430,7 +430,7 @@ Example Entry
       set of property names to preserve beyond defaults. Case-insensitive. Allows
       preserving properties like ``CATEGORIES`` or ``COMMENT`` for bug reproduction
       when user confirms no sensitive data. Added 7 tests for preserve functionality.
-      See `Issue 53 <https://github.com/mergecal/icalendar-anonymizer/issues/53>`_.
+      See `Issue 53 <https://github.com/pycalendar/icalendar-anonymizer/issues/53>`_.
 
 See the ``CHANGES.rst`` file header for complete formatting guidelines.
 
@@ -493,7 +493,7 @@ All files must pass REUSE compliance before merge.
 Getting Help
 ============
 
-- Check the `Issue Tracker <https://github.com/mergecal/icalendar-anonymizer/issues>`_
+- Check the `Issue Tracker <https://github.com/pycalendar/icalendar-anonymizer/issues>`_
 - Open a new issue for bugs or feature requests
 - For major changes, open an issue for discussion before starting work
 

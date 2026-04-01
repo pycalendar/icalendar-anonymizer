@@ -472,7 +472,7 @@ Getting Help
 If you encounter issues with the CLI:
 
 - Use ``ican --help`` for usage information
-- Check the `Issue Tracker <https://github.com/mergecal/icalendar-anonymizer/issues>`_
+- Check the `Issue Tracker <https://github.com/pycalendar/icalendar-anonymizer/issues>`_
 - Open a new issue with:
   - Your command
   - Error message

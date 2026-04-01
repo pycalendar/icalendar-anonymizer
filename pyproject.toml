@@ -119,11 +119,11 @@ version-file = "src/icalendar_anonymizer/_version.py"
 [tool.hatch.metadata.hooks.vcs.urls]
 Homepage = "https://docs.icalendar-anonymizer.com"
 Documentation = "https://docs.icalendar-anonymizer.com"
-Repository = "https://github.com/mergecal/icalendar-anonymizer"
+Repository = "https://github.com/pycalendar/icalendar-anonymizer"
 Changelog = "https://docs.icalendar-anonymizer.com/stable/changelog.html"
-Issues = "https://github.com/mergecal/icalendar-anonymizer/issues"
-Discussions = "https://github.com/mergecal/icalendar-anonymizer/discussions"
-source_archive = "https://github.com/mergecal/icalendar-anonymizer/archive/{commit_hash}.zip"
+Issues = "https://github.com/pycalendar/icalendar-anonymizer/issues"
+Discussions = "https://github.com/pycalendar/icalendar-anonymizer/discussions"
+source_archive = "https://github.com/pycalendar/icalendar-anonymizer/archive/{commit_hash}.zip"
 
 [tool.hatch.metadata]
 allow-direct-references = true
