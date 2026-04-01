@@ -9,7 +9,7 @@ Calendar bugs are hard to reproduce without actual calendar data, but people can
 
 [![Documentation](https://readthedocs.org/projects/icalendar-anonymizer/badge/?version=stable)](https://docs.icalendar-anonymizer.com/stable/)
 [![Tests](https://github.com/pycalendar/icalendar-anonymizer/actions/workflows/tests.yml/badge.svg)](https://github.com/pycalendar/icalendar-anonymizer/actions/workflows/tests.yml)
-[![codecov](https://codecov.io/gh/pycalendar/icalendar-anonymizer/graph/badge.svg?token=BeroSsugTc)](https://codecov.io/gh/pycalendar/icalendar-anonymizer)
+[![codecov](https://codecov.io/gh/pycalendar/icalendar-anonymizer/branch/main/graph/badge.svg?token=BeroSsugTc)](https://codecov.io/gh/pycalendar/icalendar-anonymizer)
 [![PyPI version](https://img.shields.io/pypi/v/icalendar-anonymizer.svg)](https://pypi.org/project/icalendar-anonymizer/)
 [![Python versions](https://img.shields.io/pypi/pyversions/icalendar-anonymizer.svg)](https://pypi.org/project/icalendar-anonymizer/)
 [![Container image](https://img.shields.io/badge/ghcr.io-pycalendar%2Ficalendar--anonymizer-blue)](https://github.com/pycalendar/icalendar-anonymizer/pkgs/container/icalendar-anonymizer)
