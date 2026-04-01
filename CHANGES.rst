@@ -50,20 +50,15 @@ Change log
 New features
 ''''''''''''
 
+- Added automatic Docker build trigger on release via ``gh workflow run`` in :file:`.github/workflows/release.yml`. See `Issue 77 <https://github.com/pycalendar/icalendar-anonymizer/issues/77>`_.
+
 .. _v0.1.3-minor-changes:
 
 Minor changes
 '''''''''''''
 
-- Migrated repository from ``mergecal`` to ``pycalendar`` GitHub organization. Docker image
-  moved from Docker Hub (``sashankbhamidi/icalendar-anonymizer``) to GitHub Container Registry
-  (``ghcr.io/pycalendar/icalendar-anonymizer``). All historical tags are available at the new
-  location.
-
-.. _v0.1.3-bug-fixes:
-
-Bug fixes
-'''''''''
+- Migrated repository from ``mergecal`` to ``pycalendar`` GitHub organization.
+- Docker image moved from Docker Hub (``sashankbhamidi/icalendar-anonymizer``) to GitHub Container Registry (``ghcr.io/pycalendar/icalendar-anonymizer``). All historical tags are available at the new location. See `Issue 71 <https://github.com/pycalendar/icalendar-anonymizer/issues/71>`_, done in `PR 106 <https://github.com/pycalendar/icalendar-anonymizer/pull/106>`_.
 
 0.1.2 (2026-02-11)
 ------------------
