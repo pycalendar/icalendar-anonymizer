@@ -121,10 +121,10 @@ License
     AGPL-3.0-or-later
 
 Source Code
-    https://github.com/mergecal/icalendar-anonymizer
+    https://github.com/pycalendar/icalendar-anonymizer
 
 Issue Tracker
-    https://github.com/mergecal/icalendar-anonymizer/issues
+    https://github.com/pycalendar/icalendar-anonymizer/issues
 
 PyPI
     https://pypi.org/project/icalendar-anonymizer/

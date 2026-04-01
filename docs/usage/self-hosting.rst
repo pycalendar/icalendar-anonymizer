@@ -30,7 +30,7 @@ Basic Setup
 .. code-block:: bash
 
    # Clone the repository
-   git clone https://github.com/mergecal/icalendar-anonymizer.git
+   git clone https://github.com/pycalendar/icalendar-anonymizer.git
    cd icalendar-anonymizer
 
    # Start the service

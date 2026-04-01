@@ -414,7 +414,7 @@ Each accepts: ``keep``, ``remove``, ``randomize``, ``replace``
 **Known Limitations**
 
 The SSRF protection has a Time-of-Check-Time-of-Use (TOCTOU) vulnerability to DNS rebinding attacks.
-See `Issue #70 <https://github.com/mergecal/icalendar-anonymizer/issues/70>`_ for future enhancements.
+See `Issue #70 <https://github.com/pycalendar/icalendar-anonymizer/issues/70>`_ for future enhancements.
 
 POST /share
 -----------
@@ -706,8 +706,8 @@ Pull and run the Docker image:
 
 .. code-block:: shell
 
-    docker pull sashankbhamidi/icalendar-anonymizer
-    docker run -p 8000:8000 sashankbhamidi/icalendar-anonymizer
+    docker pull ghcr.io/pycalendar/icalendar-anonymizer
+    docker run -p 8000:8000 ghcr.io/pycalendar/icalendar-anonymizer
 
 The web service will be available at http://localhost:8000.
 
@@ -821,7 +821,7 @@ For high-security deployments:
 - Implement additional rate limiting
 - Monitor for suspicious URL patterns
 
-See `Issue #70 <https://github.com/mergecal/icalendar-anonymizer/issues/70>`_ for planned enhancements.
+See `Issue #70 <https://github.com/pycalendar/icalendar-anonymizer/issues/70>`_ for planned enhancements.
 
 **Input Validation**
 
@@ -872,7 +872,7 @@ For high-traffic deployments:
 - Increase uvicorn workers: ``--workers 8``
 - Use multiple server instances behind a load balancer
 - Consider async worker pools for URL fetching
-- Implement caching for frequently accessed URLs (see `Issue #30 <https://github.com/mergecal/icalendar-anonymizer/issues/30>`_)
+- Implement caching for frequently accessed URLs (see `Issue #30 <https://github.com/pycalendar/icalendar-anonymizer/issues/30>`_)
 
 Troubleshooting
 ===============

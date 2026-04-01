@@ -194,7 +194,7 @@ def main(
         # Catch-all for unexpected errors
         click.echo(f"Error: Unexpected error - {e}", err=True)
         click.echo(
-            "Please report this issue at https://github.com/mergecal/icalendar-anonymizer/issues",
+            "Please report this issue at https://github.com/pycalendar/icalendar-anonymizer/issues",
             err=True,
         )
         sys.exit(1)
