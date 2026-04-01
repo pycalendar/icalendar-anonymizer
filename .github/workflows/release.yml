@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   release:
@@ -39,7 +40,7 @@ jobs:
 
             **Docker:**
             ```bash
-            docker pull ghcr.io/pycalendar/icalendar-anonymizer:${{ github.ref_name }}
+            docker pull ghcr.io/pycalendar/icalendar-anonymizer:${{ steps.version.outputs.version }}
             ```
 
             ## Documentation
@@ -49,3 +50,8 @@ jobs:
             ## Changelog
 
             https://docs.icalendar-anonymizer.com/stable/changelog.html
+
+      - name: Trigger Docker build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run docker.yml --ref ${{ github.ref_name }} --repo ${{ github.repository }}
