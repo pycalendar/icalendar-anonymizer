@@ -42,6 +42,26 @@ Change log
 ..
 .. - Start with a past tense verb, such as "Added", "Fixed", "Removed", "Updated", and other verbs.
 
+0.1.4 (unreleased)
+------------------
+
+.. _v0.1.4-new-features:
+
+New features
+''''''''''''
+
+.. _v0.1.4-minor-changes:
+
+Minor changes
+'''''''''''''
+
+.. _v0.1.4-bug-fixes:
+
+Bug fixes
+'''''''''
+
+- Fixed :file:`Dockerfile` ``CMD`` to use JSON array form with ``sh -c`` wrapper, resolving the ``JSONArgsRecommended`` lint warning while preserving shell variable expansion for ``HOST``, ``PORT``, and ``WORKERS``.
+
 0.1.3 (2026-04-02)
 ------------------
 
