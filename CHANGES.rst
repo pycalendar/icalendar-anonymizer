@@ -56,6 +56,7 @@ Minor changes
 '''''''''''''
 
 - Removed "(30-day expiry)" from shareable-link checkbox labels. See `Issue 113 <https://github.com/pycalendar/icalendar-anonymizer/issues/113>`_.
+- Synced per-field anonymization options across Upload, Paste, and Fetch URL tabs. See `Issue 115 <https://github.com/pycalendar/icalendar-anonymizer/issues/115>`_.
 
 .. _v0.1.4-bug-fixes:
 
