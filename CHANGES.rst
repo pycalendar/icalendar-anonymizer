@@ -51,6 +51,7 @@ New features
 ''''''''''''
 
 - Added Dependabot config. See `Issue 78 <https://github.com/pycalendar/icalendar-anonymizer/issues/78>`_.
+- Added ``CODEOWNERS``. See `Issue 28 <https://github.com/pycalendar/icalendar-anonymizer/issues/28>`_.
 
 .. _v0.1.5-minor-changes:
 
