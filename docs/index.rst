@@ -46,6 +46,12 @@ Strip personal data from iCalendar files while preserving technical properties f
 
         Function signatures and module documentation
 
+    .. grid-item-card:: 📖 Examples
+        :link: examples
+        :link-type: doc
+
+        Practical workflows for common scenarios
+
     .. grid-item-card:: 🤝 Contributing
         :link: contributing
         :link-type: doc
@@ -105,6 +111,7 @@ Documentation
     usage/cli
     usage/web-service
     usage/self-hosting
+    examples
     api/index
 
 .. toctree::
