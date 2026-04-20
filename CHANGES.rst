@@ -61,6 +61,7 @@ Bug fixes
 '''''''''
 
 - Fixed :file:`Dockerfile` ``CMD`` to use JSON array form with ``sh -c`` wrapper, resolving the ``JSONArgsRecommended`` lint warning while preserving shell variable expansion for ``HOST``, ``PORT``, and ``WORKERS``.
+- Preserved ``X-WR-TIMEZONE``. See `Issue 112 <https://github.com/pycalendar/icalendar-anonymizer/issues/112>`_.
 
 0.1.3 (2026-04-02)
 ------------------
