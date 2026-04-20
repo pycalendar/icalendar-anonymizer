@@ -42,7 +42,7 @@ Change log
 ..
 .. - Start with a past tense verb, such as "Added", "Fixed", "Removed", "Updated", and other verbs.
 
-0.1.4 (unreleased)
+0.1.4 (2026-04-20)
 ------------------
 
 .. _v0.1.4-new-features:
