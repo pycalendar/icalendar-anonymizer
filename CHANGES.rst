@@ -55,6 +55,8 @@ New features
 Minor changes
 '''''''''''''
 
+- Removed "(30-day expiry)" from shareable-link checkbox labels. See `Issue 113 <https://github.com/pycalendar/icalendar-anonymizer/issues/113>`_.
+
 .. _v0.1.4-bug-fixes:
 
 Bug fixes
