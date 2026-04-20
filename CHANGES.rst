@@ -50,6 +50,8 @@ Change log
 New features
 ''''''''''''
 
+- Persisted per-field anonymization options across page loads via ``localStorage``. See `Issue 116 <https://github.com/pycalendar/icalendar-anonymizer/issues/116>`_.
+
 .. _v0.1.4-minor-changes:
 
 Minor changes

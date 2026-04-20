@@ -578,6 +578,38 @@ function initFieldSync() {
     }
 }
 
+// Persist field-config select values to localStorage so options survive page reloads
+function initFieldPersistence() {
+    const STORAGE_KEY = 'icalendar-anonymizer:field-modes';
+    const fieldOf = (id) => id.split('-').slice(1).join('-');
+
+    try {
+        const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+        for (const select of document.querySelectorAll('.field-config-grid select')) {
+            const saved = stored[fieldOf(select.id)];
+            if (saved && [...select.options].some(o => o.value === saved)) {
+                select.value = saved;
+            }
+        }
+    } catch {
+        // Corrupt JSON or localStorage unavailable — fall back to HTML defaults
+    }
+
+    document.addEventListener('change', (e) => {
+        const grid = e.target.closest('.field-config-grid');
+        if (!grid) return;
+        try {
+            const snapshot = {};
+            for (const s of grid.querySelectorAll('select')) {
+                snapshot[fieldOf(s.id)] = s.value;
+            }
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+        } catch {
+            // localStorage unavailable (private mode, quota) — silently ignore
+        }
+    });
+}
+
 // Toggle share options visibility when checkbox changes
 function initShareOptionsToggle() {
     const fetchShareCheckbox = document.getElementById('fetch-share');
@@ -596,6 +628,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCopyrightYear();
     checkShareableLinks();
     initShareOptionsToggle();
+    initFieldPersistence();
     initFieldSync();
     document.getElementById('upload-form').addEventListener('submit', handleUpload);
     document.getElementById('paste-form').addEventListener('submit', handlePaste);
