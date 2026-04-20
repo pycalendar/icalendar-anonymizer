@@ -29,6 +29,7 @@ PRESERVED_PROPERTIES = {
     "TZOFFSETTO",
     "TZNAME",
     "TZURL",
+    "X-WR-TIMEZONE",
     # Metadata properties
     "SEQUENCE",
     "STATUS",

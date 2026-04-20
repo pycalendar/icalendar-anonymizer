@@ -469,6 +469,16 @@ def test_anonymizes_unknown_x_property():
     assert str(custom_field) != "sensitive data"
 
 
+def test_preserves_x_wr_timezone():
+    """X-WR-TIMEZONE is timezone metadata and must be preserved."""
+    from icalendar_anonymizer import anonymize
+
+    cal = Calendar()
+    cal.add("x-wr-timezone", "Europe/Berlin")
+
+    assert str(anonymize(cal)["x-wr-timezone"]) == "Europe/Berlin"
+
+
 def test_anonymizes_unknown_standard_property():
     """Unknown standard properties should be anonymized (safe default)."""
     from icalendar_anonymizer import anonymize
