@@ -596,10 +596,11 @@ function initFieldPersistence() {
     }
 
     document.addEventListener('change', (e) => {
-        if (!e.target.matches('.field-config-grid select')) return;
+        const grid = e.target.closest('.field-config-grid');
+        if (!grid) return;
         try {
             const snapshot = {};
-            for (const s of document.querySelectorAll('#upload-panel .field-config-grid select')) {
+            for (const s of grid.querySelectorAll('select')) {
                 snapshot[fieldOf(s.id)] = s.value;
             }
             localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
