@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: 2025 icalendar-anonymizer contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+# CODEOWNERS file for automatic PR review assignment
+# See https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners
+* @SashankBhamidi
