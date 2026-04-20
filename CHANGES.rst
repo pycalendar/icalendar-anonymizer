@@ -50,6 +50,8 @@ Change log
 New features
 ''''''''''''
 
+- Added Dependabot config. See `Issue 78 <https://github.com/pycalendar/icalendar-anonymizer/issues/78>`_.
+
 .. _v0.1.5-minor-changes:
 
 Minor changes

@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: 2025 icalendar-anonymizer contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+version: 2
+
+updates:
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: build
+      include: scope
+    groups:
+      all:
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: ci
+      include: scope
+    groups:
+      all:
+        patterns: ["*"]
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: build
+      include: scope
+    groups:
+      all:
+        patterns: ["*"]
