@@ -560,6 +560,24 @@ async function checkShareableLinks() {
     }
 }
 
+// Mirror field-config select changes to the same field on other tabs
+function initFieldSync() {
+    const sections = ['upload', 'paste', 'fetch'];
+    const selects = document.querySelectorAll('.field-config-grid select');
+
+    for (const select of selects) {
+        select.addEventListener('change', () => {
+            const [section, ...rest] = select.id.split('-');
+            const field = rest.join('-');
+            for (const other of sections) {
+                if (other === section) continue;
+                const peer = document.getElementById(`${other}-${field}`);
+                if (peer) peer.value = select.value;
+            }
+        });
+    }
+}
+
 // Toggle share options visibility when checkbox changes
 function initShareOptionsToggle() {
     const fetchShareCheckbox = document.getElementById('fetch-share');
@@ -578,6 +596,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCopyrightYear();
     checkShareableLinks();
     initShareOptionsToggle();
+    initFieldSync();
     document.getElementById('upload-form').addEventListener('submit', handleUpload);
     document.getElementById('paste-form').addEventListener('submit', handlePaste);
     document.getElementById('fetch-form').addEventListener('submit', handleFetch);
