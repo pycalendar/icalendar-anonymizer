@@ -5,41 +5,39 @@
 Publish an anonymized calendar with Open Web Calendar
 =====================================================
 
-This tutorial shows you how to publish a public calendar that displays only event titles, while keeping the rest of your schedule private.
+Share your calendar publicly, but hide the details you don't want people to see.
 
-You'll chain three tools:
+You'll use three tools:
 
-1. **Google Calendar** provides a private ICS feed.
-2. **icalendar-anonymizer** strips personal data from the feed.
-3. **Open Web Calendar (OWC)** renders the anonymized feed as a public web page.
+- **Google Calendar** — where your events live
+- **icalendar-anonymizer** — removes the fields you choose
+- **Open Web Calendar (OWC)** — renders the result as a web page
 
-The result is a live-updating public calendar that hides attendees, locations, descriptions, and categories but keeps dates, times, and event titles visible.
+Step 1: Create a Google Calendar
+================================
 
-Before you start
-================
+Sign in at `Google Calendar <https://calendar.google.com/>`_.
 
-You need:
+In the left sidebar, next to **Other calendars**, click **+** → **Create new calendar**. Name it ``Demo Calendar``, pick your timezone, click **Create calendar**.
 
-- A Google Calendar account (or any calendar source that exposes an ICS URL)
-- A web browser
+Add a few events. Mix weekly, daily, and one-off. Give them titles, descriptions, locations — the tutorial uses them to show the difference between what stays and what gets stripped.
 
-You don't need:
+.. image:: /_static/tutorials/google-calendar-demo.png
+   :alt: Google Calendar showing a month of events including Team Standup, Gym, Lunch with Steve, and 1:1 with Sashank
+   :width: 100%
 
-- A server
-- A developer account
-- To install anything
+Step 2: Get the ICS URL
+=======================
 
-Step 1: Get your Google Calendar ICS URL
-========================================
+Google Calendar exposes each calendar as an ICS feed.
 
-1. Open `Google Calendar <https://calendar.google.com/>`_.
-2. Select the **gear icon** in the top right, then select **Settings**.
-3. In the left sidebar, under **Settings for my calendars**, select the calendar you want to publish.
-4. Scroll to the **Integrate calendar** section.
-5. Copy the **Secret address in iCal format**.
+1. Gear icon (top right) → **Settings**.
+2. Left sidebar → **Settings for my calendars** → your **Demo Calendar**.
+3. Scroll to **Integrate calendar**.
+4. Copy the **Secret address in iCal format**.
 
 .. image:: /_static/tutorials/google-calendar-ics.png
-   :alt: Google Calendar's "Integrate calendar" section showing the Secret address in iCal format field
+   :alt: The Integrate calendar section with the Secret address in iCal format field
    :width: 100%
 
 The URL looks like this::
@@ -47,96 +45,69 @@ The URL looks like this::
     https://calendar.google.com/calendar/ical/{email}/private-{secret-token}/basic.ics
 
 .. warning::
-    Keep this URL private. Anyone who has it can read your full calendar. The next step anonymizes the feed before it's exposed publicly.
+    Treat this URL like a password. Anyone who has it can read your full calendar. Step 3 wraps it in an encrypted link so you can share publicly without leaking the original.
 
-Step 2: Wrap the URL with icalendar-anonymizer
-==============================================
+Step 3: Choose what to share online
+===================================
 
-icalendar-anonymizer fetches the Google feed, strips personal data, and returns an anonymized ICS file. Use the ``/fetch`` endpoint on `icalendar-anonymizer.com <https://icalendar-anonymizer.com/>`_.
+Open `icalendar-anonymizer.com <https://icalendar-anonymizer.com/>`_ and click the **Fetch URL** tab. Paste the secret URL.
 
-The basic pattern is::
-
-    https://icalendar-anonymizer.com/fetch?url=YOUR_GOOGLE_URL
-
-URL-encode your Google URL before you add it. Most browsers and online encoders handle this.
-
-Configure which fields to keep with query parameters. To keep event titles and remove everything else, add ``summary=keep``::
-
-    https://icalendar-anonymizer.com/fetch?url=YOUR_GOOGLE_URL&summary=keep
-
-Supported query parameters: ``summary``, ``description``, ``location``, ``comment``, ``contact``, ``resources``, ``categories``, ``attendee``, ``organizer``, ``uid``. Each accepts ``keep``, ``remove``, ``randomize``, or ``replace``.
-
-The defaults match the web interface: ``summary=keep``, all personal fields set to ``remove``, ``uid=randomize``.
+Expand **Advanced Options**.
 
 .. image:: /_static/tutorials/anonymizer-fetch-options.png
-   :alt: The Fetch URL tab on icalendar-anonymizer.com with Advanced Options expanded, showing per-field dropdowns
+   :alt: The Fetch URL tab with Advanced Options expanded, showing dropdowns for each field
    :width: 100%
 
-You can also configure these options visually on the `Fetch URL tab <https://icalendar-anonymizer.com/>`_, then copy the resulting URL.
+Each field has four modes:
 
-Test the wrapped URL by opening it in your browser. You should see an anonymized ICS file.
+- **Keep original** — pass through unchanged
+- **Remove** — strip the field entirely
+- **Randomize** — replace with a deterministic hash
+- **Replace with placeholder** — replace with fixed text like ``[Redacted]``
 
-Step 3: Pass the wrapped URL to Open Web Calendar
-=================================================
+The defaults keep titles (``SUMMARY: Keep original``) and remove everything else personal — descriptions, locations, attendees, organizers, categories, comments. ``UID`` is randomized so recurring events stay grouped but the original identifier doesn't leak.
 
-Open Web Calendar accepts an ICS URL through its ``url`` query parameter::
+Check **Generate shareable link** and pick **Live proxy (Fernet)**. This encrypts the original URL and your field choices into an opaque token. Anyone with the resulting link gets your anonymized calendar, but can't decrypt it back to the Google URL or see the fields you stripped.
 
-    https://open-web-calendar.hosted.quelltext.eu/calendar.html?url=WRAPPED_URL
+Click **Fetch & Anonymize**. Copy the link::
 
-Replace ``WRAPPED_URL`` with the URL from Step 2, URL-encoded a second time. The wrapped URL already contains an encoded Google URL inside it; encoding it again escapes the ``&`` and ``?`` characters that OWC would otherwise treat as its own parameters. The final URL contains double-encoded characters like ``%253A`` (which is ``%3A`` encoded again).
+    https://icalendar-anonymizer.com/fernet/{encrypted-token}
 
-A complete example::
+It's live — every time someone opens it, icalendar-anonymizer refetches your calendar and applies the same field choices. Edits in Google Calendar show up within minutes.
 
-    https://open-web-calendar.hosted.quelltext.eu/calendar.html?url=https%3A%2F%2Ficalendar-anonymizer.com%2Ffetch%3Furl%3Dhttps%253A%252F%252Fcalendar.google.com%252Fcalendar%252Fical%252F...
+Step 4: Embed with Open Web Calendar
+====================================
 
-Open the URL. OWC renders a public calendar that shows only the event titles from your Google Calendar.
+OWC turns an ICS URL into a month/week/day view. Pass your Fernet URL through its ``url`` parameter::
 
-.. image:: /_static/tutorials/owc-rendered.png
-   :alt: Open Web Calendar rendering a monthly view with only event titles visible
+    https://open-web-calendar.hosted.quelltext.eu/calendar.html?url={fernet-url}
+
+URL-encode the Fernet URL first. It contains ``&`` and ``?``, which OWC would otherwise read as its own parameters. Most online URL encoders handle this in one click.
+
+.. image:: /_static/tutorials/owc-rendered-demo.png
+   :alt: Open Web Calendar rendering the anonymized Demo Calendar with only event titles visible
    :width: 100%
 
-Step 4: Embed the calendar on your website
-==========================================
+Compare this with the Step 1 screenshot. Event titles and times match. Descriptions, locations, and everything else are gone.
 
-To embed the calendar on any web page, use an iframe::
+To embed on a web page, wrap the URL in an iframe::
 
-    <iframe src="https://open-web-calendar.hosted.quelltext.eu/calendar.html?url=WRAPPED_URL"
+    <iframe src="https://open-web-calendar.hosted.quelltext.eu/calendar.html?url={fernet-url}"
             width="100%"
             height="600"
             frameborder="0">
     </iframe>
 
-Replace ``WRAPPED_URL`` with your wrapped URL. The calendar re-fetches the anonymized feed on every page load, so updates in Google Calendar appear in the embedded view without any manual refresh.
-
-What gets published
-===================
-
-With the default configuration, visitors to your public calendar see:
-
-- Event dates and times
-- Event titles
-- Recurrence (weekly standups, monthly reviews, and so on)
-- Your timezone
-
-Visitors don't see:
-
-- Descriptions or notes
-- Locations
-- Attendees, organizers, or any email addresses
-- Comments, categories, or custom fields
-
-To hide titles too, change ``summary=keep`` to ``summary=remove`` in the wrapped URL. OWC will render empty blocks at your busy times, revealing only availability.
-
 Troubleshooting
 ===============
 
-**OWC shows an empty calendar.** Open your wrapped URL directly in the browser. If it doesn't return valid ICS, the issue is with icalendar-anonymizer or the source URL. Check that your Google ICS URL is correct and reachable by the icalendar-anonymizer service. Keep the secret URL private; don't share it publicly.
+**OWC shows an empty calendar.** Open your Fernet URL in the browser. If the response doesn't start with ``BEGIN:VCALENDAR``, the Google URL is wrong or Google's ICS feed is slow to pick up new events (can take 10–30 minutes).
 
-**The calendar doesn't update.** OWC fetches fresh data on every page load, but your browser may cache the page itself. Force-refresh with :kbd:`Ctrl+F5` or :kbd:`Cmd+Shift+R`.
+**Fields you expected to hide are still visible.** The Fernet token captures your field choices at the moment you generated it. Changing the dropdowns later doesn't update an existing token — generate a new link.
 
-**Query parameters aren't applied.** Make sure you URL-encoded the inner URL. Unencoded ``&`` characters break the chain.
+**Query parameters aren't being applied.** Make sure you URL-encoded the Fernet URL before passing it to OWC.
 
 Related topics
 ==============
 
-- :doc:`../usage/web-service` — Full reference for the ``/fetch`` endpoint
+- :doc:`../usage/web-service` — Full reference for the ``/fetch`` and ``/fernet-generate`` endpoints
