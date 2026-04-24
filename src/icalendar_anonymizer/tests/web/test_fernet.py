@@ -9,6 +9,7 @@ import os
 from unittest.mock import patch
 
 import httpx
+import pytest
 from fastapi.testclient import TestClient
 
 from icalendar_anonymizer.webapp.main import app
@@ -137,6 +138,30 @@ class TestFernetGenerate:
 
             assert response.status_code == 400
             assert "private" in response.json()["detail"].lower()
+
+    @pytest.mark.parametrize(
+        ("body", "expected"),
+        [
+            (
+                {"url": "https://example.com/calendar.ics", "config": {"summary": "keep"}},
+                {"SUMMARY": "keep"},
+            ),
+            ({"url": "https://example.com/calendar.ics"}, None),
+        ],
+        ids=["with_config", "without_config"],
+    )
+    def test_generate_field_modes_in_payload(self, body, expected):
+        """field_modes is stored in the payload when config is provided, omitted otherwise."""
+        key = Fernet.generate_key().decode()
+
+        with patch.dict(os.environ, {"FERNET_KEY": key}):
+            response = client.post("/fernet-generate", json=body)
+
+            assert response.status_code == 200
+            token = _extract_token_from_url(response.json()["url"])
+            payload = json.loads(Fernet(key.encode()).decrypt(token.encode()).decode())
+
+            assert payload.get("field_modes") == expected
 
 
 class TestFernetFetch:
@@ -285,6 +310,31 @@ class TestFernetFetch:
             assert "Test Event" not in content
             assert "Test description" not in content
             assert "20250101T100000Z" in content
+
+    def test_fetch_applies_field_modes(self, httpx_mock):
+        """Field modes encoded in the token are applied on fetch."""
+        key = Fernet.generate_key().decode()
+        calendar_url = "https://example.com/calendar.ics"
+
+        httpx_mock.add_response(url=calendar_url, text=VALID_ICS)
+
+        cipher = Fernet(key.encode())
+        payload = {
+            "url": calendar_url,
+            "salt": base64.b64encode(b"\x00" * 32).decode(),
+            "field_modes": {"SUMMARY": "keep", "DESCRIPTION": "remove"},
+        }
+        token = cipher.encrypt(json.dumps(payload).encode()).decode()
+
+        with patch.dict(os.environ, {"FERNET_KEY": key}):
+            response = client.get(f"/fernet/{token}")
+
+            assert response.status_code == 200
+            content = response.content.decode("utf-8")
+
+            assert "Test Event" in content
+            assert "Test description" not in content
+            assert "DESCRIPTION:" not in content
 
     def test_fetch_with_redirect(self, httpx_mock):
         """Test fetch follows redirects and validates final URL."""

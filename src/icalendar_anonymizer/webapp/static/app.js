@@ -215,7 +215,7 @@ async function handleFetch(e) {
             return;
         }
         if (shareType === 'fernet') {
-            await fetchAndShareFernet('fetch', url);
+            await fetchAndShareFernet('fetch', url, config);
         } else {
             // R2 workflow
             await fetchAndShare('fetch', url, config);
@@ -261,14 +261,15 @@ async function shareFile(section, formData) {
 }
 
 // Fetch URL then share via Fernet (live proxy)
-async function fetchAndShareFernet(section, url) {
+async function fetchAndShareFernet(section, url, config) {
     showResult(section, 'loading', 'Generating live proxy link...');
 
     try {
+        const body = config ? { url, config } : { url };
         const response = await fetch('/fernet-generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url })
+            body: JSON.stringify(body)
         });
 
         if (!response.ok) {

@@ -547,6 +547,7 @@ class FernetGenerateRequest(BaseModel):
     """Request model for /fernet-generate endpoint."""
 
     url: str
+    config: FieldConfig | None = None
 
 
 class FernetShareResponse(BaseModel):
@@ -689,11 +690,14 @@ async def generate_fernet_token(
     # Validate URL for SSRF protection
     _validate_url(body.url)
 
-    # Create payload with URL and random salt
+    # Create payload with URL, random salt, and optional field modes
     payload = {
         "url": body.url,
         "salt": base64.b64encode(secrets.token_bytes(SALT_SIZE_BYTES)).decode(),
     }
+    field_modes = _build_field_modes(body.config)
+    if field_modes:
+        payload["field_modes"] = field_modes
 
     # Encrypt payload
     cipher = Fernet(fernet_key.encode())
@@ -807,7 +811,8 @@ async def fernet_fetch(token: str) -> Response:
             detail=f"Invalid salt length (expected {SALT_SIZE_BYTES} bytes)",
         )
 
-    anonymized_cal = _anonymize_calendar(ics_content, salt=salt)
+    field_modes = payload.get("field_modes") or None
+    anonymized_cal = _anonymize_calendar(ics_content, field_modes=field_modes, salt=salt)
 
     return Response(
         content=anonymized_cal.to_ical(),
