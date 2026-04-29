@@ -18,7 +18,7 @@ Step 1: Create a Google Calendar
 
 Sign in at `Google Calendar <https://calendar.google.com/>`_.
 
-In the left sidebar, next to :guilabel:`Other calendars`, :menuselection:`+ --> Create new calendar`.
+In the left sidebar, next to :guilabel:`Other calendars`, select :menuselection:`+ --> Create new calendar`.
 Name it ``Demo Calendar``, pick your time zone, and click the :guilabel:`Create calendar` button.
 
 Add a few events.
