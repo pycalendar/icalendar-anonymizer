@@ -52,6 +52,12 @@ Strip personal data from iCalendar files while preserving technical properties f
 
         Publish an anonymized calendar with Open Web Calendar
 
+    .. grid-item-card:: 📖 Examples
+        :link: examples
+        :link-type: doc
+
+        Practical workflows for common scenarios
+
     .. grid-item-card:: 🤝 Contributing
         :link: contributing
         :link-type: doc
@@ -112,6 +118,7 @@ Documentation
     usage/web-service
     usage/self-hosting
     tutorials/open-web-calendar
+    examples
     api/index
 
 .. toctree::

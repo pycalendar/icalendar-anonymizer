@@ -55,6 +55,7 @@ New features
 - Added ``SECURITY.md``. See `Issue 44 <https://github.com/pycalendar/icalendar-anonymizer/issues/44>`_.
 - Added ``field_modes`` support to Fernet live-proxy tokens so per-field UI choices are applied on fetch. See `Issue 139 <https://github.com/pycalendar/icalendar-anonymizer/issues/139>`_.
 - Added Open Web Calendar tutorial at :file:`docs/tutorials/open-web-calendar.rst`. See `Issue 93 <https://github.com/pycalendar/icalendar-anonymizer/issues/93>`_.
+- Added :file:`docs/examples.rst` with real-world workflows. See `Issue 59 <https://github.com/pycalendar/icalendar-anonymizer/issues/59>`_.
 
 .. _v0.1.5-minor-changes:
 
