@@ -140,7 +140,7 @@ Minor changes
 - Added :file:`REUSE.toml` for fallback licensing of files without SPDX headers (auto-generated :file:`_version.py`). In-file headers remain preferred. :issue:`58`
 - Improved test coverage for Cloudflare Workers integration. :pr:`90`
 - Moved ``fastapi``, ``httpx``, and ``python-multipart`` from core dependencies to ``[web]`` extras. Base installation now only requires ``icalendar``. :issue:`23`
-- Updated documentation to use ``python -m pip`` per best practices.
+- Updated documentation to use ``python -m pip`` per best practices. :pr:`97`
 
 .. _v0.1.2-bug-fixes:
 
