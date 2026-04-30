@@ -63,6 +63,8 @@ New features
 Minor changes
 '''''''''''''
 
+- Adopted :mod:`sphinx_issues` extension for shorter changelog issue and pull request references.
+
 .. _v0.1.5-bug-fixes:
 
 Bug fixes
