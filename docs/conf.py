@@ -16,7 +16,11 @@ extensions = [
     "sphinx.ext.autosectionlabel",
     "sphinx_copybutton",
     "sphinx_design",
+    "sphinx_issues",
 ]
+
+# sphinx_issues configuration
+issues_github_path = "pycalendar/icalendar-anonymizer"
 
 # Theme configuration
 html_theme = "pydata_sphinx_theme"
