@@ -11,8 +11,10 @@ VERSION			?=
 RUFFPATH        = "$(realpath .venv/bin/ruff)"
 SPHINXAUTOBUILD = "$(realpath .venv/bin/sphinx-autobuild)"
 SPHINXBUILD     = "$(realpath .venv/bin/sphinx-build)"
+PCPATH          = "$(realpath .venv/bin/pre-commit)"
+PCOPTS          ?=
 TESTPATH        = "$(realpath .venv/bin/pytest)"
-TESTOPTIONS     ?=
+TESTOPTS        ?=
 #TOWNCRIERPATH   = "$(realpath .venv/bin/towncrier)"
 DOCS_DIR        = ./docs/
 BUILDDIR        = ../_build
@@ -35,7 +37,7 @@ help:  # This help message
 	@uv python install "$(PYTHONVERSION)"
 	@uv venv --python "$(PYTHONVERSION)"
 	@uv sync --group all
-	@uv run pre-commit install
+	@uv run pre-commit install --hook-type commit-msg
 
 .PHONY: sync
 sync:  ## Sync package requirements
@@ -139,7 +141,11 @@ docs-all: .venv clean vale html linkcheckbroken  ## Clean docs build, then run v
 
 .PHONY: test
 test: .venv  ## Run code tests and coverage
-	@$(TESTPATH) $(TESTOPTIONS)
+	@$(TESTPATH) $(TESTOPTS)
+
+.PHONY: coverage
+coverage: .venv
+	@$(TESTPATH) '--cov=src/icalendar_anonymizer' '--cov-report=html'
 # /test
 
 
@@ -158,6 +164,11 @@ lint-fix: .venv  ## Format the code base with ruff
 .PHONY: format
 format: .venv  ## Format the code base with ruff
 	$(RUFFPATH) format
+
+.PHONY: pc
+pc: .venv
+	@pre-commit run $(PCOPTS) --all-files
+
 # /development
 
 # deployment
