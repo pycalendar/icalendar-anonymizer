@@ -9,3 +9,15 @@ path = "src/icalendar_anonymizer/_version.py"
 precedence = "override"
 SPDX-FileCopyrightText = "2025 icalendar-anonymizer contributors"
 SPDX-License-Identifier = "AGPL-3.0-or-later"
+
+[[annotations]]
+path = "docs/_static/contributing/**"
+precedence = "override"
+SPDX-FileCopyrightText = "2025 icalendar-anonymizer contributors"
+SPDX-License-Identifier = "AGPL-3.0-or-later"
+
+[[annotations]]
+path = "docs/_static/js/custom-icons.js"
+precedence = "override"
+SPDX-FileCopyrightText = "Copyright (c) 2018, pandas"
+SPDX-License-Identifier = "BSD-3-Clause"
