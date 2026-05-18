@@ -58,6 +58,21 @@ intersphinx_mapping = {
     "icalendar": ("https://icalendar.readthedocs.io/en/latest/", None),
 }
 
+# -- linkcheck builder configuration ----------------------------------
+# Ignore localhost
+linkcheck_ignore = [
+    # Ignore local development server
+    r"http://127.0.0.1",
+    r"http://localhost",
+    # Ignore pages that require authentication
+    r"https://calendar.google.com/",
+    r"https://github.com/pycalendar/icalendar-anonymizer/fork",
+    # Ignore specific anchors
+]
+linkcheck_anchors = True
+linkcheck_timeout = 5
+linkcheck_retries = 1
+
 # Napoleon settings (Google-style docstrings)
 napoleon_google_docstring = True
 napoleon_numpy_docstring = False

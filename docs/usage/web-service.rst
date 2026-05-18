@@ -359,7 +359,7 @@ This endpoint includes SSRF (Server-Side Request Forgery) protection:
 - Blocks private IP ranges (10.x, 172.16.x, 192.168.x, 169.254.x)
 - Blocks localhost (127.0.0.1, ::1, 0.0.0.0)
 - Blocks IPv6 private ranges (fc00::/7, fe80::/10)
-- Only allows http:// and https:// schemes
+- Only allows ``http://`` and ``https://`` schemes
 - 10-second timeout
 - 10 MB size limit
 - Validates redirect destinations
