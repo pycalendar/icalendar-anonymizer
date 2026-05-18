@@ -50,11 +50,17 @@ def anonymize(
                  Case-insensitive. User must ensure these don't contain
                  sensitive data. Example: {"CATEGORIES", "COMMENT"}
                  Cannot be used with field_modes.
-        field_modes: Optional dict mapping field names to anonymization modes.
-                    Modes: "keep", "remove", "randomize", "replace".
-                    Fields: SUMMARY, DESCRIPTION, LOCATION, COMMENT, CONTACT,
-                           RESOURCES, CATEGORIES, ATTENDEE, ORGANIZER, UID.
-                    Cannot be used with preserve.
+        field_modes:
+            Optional dict mapping field names to anonymization modes.
+
+            Modes
+                "keep", "remove", "randomize", "replace".
+
+            Fields
+                SUMMARY, DESCRIPTION, LOCATION, COMMENT, CONTACT,
+                RESOURCES, CATEGORIES, ATTENDEE, ORGANIZER, UID.
+
+            Cannot be used with preserve.
 
     Returns:
         New anonymized Calendar object
