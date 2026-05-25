@@ -27,12 +27,22 @@ html_theme_options = {
             "url": "https://github.com/pycalendar/icalendar-anonymizer",
             "icon": "fa-brands fa-square-github",
             "type": "fontawesome",
+            "attributes": {
+                "target": "_blank",
+                "rel": "noopener me",
+                "class": "nav-link custom-fancy-css",
+            },
         },
         {
             "name": "PyPI",
-            "url": "https://pypi.org/project/icalendar-anonymizer",
-            "icon": "fa-brands fa-python",
+            "url": "https://pypi.org/project/icalendar",
+            "icon": "fa-custom fa-pypi",
             "type": "fontawesome",
+            "attributes": {
+                "target": "_blank",
+                "rel": "noopener me",
+                "class": "nav-link custom-fancy-css",
+            },
         },
     ],
     "logo": {"text": "icalendar-anonymizer"},
@@ -55,7 +65,10 @@ html_context = {
 html_static_path = [
     "_static",
 ]
-
+# Customize the navbar icons
+html_js_files = [
+   ("js/custom-icons.js", {"defer": "defer"}),
+]
 # Intersphinx mapping
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
