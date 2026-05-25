@@ -159,7 +159,7 @@ ci:
 .PHONY: ci-test
 ci-test:
 	@uv python update-shell
-	@$(TESTPATH) --cov --cov-branch --cov-report=xml --cov-report=term --junitxml=junit.xml -o junit_family=legacy
+	@pytest --cov --cov-branch --cov-report=xml --cov-report=term --junitxml=junit.xml -o junit_family=legacy
 # /test
 
 
