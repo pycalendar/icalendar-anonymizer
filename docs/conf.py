@@ -16,7 +16,6 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
-    # "sphinx.ext.autosectionlabel",
     "sphinx_copybutton",
     "sphinx_design",
     "sphinx_issues",
@@ -114,10 +113,6 @@ autodoc_default_options = {
     "undoc-members": True,
     "show-inheritance": True,
 }
-
-# Autosectionlabel settings
-autosectionlabel_prefix_document = True
-
 
 # -- notfound.extension configuration ----------------------------------
 # https://sphinx-notfound-page.readthedocs.io/en/latest/configuration.html
