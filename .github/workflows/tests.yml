@@ -59,7 +59,6 @@ jobs:
         run: |
           make ci PYTHONVERSION=${{ matrix.python-version }}
           uv tree
-          source .venv/bin/activate
 
       - name: Run tests
         run: pytest --cov --cov-branch --cov-report=xml --cov-report=term --junitxml=junit.xml -o junit_family=legacy

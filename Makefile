@@ -11,6 +11,7 @@ PAPER           ?=
 VERSION			?=
 
 # Internal variables.
+ACTIVATEPATH    = "$(realpath .venv/bin/activate)"
 RUFFPATH        = "$(realpath .venv/bin/ruff)"
 SPHINXAUTOBUILD = "$(realpath .venv/bin/sphinx-autobuild)"
 SPHINXBUILD     = "$(realpath .venv/bin/sphinx-build)"
@@ -155,7 +156,7 @@ ci:
 	@uv python install "$(PYTHONVERSION)"
 	@uv venv --python "$(PYTHONVERSION)"
 	@uv sync --group test --group web
-
+	@source "$(ACTIVATEPATH)"
 # /test
 
 
