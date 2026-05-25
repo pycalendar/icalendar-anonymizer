@@ -61,7 +61,7 @@ jobs:
           uv tree
 
       - name: Run tests
-        run: .venv/bin/pytest --cov --cov-branch --cov-report=xml --cov-report=term --junitxml=junit.xml -o junit_family=legacy
+        run: make ci-test
 
       - name: Upload coverage to Codecov
         if: ${{ !cancelled() }}

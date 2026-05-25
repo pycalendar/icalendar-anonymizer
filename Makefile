@@ -156,6 +156,10 @@ ci:
 	@uv venv --python "$(PYTHONVERSION)"
 	@uv sync --group test --group web
 	@source .venv/bin/activate
+
+.PHONY: ci-test
+ci-test:
+	$(TESTPATH) --cov --cov-branch --cov-report=xml --cov-report=term --junitxml=junit.xml -o junit_family=legacy
 # /test
 
 
