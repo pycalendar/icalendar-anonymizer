@@ -52,6 +52,10 @@ html_context = {
     "doc_path": "docs",
 }
 
+html_static_path = [
+    "_static",
+]
+
 # Intersphinx mapping
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
