@@ -75,7 +75,7 @@ html_static_path = [
 ]
 # Customize the navbar icons
 html_js_files = [
-   ("js/custom-icons.js", {"defer": "defer"}),
+    ("js/custom-icons.js", {"defer": "defer"}),
 ]
 
 templates_path = ["_templates"]
@@ -120,5 +120,3 @@ autosectionlabel_prefix_document = True
 # -- notfound.extension configuration ----------------------------------
 # https://sphinx-notfound-page.readthedocs.io/en/latest/configuration.html
 notfound_template = "404.html"
-
-
