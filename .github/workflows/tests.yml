@@ -47,21 +47,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install uv and Python ${{ matrix.python-version }}
-        uses: astral-sh/setup-uv@v7
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
         with:
-          enable-cache: true
-          # Install a specific version of uv.
-          version: "0.11.16"
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
         run: |
-          make ci PYTHONVERSION=${{ matrix.python-version }}
-          uv tree
+          python -m pip install --upgrade pip
+          pip install -e ".[test,web]"
 
       - name: Run tests
-        run: make ci-test
+        run: pytest --cov --cov-branch --cov-report=xml --cov-report=term --junitxml=junit.xml -o junit_family=legacy
 
       - name: Upload coverage to Codecov
         if: ${{ !cancelled() }}
