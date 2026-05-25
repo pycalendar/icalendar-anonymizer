@@ -156,7 +156,7 @@ ci:
 	@uv python install "$(PYTHONVERSION)"
 	@uv venv --python "$(PYTHONVERSION)"
 	@uv sync --group test --group web
-	@source "$(ACTIVATEPATH)"
+	@source $(ACTIVATEPATH)
 # /test
 
 
