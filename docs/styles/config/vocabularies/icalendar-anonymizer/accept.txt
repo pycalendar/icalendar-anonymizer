@@ -4,10 +4,12 @@
 [Aa]nonymize[dr]
 anonymization
 async
+[Aa]utogenerated
 Caddy
 commitizen
 cron
-[Dd]ocstrings
+[Dd]octests?
+[Dd]ocstrings?
 doctest
 Fernet
 Gunicorn
