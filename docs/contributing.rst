@@ -17,220 +17,242 @@ This guide covers the development workflow, testing, code style, and other requi
 .. include:: ./_include/configure-git-card-dev.inc
 .. include:: ./_include/configure-git-steps.inc
 
-Fork the repository on GitHub, then clone your fork:
+
+Install icalendar-anonymizer for development
+--------------------------------------------
+
+Change your directory to your local clone.
 
 .. code-block:: shell
 
-    git clone https://github.com/YOUR-USERNAME/icalendar-anonymizer.git
     cd icalendar-anonymizer
 
-Install Development Dependencies
---------------------------------
-
-Install in editable mode with dev extras:
+Install icalendar-anonymizer for development—including all of its dependencies for tests, documentation, and formatting code, as well as a Python virtual environment—with the following command.
 
 .. code-block:: shell
 
-    pip install -e ".[dev]"
+    make dev
 
-This installs:
 
-- **pytest** - Testing framework
-- **ruff** - Linting and code formatting
-- **pre-commit** - Git hook management
-- **commitizen** - Conventional commit enforcement
-- **reuse** - License compliance checking
-- **build** and **twine** - Package building and publishing
+Development workflow
+--------------------
 
-For documentation building, also install:
+This section covers the general development workflow.
+Subsequent sections go into more detail.
 
-.. code-block:: shell
+Follow these steps from the root of your clone.
 
-    pip install -e ".[doc]"
+1.  Check out the ``main`` branch, update it locally, and create a branch from it.
 
-Development Workflow
-====================
+    ..  code-block:: shell
 
-1. **Create a Feature Branch**
+        git checkout main
+        git pull origin main
+        git checkout -b feature-name
 
-   Create a branch from ``main``:
+#.  Write your code changes, corresponding tests, docstrings, and narrative documentation.
+    All new features must include tests and documentation.
 
-   .. code-block:: shell
+#.  Run tests.
+    You can pass any options that pytest supports as an environment variable or argument ``TESTOPTS``.
 
-       git checkout main
-       git pull origin main
-       git checkout -b feature-name
+    ..  code-block:: shell
 
-2. **Make Changes with Tests**
+        make test
 
-   Write your code changes and corresponding tests. All new features must include tests.
+#.  Build documentation and view a live preview in a web browser.
 
-3. **Run Tests and Linting**
+    ..  code-block:: shell
 
-   .. code-block:: shell
+        make livehtml
 
-       pytest                     # Run tests
-       ruff check .               # Check for linting errors
-       ruff check . --fix         # Auto-fix linting errors
-       ruff format .              # Format code
+#.  Check links in documentation.
 
-4. **Commit with Conventional Format**
+    ..  code-block:: shell
 
-   Follow :doc:`contribute/commit-format` for commit messages:
+        make linkcheckbroken
 
-   .. code-block:: shell
+#.  Check spelling, style, and grammar in narrative documentation.
 
-       git add .
-       git commit -m "feat: add new feature description"
+    ..  code-block:: shell
 
-5. **Push and Open Pull Request**
+        make vale
 
-   .. code-block:: shell
+#.  Lint and format code.
 
-       git push origin feature-name
+    ..  code-block:: shell
 
-   Then open a pull request on GitHub.
+        make lint-check  # Check for linting errors
+        make lint-fix    # Auto-fix linting errors
+        make format      # Format code
 
-Running Tests
-=============
+#.  Commit your changes, using the `Conventional Commits <https://www.conventionalcommits.org/en/v1.0.0/>`_ message format that follows :doc:`contribute/commit-format`.
 
-Run All Tests
--------------
+    ..  code-block:: shell
 
-.. code-block:: shell
+        git add .
+        git commit -m "feat: add new feature description"
 
-    pytest
+#.  Push your changes to GitHub.
 
-Run with Coverage
------------------
+    ..  code-block:: shell
 
-.. code-block:: shell
+        git push origin feature-name
 
-    pytest --cov=src/icalendar_anonymizer --cov-report=html
+#.  Open a pull request on GitHub.
 
-Coverage report will be in ``htmlcov/index.html``.
 
-Test Requirements
------------------
+Run tests
+---------
 
-- **90% minimum coverage** required - PRs fail if coverage drops below this threshold
-- All tests must pass before merge
-- Add tests for all new features and bug fixes
-- Use parametrized tests to reduce duplication (see :ref:`contributing:Test Organization`)
+This section describes how to run tests.
 
-CI Test Matrix
---------------
+Run all tests
+^^^^^^^^^^^^^
 
-Continuous integration runs tests on:
+..  code-block:: shell
 
-- **Python versions**: 3.11, 3.12, 3.13
-- **Operating systems**: Ubuntu, Windows, macOS
+    make test
 
-This creates 9 test jobs total. All must pass before merge.
+Run tests with coverage
+^^^^^^^^^^^^^^^^^^^^^^^
 
-Code Quality
-============
+..  code-block:: shell
 
-Linting with Ruff
------------------
+    make coverage
 
-We use `Ruff <https://docs.astral.sh/ruff/>`_ for linting and code formatting with a **100-character line length**.
+The test coverage report will be in ``htmlcov/index.html``.
 
-Check for Errors
-^^^^^^^^^^^^^^^^
+Test requirements
+^^^^^^^^^^^^^^^^^
 
-.. code-block:: shell
+All tests must satisfy the following requirements.
 
-    ruff check .
+-   A minimum of 90% coverage is required and enforced by continuous integration (CI).
+-   All tests must pass.
+-   All new features and bug fixes must have tests.
+-   Use parametrized tests to reduce duplication, as described in :ref:`test-organization`.
 
-Auto-Fix Errors
+CI test matrix
+^^^^^^^^^^^^^^
+
+Continuous integration runs tests on the matrix cross-product of the following parameters.
+
+-   Python versions 3.11, 3.12, and 3.13
+-   Ubuntu, Windows, and macOS operating systems
+
+This creates nine test jobs.
+Tests must pass across the entire matrix.
+
+
+Code quality
+------------
+
+Use `Ruff <https://docs.astral.sh/ruff/>`_ for linting and formatting code.
+Ruff is configured to limit line length to one-hundred characters.
+
+Check for lint errors
+^^^^^^^^^^^^^^^^^^^^^
+
+..  code-block:: shell
+
+    make lint-check
+
+Fix lint errors
 ^^^^^^^^^^^^^^^
 
-.. code-block:: shell
+..  code-block:: shell
 
-    ruff check . --fix
+    make lint-fix
 
-Format Code
+Format code
 ^^^^^^^^^^^
 
-.. code-block:: shell
+..  code-block:: shell
 
-    ruff format .
+    make format
 
 Configuration
 ^^^^^^^^^^^^^
 
-Ruff settings are in ``pyproject.toml`` under ``[tool.ruff]``. The CI enforces the same Ruff version (>=0.14.0) for consistency.
+Ruff settings are in :file:`pyproject.toml` under the ``[tool.ruff]`` table.
 
-Pre-commit Hooks (Recommended)
-==============================
+CI enforces the same Ruff version as that used in development.
 
-Pre-commit hooks catch issues before committing, providing faster feedback than waiting for CI.
-
-Setup (One-Time)
+pre-commit hooks
 ----------------
 
-.. code-block:: shell
+pre-commit hooks catch issues before committing, providing feedback faster than waiting for CI.
+These are installed automatically when creating a development environment.
+The hooks are defined in :file:`.pre-commit-config.yaml`.
 
-    pre-commit install                          # Install pre-commit hooks
-    pre-commit install --hook-type commit-msg   # Install commit message validation
+What runs on every commit
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
-What Runs on Every Commit
--------------------------
+-   Code lint
+-   Code format
+-   REUSE compliance validates SPDX license headers
+-   File integrity checks:
 
-- **Ruff linting** (``ruff check --fix``) - Auto-fixes linting errors
-- **Ruff formatting** (``ruff format``) - Auto-formats Python code
-- **REUSE compliance** (``reuse lint``) - Validates SPDX license headers
-- **File integrity checks**:
-  - Trailing whitespace removal
-  - End-of-file fixer
-  - YAML/JSON/TOML validation
-  - Python AST check
-  - Case conflict check
-  - Merge conflict detection
-  - Large file prevention (>1MB)
-  - Line ending normalization (LF)
-  - Debug statement detection
-- **Commit message validation** - Enforces conventional commits format
+    -   Trailing whitespace removal
+    -   End-of-file fixer
+    -   YAML, JSON, and TOML syntax validation
+    -   Python AST check
+    -   Case conflict check
+    -   Merge conflict detection
+    -   Large file prevention, configured to detect files larger than 1MB
+    -   Line ending normalization to ``LF``
+    -   Debug statement detection
+
+-   Commit message validation, enforcing Conventional Commits format
 
 Performance
------------
+^^^^^^^^^^^
 
-All checks complete in under 5 seconds.
+All checks complete in under five seconds.
 
-Run Manually
-------------
+Run pre-commit manually
+^^^^^^^^^^^^^^^^^^^^^^^
 
-.. code-block:: shell
+You can run pre-commit manually.
 
-    pre-commit run --all-files       # Run all hooks on all files
+Run all hooks on all files.
+
+..  code-block:: shell
+
+    make pc
+
     pre-commit run ruff --all-files  # Run specific hook
 
-Skip Hooks (Sparingly)
-----------------------
+Skip hooks
+^^^^^^^^^^
 
-For work-in-progress commits:
+For work-in-progress commits, you can skip pre-commit hooks with the following command.
+Use it sparingly.
 
-.. code-block:: shell
+..  code-block:: shell
 
     git commit --no-verify
 
-Note on Pre-commit
-------------------
+..  note::
 
-Pre-commit is **optional** for contributors. CI enforces the same checks regardless. Core maintainers should use it.
+    pre-commit is optional for contributors.
+    CI enforces the same checks regardless.
+    Core maintainers should use it.
 
-Code Style Guidelines
-=====================
+Code style guidelines
+---------------------
+
+This section describes guidelines for writing code in icalendar-anonymizer.
 
 Docstrings
-----------
+^^^^^^^^^^
 
-Use **Google-style docstrings** with multi-line format:
+Use Google-style docstrings with multi-line format:
 
-.. code-block:: python
+..  code-block:: python
 
-    def function(arg1: str, arg2: int) -> str:
+    def foo(arg1: str, arg2: int) -> str:
         """Brief description on first line.
 
         More detailed explanation if needed. Can span multiple paragraphs.
@@ -246,14 +268,17 @@ Use **Google-style docstrings** with multi-line format:
             ValueError: When invalid input provided
         """
 
-Don't include Examples sections unless they contain real, testable doctests.
+Include an Examples section only with real, testable doctests.
 
-Test Organization
------------------
+
+..  _test-organization:
+
+Test organization
+^^^^^^^^^^^^^^^^^
 
 Use ``pytest.mark.parametrize`` for duplicate test patterns:
 
-.. code-block:: python
+..  code-block:: python
 
     @pytest.mark.parametrize(
         ("property_name", "expected_value"),
@@ -268,14 +293,14 @@ Use ``pytest.mark.parametrize`` for duplicate test patterns:
 Organize tests into logical groups with clear section comments.
 
 Imports
--------
+^^^^^^^
 
-- Standard library imports first
-- Third-party imports second
-- Local imports third
-- Sort alphabetically within each group
+-   Standard library imports first
+-   Third-party imports second
+-   Local imports third
+-   Sort alphabetically within each group
 
-.. code-block:: python
+..  code-block:: python
 
     # Standard library
     import hashlib
@@ -287,33 +312,37 @@ Imports
     # Local
     from icalendar_anonymizer import anonymize
 
-Line Length
------------
+Line length
+^^^^^^^^^^^
 
-**100 characters maximum** - enforced by Ruff.
+The maximum line length for code is 100 characters maximum.
+It is enforced by Ruff.
 
-Documentation
--------------
+Documentation style guidelines
+------------------------------
 
-API Documentation
+This section describes the guidelines for writing documentation for icalendar-anonymizer. 
+
+API documentation
 ^^^^^^^^^^^^^^^^^
 
-Use **autodoc** for API function signatures in Sphinx documentation:
+Use :program:`autodoc` for API function signatures in Sphinx documentation:
 
-.. code-block:: rst
+..  code-block:: rst
 
     .. autofunction:: icalendar_anonymizer.anonymize
 
-This ensures documentation stays in sync with code. Don't manually copy function signatures.
+This ensures documentation stays in sync with code.
+Don't manually copy function signatures.
 
-Code Examples
+Code examples
 ^^^^^^^^^^^^^
 
-Use **doctest format** for Python examples in documentation:
+Use doctest format for Python examples in documentation:
 
-.. code-block:: rst
+..  code-block:: rst
 
-    .. doctest::
+    ..  doctest::
 
         >>> from icalendar import Calendar
         >>> from icalendar_anonymizer import anonymize
@@ -321,187 +350,200 @@ Use **doctest format** for Python examples in documentation:
 
 This allows examples to be automatically tested for correctness.
 
-Pull Request Process
-====================
+Pull request process
+--------------------
+
+This section describes the guidelines for working with pull requests for icalendar-anonymizer. 
 
 Requirements
-------------
+^^^^^^^^^^^^
 
-- **One approval** required before merge
-- All tests must pass (9 test jobs)
-- Coverage must be ≥90%
-- PR title must follow :doc:`contribute/commit-format`
-- Update ``CHANGES.rst`` with your changes
+The following list of requirements must be satisfied to merge a pull request.
 
-PR Title Format
----------------
+-   At least one approval is required before merge
+-   All tests must pass
+-   Coverage must be greater than or equal to 90%
+-   Pull request title must follow :doc:`contribute/commit-format`
+-   A change log entry
 
-PR titles must follow conventional commits because we use squash merge:
+Title format
+^^^^^^^^^^^^
 
-.. code-block:: text
+Pull request titles must follow conventional commits because maintainers use squash merge:
+
+..  code-block:: text
 
     feat: add preserve parameter to anonymize function
     fix: correct UID uniqueness handling
     docs: update installation instructions
 
-The PR title becomes the commit message on ``main``.
+The pull request title becomes the commit message on the ``main`` branch.
 
-Update CHANGES.rst
-------------------
+Change log
+^^^^^^^^^^
 
-Add your changes to ``CHANGES.rst`` following the formatting rules documented in the file header.
+Add your changes to :file:`CHANGES.rst` following the formatting rules documented in the file header.
 
-See :ref:`contributing:CHANGES.rst Formatting` below.
+See :ref:`change-log-format` below.
 
-CHANGES.rst Formatting
-======================
 
-Add entries under the appropriate category in ``CHANGES.rst``:
+.. _change-log-format:
 
-Categories
-----------
+Change log format
+-----------------
 
-- **Breaking changes** - Incompatible API changes
-- **New features** - New functionality
-- **Minor changes** - Small improvements
-- **Bug fixes** - Bug fixes
+Add entries under the appropriate category in :file:`CHANGES.rst`.
 
-Formatting Rules
-----------------
+Breaking changes
+    Incompatible API changes
+New features
+    New functionality
+Minor changes
+    Small improvements
+Bug fixes
+    Bug fixes
 
-Use these RST formatting conventions:
+Format rules
+^^^^^^^^^^^^
 
-Inline Literals
-^^^^^^^^^^^^^^^
+Use the following reStructuredText format conventions.
+
+Inline literals
++++++++++++++++
 
 Use double backticks for property names and inline code:
 
-.. code-block:: rst
+..  code-block:: rst
 
     ``PROPERTY``
     ``preserve`` parameter
 
-Python Objects
-^^^^^^^^^^^^^^
+Python objects
+++++++++++++++
 
 Use Python domain roles:
 
-.. code-block:: rst
+..  code-block:: rst
 
     :py:func:`function_name`
     :py:class:`ClassName`
     :py:meth:`method_name`
 
 Files
-^^^^^
++++++
 
-Use the ``:file:`` directive:
+Use the ``:file:`` directive for files and directories.
 
-.. code-block:: rst
+..  code-block:: rst
 
     :file:`docs/conf.py`
     :file:`pyproject.toml`
+    :file:`src/tests/`
 
-Issue Links
-^^^^^^^^^^^
+Issue links
++++++++++++
 
 Reference issues with full URLs:
 
-.. code-block:: rst
+..  code-block:: rst
 
     See `Issue 9 <https://github.com/pycalendar/icalendar-anonymizer/issues/9>`_.
 
 Verbs
-^^^^^
++++++
 
 Start entries with past tense verbs:
 
-- Added
-- Fixed
-- Updated
-- Removed
-- Deprecated
+-   Added
+-   Fixed
+-   Updated
+-   Removed
+-   Deprecated
 
-Example Entry
--------------
+Example entry
+^^^^^^^^^^^^^
 
-.. code-block:: rst
+..  code-block:: rst
 
     - Added ``preserve`` parameter to :py:func:`anonymize` function. Accepts optional
       set of property names to preserve beyond defaults. Case-insensitive. Allows
       preserving properties like ``CATEGORIES`` or ``COMMENT`` for bug reproduction
-      when user confirms no sensitive data. Added 7 tests for preserve functionality.
+      when user confirms no sensitive data. Added 7 tests to preserve functionality.
       See `Issue 53 <https://github.com/pycalendar/icalendar-anonymizer/issues/53>`_.
 
-See the ``CHANGES.rst`` file header for complete formatting guidelines.
+See the :file:`CHANGES.rst` file header for complete formatting guidelines.
 
-Licensing and REUSE Compliance
-==============================
+License and REUSE compliance
+----------------------------
 
 This project follows the `REUSE specification <https://reuse.software/>`_ for clear licensing.
 
 License
--------
+^^^^^^^
 
-The project is licensed under **AGPL-3.0-or-later**.
+The project is licensed under AGPL-3.0-or-later.
 
-SPDX Headers and REUSE.toml
-----------------------------
+SPDX headers and :file:`REUSE.toml`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-**All new source files must include SPDX headers.** Auto-generated files that cannot have persistent headers may instead rely on entries in ``REUSE.toml`` as a fallback.
+All new source files must include SPDX headers.
+Auto-generated files that cannot have persistent headers may instead rely on entries in :file:`REUSE.toml` as a fallback.
 
-**In-file headers** (required for all source files):
+SPDX headers are required in all source files:
 
-Python Files
-^^^^^^^^^^^^
+Python files
+++++++++++++
 
-.. code-block:: python
+..  code-block:: python
 
     # SPDX-FileCopyrightText: 2025 icalendar-anonymizer contributors
     # SPDX-License-Identifier: AGPL-3.0-or-later
 
-RST Files
-^^^^^^^^^
+reStructuredText files
+++++++++++++++++++++++
 
-.. code-block:: rst
+..  code-block:: rst
 
     .. SPDX-FileCopyrightText: 2025 icalendar-anonymizer contributors
     .. SPDX-License-Identifier: AGPL-3.0-or-later
 
-Markdown Files
-^^^^^^^^^^^^^^
+Markdown files
+++++++++++++++
 
-.. code-block:: markdown
+..  code-block:: markdown
 
     <!--- SPDX-FileCopyrightText: 2025 icalendar-anonymizer contributors -->
     <!--- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
-**REUSE.toml** (fallback only):
+:file:`REUSE.toml`
+++++++++++++++++++
 
-Use ``REUSE.toml`` only as a fallback for auto-generated files that cannot reasonably include headers; it must not be treated as a substitute for adding headers to regular source files.
+Use :file:`REUSE.toml` only as a fallback for auto-generated files that cannot reasonably include headers.
+It must not be treated as a substitute for adding headers to regular source files.
 
-Checking Compliance
--------------------
+Check compliance
+----------------
 
-Pre-commit hooks automatically check REUSE compliance. You can also run manually:
+pre-commit hooks automatically check REUSE compliance.
+You can also run the check manually:
 
-.. code-block:: shell
+..  code-block:: shell
 
     reuse lint
 
 All files must pass REUSE compliance before merge.
 
-Getting Help
-============
+Get help
+--------
 
-- Check the `Issue Tracker <https://github.com/pycalendar/icalendar-anonymizer/issues>`_
-- Open a new issue for bugs or feature requests
-- For major changes, open an issue for discussion before starting work
+-   Check the `Issue Tracker <https://github.com/pycalendar/icalendar-anonymizer/issues>`_
+-   Open a new issue for bugs or feature requests
+-   For major changes, open an issue for discussion before starting work
 
 Reference
-=========
+---------
 
-.. toctree::
-   :maxdepth: 1
+..  toctree::
+    :maxdepth: 1
 
-   contribute/commit-format
+    contribute/commit-format
