@@ -5,16 +5,17 @@
 Contributing
 ============
 
-This guide covers the development workflow, testing, code style, and contribution requirements.
+This guide covers the development workflow, testing, code style, and other requirements to contribute to icalendar-anonymizer.
 
-.. note::
-   A shorter quick-reference version is available in the repository's :file:`CONTRIBUTING.md` file for GitHub.
+.. _development-prerequisites:
 
-Getting Started
-===============
+.. include:: ./_include/prerequisites.inc
 
-Fork and Clone
---------------
+.. _development-configure-git:
+
+.. include:: ./_include/configure-git.inc
+.. include:: ./_include/configure-git-card-dev.inc
+.. include:: ./_include/configure-git-steps.inc
 
 Fork the repository on GitHub, then clone your fork:
 
