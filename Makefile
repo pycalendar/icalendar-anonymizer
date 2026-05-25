@@ -158,7 +158,7 @@ ci:
 
 .PHONY: ci-test
 ci-test:
-	$(TESTPATH) --cov --cov-branch --cov-report=xml --cov-report=term --junitxml=junit.xml -o junit_family=legacy
+	@$(TESTPATH) --cov --cov-branch --cov-report=xml --cov-report=term --junitxml=junit.xml -o junit_family=legacy
 # /test
 
 
