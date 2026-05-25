@@ -2,9 +2,11 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 """Sphinx configuration for icalendar-anonymizer documentation."""
+import datetime
 
 project = "icalendar-anonymizer"
-copyright = "2025, icalendar-anonymizer contributors"  # noqa: A001
+this_year = datetime.date.today().year  # noqa: DTZ011
+copyright = f"{this_year}, icalendar-anonymizer contributors"  # noqa: A001
 author = "icalendar-anonymizer contributors"
 
 # Extensions
