@@ -47,10 +47,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v6
+      - name: Install uv and Python ${{ matrix.python_version }}
+        if: ${{ !matrix.skip }}
+        uses: astral-sh/setup-uv@v7
         with:
-          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+          # Install a specific version of uv.
+          version: "0.11.16"
+          python-version: ${{ matrix.python_version }}
 
       - name: Install dependencies
         run: |
