@@ -62,6 +62,8 @@ New features
 Minor changes
 '''''''''''''
 
+- Revised Contributing documentation. See `Issue 74 <https://github.com/pycalendar/icalendar-anonymizer/issues/74>`_.
+
 .. _v0.1.5-bug-fixes:
 
 Bug fixes
