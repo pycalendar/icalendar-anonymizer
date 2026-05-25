@@ -149,6 +149,13 @@ test: .venv  ## Run code tests and coverage
 .PHONY: coverage
 coverage: .venv
 	@$(TESTPATH) '--cov=src/icalendar_anonymizer' '--cov-report=html'
+
+.PHONY: ci
+ci:
+	@uv python install "$(PYTHONVERSION)"
+	@uv venv --python "$(PYTHONVERSION)"
+	@uv sync --group test --group web
+
 # /test
 
 
