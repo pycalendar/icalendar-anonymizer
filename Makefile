@@ -155,6 +155,7 @@ ci:
 	@uv python install "$(PYTHONVERSION)"
 	@uv venv --python "$(PYTHONVERSION)"
 	@uv sync --group test --group web
+	@uv python update-shell
 
 .PHONY: ci-test
 ci-test:
