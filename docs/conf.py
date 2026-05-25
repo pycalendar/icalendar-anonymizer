@@ -9,6 +9,7 @@ author = "icalendar-anonymizer contributors"
 
 # Extensions
 extensions = [
+    "notfound.extension",
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
@@ -45,6 +46,9 @@ html_theme_options = {
             },
         },
     ],
+    "footer_start": ["nlnet", "donate"],
+    "footer_center": ["copyright"],
+    "footer_end": ["rtd-pr-previews", "theme-version", "sphinx-version"],
     "logo": {"text": "icalendar-anonymizer"},
     "use_edit_page_button": True,
     "show_toc_level": 2,
@@ -69,6 +73,9 @@ html_static_path = [
 html_js_files = [
    ("js/custom-icons.js", {"defer": "defer"}),
 ]
+
+templates_path = ["_templates"]
+
 # Intersphinx mapping
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
@@ -104,3 +111,10 @@ autodoc_default_options = {
 
 # Autosectionlabel settings
 autosectionlabel_prefix_document = True
+
+
+# -- notfound.extension configuration ----------------------------------
+# https://sphinx-notfound-page.readthedocs.io/en/latest/configuration.html
+notfound_template = "404.html"
+
+
