@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 """Sphinx configuration for icalendar-anonymizer documentation."""
+
 import datetime
 
 project = "icalendar-anonymizer"
