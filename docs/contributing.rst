@@ -443,11 +443,11 @@ Use the ``:file:`` directive for files and directories.
 Issue links
 +++++++++++
 
-Reference issues with full URLs:
+Reference issues using `sphinx-issues <https://github.com/sloria/sphinx-issues#usage-inside-the-documentation>`_ syntax, after the change log entry.
 
 ..  code-block:: rst
 
-    See `Issue 9 <https://github.com/pycalendar/icalendar-anonymizer/issues/9>`_.
+    - My change log entry. :issue:`123`
 
 Verbs
 +++++
