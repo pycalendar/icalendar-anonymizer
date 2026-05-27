@@ -25,7 +25,7 @@ Then, install the CLI from a local checkout of icalendar-anonymizer with the fol
 
     uv pip install --group cli
 
-This installs the Click 8.3.1+ dependency and both command-line tools.
+This installs the Click dependency and both command-line tools.
 
 Commands
 ========
