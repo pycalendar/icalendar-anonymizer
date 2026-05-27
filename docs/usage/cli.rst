@@ -41,20 +41,20 @@ Read from a file and write to another file:
     icalendar-anonymize calendar.ics -o anonymized.ics
     ican calendar.ics -o anonymized.ics
 
-Write to stdout
----------------
+Write to ``stdout``
+-------------------
 
-Omit the ``-o`` flag to write to stdout:
+Omit the ``-o`` flag to write to ``stdout``:
 
 .. code-block:: shell
 
     icalendar-anonymize calendar.ics
     ican calendar.ics > anonymized.ics
 
-Read from stdin
----------------
+Read from ``stdin``
+-------------------
 
-Omit the input argument or use ``-`` to read from stdin:
+Omit the input argument or use ``-`` to read from ``stdin``:
 
 .. code-block:: shell
 
@@ -86,16 +86,16 @@ Options Reference
 
    Input iCalendar file to anonymize. Optional positional argument.
 
-   - **Default**: stdin (``-``)
-   - **Format**: File path or ``-`` for stdin
+   - **Default**: ``stdin`` (``-``)
+   - **Format**: File path or ``-`` for ``stdin``
    - **Example**: ``ican calendar.ics``
 
 .. option:: -o <file>, --output <file>
 
    Output file for anonymized calendar.
 
-   - **Default**: stdout (``-``)
-   - **Format**: File path or ``-`` for stdout
+   - **Default**: ``stdout`` (``-``)
+   - **Format**: File path or ``-`` for ``stdout``
    - **Example**: ``ican input.ics -o output.ics``
 
 .. option:: -v, --verbose
@@ -103,7 +103,7 @@ Options Reference
    Show processing information on stderr. Displays input/output sources and processing steps.
 
    - **Flag**: No value required
-   - **Output**: Messages written to stderr (not stdout)
+   - **Output**: Messages written to stderr (not ``stdout``)
    - **Example**: ``ican -v calendar.ics -o anonymized.ics``
 
    Example verbose output:
@@ -217,13 +217,13 @@ Pipeline Processing
 
 .. code-block:: shell
 
-    # Read from stdin, write to stdout
+    # Read from ``stdin``, write to ``stdout``
     cat calendar.ics | ican > anonymized.ics
 
-    # Explicit stdin/stdout with -
+    # Explicit ``stdin``/``stdout`` with -
     ican - < calendar.ics > anonymized.ics
 
-    # Verbose output to stderr doesn't corrupt stdout
+    # Verbose output to stderr doesn't corrupt ``stdout``
     cat calendar.ics | ican -v > anonymized.ics
 
 Batch Processing
@@ -483,7 +483,7 @@ If you encounter issues with the CLI:
 Integration Examples
 ====================
 
-Git Pre-Commit Hook
+Git pre-commit hook
 --------------------
 
 Automatically anonymize calendars before committing:
@@ -500,7 +500,7 @@ Automatically anonymize calendars before committing:
         fi
     done
 
-Cron Job
+cron job
 --------
 
 Periodically anonymize shared calendars:
