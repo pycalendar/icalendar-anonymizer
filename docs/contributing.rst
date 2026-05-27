@@ -1,9 +1,9 @@
 .. SPDX-FileCopyrightText: 2025 icalendar-anonymizer contributors
 .. SPDX-License-Identifier: AGPL-3.0-or-later
 
-============
+************
 Contributing
-============
+************
 
 This guide covers the development workflow, testing, code style, and other requirements to contribute to icalendar-anonymizer.
 
@@ -19,7 +19,7 @@ This guide covers the development workflow, testing, code style, and other requi
 
 
 Install icalendar-anonymizer for development
---------------------------------------------
+============================================
 
 Change your directory to your local clone.
 
@@ -35,7 +35,7 @@ Install icalendar-anonymizer for development—including all of its dependencies
 
 
 Development workflow
---------------------
+====================
 
 This section covers the general development workflow.
 Subsequent sections go into more detail.
@@ -103,19 +103,19 @@ Follow these steps from the root of your clone.
 
 
 Run tests
----------
+=========
 
 This section describes how to run tests.
 
 Run all tests
-^^^^^^^^^^^^^
+-------------
 
 ..  code-block:: shell
 
     make test
 
 Run tests with coverage
-^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------
 
 ..  code-block:: shell
 
@@ -124,7 +124,7 @@ Run tests with coverage
 The test coverage report will be in ``htmlcov/index.html``.
 
 Test requirements
-^^^^^^^^^^^^^^^^^
+-----------------
 
 All tests must satisfy the following requirements.
 
@@ -134,7 +134,7 @@ All tests must satisfy the following requirements.
 -   Use parametrized tests to reduce duplication, as described in :ref:`test-organization`.
 
 CI test matrix
-^^^^^^^^^^^^^^
+--------------
 
 Continuous integration runs tests on the matrix cross-product of the following parameters.
 
@@ -146,48 +146,48 @@ Tests must pass across the entire matrix.
 
 
 Code quality
-------------
+============
 
 Use `Ruff <https://docs.astral.sh/ruff/>`_ for linting and formatting code.
 Ruff is configured to limit line length to one-hundred characters.
 
 Check for lint errors
-^^^^^^^^^^^^^^^^^^^^^
+---------------------
 
 ..  code-block:: shell
 
     make lint-check
 
 Fix lint errors
-^^^^^^^^^^^^^^^
+---------------
 
 ..  code-block:: shell
 
     make lint-fix
 
 Format code
-^^^^^^^^^^^
+-----------
 
 ..  code-block:: shell
 
     make format
 
 Configuration
-^^^^^^^^^^^^^
+-------------
 
 Ruff settings are in :file:`pyproject.toml` under the ``[tool.ruff]`` table.
 
 CI enforces the same Ruff version as that used in development.
 
 pre-commit hooks
-----------------
+================
 
 pre-commit hooks catch issues before committing, providing feedback faster than waiting for CI.
 These are installed automatically when creating a development environment.
 The hooks are defined in :file:`.pre-commit-config.yaml`.
 
 What runs on every commit
-^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------------
 
 -   Code lint
 -   Code format
@@ -207,12 +207,12 @@ What runs on every commit
 -   Commit message validation, enforcing Conventional Commits format
 
 Performance
-^^^^^^^^^^^
+-----------
 
 All checks complete in under five seconds.
 
 Run pre-commit manually
-^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------
 
 You can run pre-commit manually.
 
@@ -225,7 +225,7 @@ Run all hooks on all files.
     pre-commit run ruff --all-files  # Run specific hook
 
 Skip hooks
-^^^^^^^^^^
+----------
 
 For work-in-progress commits, you can skip pre-commit hooks with the following command.
 Use it sparingly.
@@ -241,12 +241,12 @@ Use it sparingly.
     Core maintainers should use it.
 
 Code style guidelines
----------------------
+=====================
 
 This section describes guidelines for writing code in icalendar-anonymizer.
 
 Docstrings
-^^^^^^^^^^
+----------
 
 Use Google-style docstrings with multi-line format:
 
@@ -274,7 +274,7 @@ Include an Examples section only with real, testable doctests.
 ..  _test-organization:
 
 Test organization
-^^^^^^^^^^^^^^^^^
+-----------------
 
 Use ``pytest.mark.parametrize`` for duplicate test patterns:
 
@@ -293,7 +293,7 @@ Use ``pytest.mark.parametrize`` for duplicate test patterns:
 Organize tests into logical groups with clear section comments.
 
 Imports
-^^^^^^^
+-------
 
 -   Standard library imports first
 -   Third-party imports second
@@ -313,18 +313,18 @@ Imports
     from icalendar_anonymizer import anonymize
 
 Line length
-^^^^^^^^^^^
+-----------
 
 The maximum line length for code is 100 characters maximum.
 It is enforced by Ruff.
 
 Documentation style guidelines
-------------------------------
+==============================
 
 This section describes the guidelines for writing documentation for icalendar-anonymizer. 
 
 API documentation
-^^^^^^^^^^^^^^^^^
+-----------------
 
 Use :program:`autodoc` for API function signatures in Sphinx documentation:
 
@@ -336,7 +336,7 @@ This ensures documentation stays in sync with code.
 Don't manually copy function signatures.
 
 Code examples
-^^^^^^^^^^^^^
+-------------
 
 Use doctest format for Python examples in documentation:
 
@@ -351,12 +351,12 @@ Use doctest format for Python examples in documentation:
 This allows examples to be automatically tested for correctness.
 
 Pull request process
---------------------
+====================
 
 This section describes the guidelines for working with pull requests for icalendar-anonymizer. 
 
 Requirements
-^^^^^^^^^^^^
+------------
 
 The following list of requirements must be satisfied to merge a pull request.
 
@@ -367,7 +367,7 @@ The following list of requirements must be satisfied to merge a pull request.
 -   A change log entry
 
 Title format
-^^^^^^^^^^^^
+------------
 
 Pull request titles must follow conventional commits because maintainers use squash merge:
 
@@ -380,7 +380,7 @@ Pull request titles must follow conventional commits because maintainers use squ
 The pull request title becomes the commit message on the ``main`` branch.
 
 Change log
-^^^^^^^^^^
+----------
 
 Add your changes to :file:`CHANGES.rst` following the formatting rules documented in the file header.
 
@@ -390,7 +390,7 @@ See :ref:`change-log-format` below.
 .. _change-log-format:
 
 Change log format
------------------
+=================
 
 Add entries under the appropriate category in :file:`CHANGES.rst`.
 
@@ -404,12 +404,12 @@ Bug fixes
     Bug fixes
 
 Format rules
-^^^^^^^^^^^^
+------------
 
 Use the following reStructuredText format conventions.
 
 Inline literals
-+++++++++++++++
+^^^^^^^^^^^^^^^
 
 Use double backticks for property names and inline code:
 
@@ -419,7 +419,7 @@ Use double backticks for property names and inline code:
     ``preserve`` parameter
 
 Python objects
-++++++++++++++
+^^^^^^^^^^^^^^
 
 Use Python domain roles:
 
@@ -430,7 +430,7 @@ Use Python domain roles:
     :py:meth:`method_name`
 
 Files
-+++++
+^^^^^
 
 Use the ``:file:`` directive for files and directories.
 
@@ -441,7 +441,7 @@ Use the ``:file:`` directive for files and directories.
     :file:`src/tests/`
 
 Issue links
-+++++++++++
+^^^^^^^^^^^
 
 Reference issues using `sphinx-issues <https://github.com/sloria/sphinx-issues#usage-inside-the-documentation>`_ syntax, after the change log entry.
 
@@ -450,7 +450,7 @@ Reference issues using `sphinx-issues <https://github.com/sloria/sphinx-issues#u
     - My change log entry. :issue:`123`
 
 Verbs
-+++++
+^^^^^
 
 Start entries with past tense verbs:
 
@@ -461,7 +461,7 @@ Start entries with past tense verbs:
 -   Deprecated
 
 Example entry
-^^^^^^^^^^^^^
+-------------
 
 ..  code-block:: rst
 
@@ -474,17 +474,17 @@ Example entry
 See the :file:`CHANGES.rst` file header for complete formatting guidelines.
 
 License and REUSE compliance
-----------------------------
+============================
 
 This project follows the `REUSE specification <https://reuse.software/>`_ for clear licensing.
 
 License
-^^^^^^^
+-------
 
 The project is licensed under AGPL-3.0-or-later.
 
 SPDX headers and :file:`REUSE.toml`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------------------
 
 All new source files must include SPDX headers.
 Autogenerated files that cannot have persistent headers may instead rely on entries in :file:`REUSE.toml` as a fallback.
@@ -492,7 +492,7 @@ Autogenerated files that cannot have persistent headers may instead rely on entr
 SPDX headers are required in all source files:
 
 Python files
-++++++++++++
+^^^^^^^^^^^^
 
 ..  code-block:: python
 
@@ -500,7 +500,7 @@ Python files
     # SPDX-License-Identifier: AGPL-3.0-or-later
 
 reStructuredText files
-++++++++++++++++++++++
+^^^^^^^^^^^^^^^^^^^^^^
 
 ..  code-block:: rst
 
@@ -508,7 +508,7 @@ reStructuredText files
     .. SPDX-License-Identifier: AGPL-3.0-or-later
 
 Markdown files
-++++++++++++++
+^^^^^^^^^^^^^^
 
 ..  code-block:: markdown
 
@@ -516,13 +516,13 @@ Markdown files
     <!--- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 :file:`REUSE.toml`
-++++++++++++++++++
+^^^^^^^^^^^^^^^^^^
 
 Use :file:`REUSE.toml` only as a fallback for autogenerated files that cannot reasonably include headers.
 It must not be treated as a substitute for adding headers to regular source files.
 
 Check compliance
-----------------
+================
 
 pre-commit hooks automatically check REUSE compliance.
 You can also run the check manually:
@@ -534,14 +534,14 @@ You can also run the check manually:
 All files must pass REUSE compliance before merge.
 
 Get help
---------
+========
 
 -   Check the `Issue Tracker <https://github.com/pycalendar/icalendar-anonymizer/issues>`_
 -   Open a new issue for bugs or feature requests
 -   For major changes, open an issue for discussion before starting work
 
 Reference
----------
+=========
 
 ..  toctree::
     :maxdepth: 1

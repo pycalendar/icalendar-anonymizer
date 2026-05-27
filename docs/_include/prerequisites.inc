@@ -2,7 +2,7 @@
 .. SPDX-License-Identifier: AGPL-3.0-or-later
 
 Prerequisites
--------------
+=============
 
 You'll need to first install prerequisites on, and clone the icalendar-anonymizer repository to, your local computer.
 
@@ -14,7 +14,7 @@ Tests, code formatting, and documentation builds and checks require that you ins
 
 
 :program:`Make`
-^^^^^^^^^^^^^^^
+---------------
 
 :program:`Make` is used to provide an interface to developers to perform repetitive tasks with a single command.
 
@@ -27,7 +27,7 @@ Use your favorite search engine or trusted online resource for how to update :pr
 
 
 uv
-^^
+--
 
 `uv <https://docs.astral.sh/uv/>`_ is used for installing Python, creating a Python virtual environment, and managing dependencies for documentation.
 
@@ -53,6 +53,6 @@ Read the console output for further instructions, and follow them, if needed.
         `Other uv installation methods <https://docs.astral.sh/uv/getting-started/installation/>`_
 
 Git
-^^^
+---
 
 Install `Git <https://git-scm.com/book/en/v2/Getting-Started-Installing-Git>`_ for your operating system.
