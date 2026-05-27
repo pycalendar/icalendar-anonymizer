@@ -5,16 +5,25 @@
 Command-line interface
 ======================
 
-The command-line interface provides Unix-style tools for anonymizing iCalendar files from the terminal.
+The command-line interface (CLI) provides Unix-style tools for anonymizing iCalendar files from the terminal.
 
 Installation
 ============
 
-Install the CLI with:
+First, install uv as described in :ref:`development-prerequisites`.
+
+Then, clone icalendar-anonymizer and change your working directory to the root of the repository.
+
+..  code-block:: shell
+
+    git clone https://github.com/pycalendar/icalendar-anonymizer.git
+    cd icalendar-anonymizer
+
+Then, install the CLI from a local checkout of icalendar-anonymizer with the following command.
 
 .. code-block:: shell
 
-    pip install icalendar-anonymizer[cli]
+    uv pip install --group cli
 
 This installs the Click 8.3.1+ dependency and both command-line tools.
 
