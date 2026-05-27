@@ -2,7 +2,7 @@
 .. SPDX-License-Identifier: AGPL-3.0-or-later
 
 ======================
-Command-Line Interface
+Command-line interface
 ======================
 
 The command-line interface provides Unix-style tools for anonymizing iCalendar files from the terminal.
@@ -28,10 +28,10 @@ Two commands are provided as aliases:
 
 Both commands work identically.
 
-Basic Usage
+Basic usage
 ===========
 
-Anonymize a File
+Anonymize a file
 ----------------
 
 Read from a file and write to another file:
@@ -61,7 +61,7 @@ Omit the input argument or use ``-`` to read from ``stdin``:
     cat calendar.ics | icalendar-anonymize > anonymized.ics
     icalendar-anonymize - -o anonymized.ics
 
-Unix-Style Piping
+Unix-style piping
 -----------------
 
 Combine with other Unix tools:
@@ -77,7 +77,7 @@ Combine with other Unix tools:
     # Anonymize and compress
     cat calendar.ics | ican | gzip > anonymized.ics.gz
 
-Options Reference
+Options reference
 =================
 
 .. program:: icalendar-anonymize
@@ -116,7 +116,7 @@ Options Reference
        Writing to: anonymized.ics
        Done.
 
-Field Configuration Options
+Field configuration options
 ----------------------------
 
 Configure how individual fields are anonymized. Four modes: ``keep``, ``remove``, ``randomize``, ``replace``.
@@ -201,7 +201,7 @@ Configure how individual fields are anonymized. Four modes: ``keep``, ``remove``
 Examples
 ========
 
-Basic File Conversion
+Basic file conversion
 ---------------------
 
 .. code-block:: shell
@@ -212,7 +212,7 @@ Basic File Conversion
     # Verbose output shows progress
     ican -v calendar.ics -o anonymized.ics
 
-Pipeline Processing
+Pipeline processing
 -------------------
 
 .. code-block:: shell
@@ -226,7 +226,7 @@ Pipeline Processing
     # Verbose output to stderr doesn't corrupt ``stdout``
     cat calendar.ics | ican -v > anonymized.ics
 
-Batch Processing
+Batch processing
 ----------------
 
 .. code-block:: shell
@@ -241,7 +241,7 @@ Batch Processing
         ican "$file" -o "anon-$(basename "$file")"
     done < file-list.txt
 
-Remote Files
+Remote files
 ------------
 
 .. code-block:: shell
@@ -252,7 +252,7 @@ Remote Files
     # With error checking
     curl -f https://example.com/calendar.ics | ican -v > local-anon.ics
 
-Combining with Other Tools
+Combining with other tools
 ---------------------------
 
 .. code-block:: shell
@@ -269,7 +269,7 @@ Combining with Other Tools
     # Keep summaries for debugging, pipe to file
     ican --summary keep calendar.ics | gzip > debug-anon.ics.gz
 
-What Gets Anonymized?
+What gets anonymized?
 =====================
 
 .. note::
@@ -293,12 +293,12 @@ The CLI uses the same anonymization as the Python API:
 
 See :doc:`python-api` for complete property reference.
 
-Error Handling
+Error handling
 ==============
 
 The CLI provides clear error messages for common issues.
 
-File Not Found
+File not found
 --------------
 
 .. code-block:: text
@@ -308,7 +308,7 @@ File Not Found
 
 **Exit code**: 2
 
-Invalid ICS File
+Invalid ICS file
 ----------------
 
 .. code-block:: text
@@ -318,7 +318,7 @@ Invalid ICS File
 
 **Exit code**: 1
 
-Empty Input
+Empty input
 -----------
 
 .. code-block:: text
@@ -328,7 +328,7 @@ Empty Input
 
 **Exit code**: 1
 
-Permission Denied
+Permission denied
 -----------------
 
 .. code-block:: text
@@ -338,7 +338,7 @@ Permission Denied
 
 **Exit code**: 1
 
-Keyboard Interrupt
+Keyboard interrupt
 ------------------
 
 .. code-block:: text
@@ -349,7 +349,7 @@ Keyboard Interrupt
 
 **Exit code**: 130
 
-Exit Codes
+Exit codes
 ==========
 
 The CLI follows Unix conventions for exit codes:
@@ -377,7 +377,7 @@ The CLI follows Unix conventions for exit codes:
 Troubleshooting
 ===============
 
-Command Not Found
+Command not found
 -----------------
 
 If you get ``command not found`` after installation:
@@ -406,7 +406,7 @@ If you get ``command not found`` after installation:
 
        python -m icalendar_anonymizer.cli calendar.ics
 
-Binary Mode on Windows
+Binary mode on windows
 ----------------------
 
 The CLI automatically handles binary mode on Windows. You don't need to worry about CRLF line endings.
@@ -418,7 +418,7 @@ If you encounter encoding issues on Windows:
     # Use binary mode with PowerShell
     Get-Content calendar.ics -Raw | ican > anonymized.ics
 
-Large Files
+Large files
 -----------
 
 The CLI loads the entire file into memory. For very large files (>100MB):
@@ -438,7 +438,7 @@ The CLI loads the entire file into memory. For very large files (>100MB):
 
 3. **Use the Python API**: For programmatic control over memory usage
 
-Hyphen as Filename
+Hyphen as filename
 ------------------
 
 To use a file literally named ``-``:
@@ -466,7 +466,7 @@ Check the exit code after running:
     echo %ERRORLEVEL%  # Windows cmd
     echo $LASTEXITCODE  # Windows PowerShell
 
-Getting Help
+Getting help
 ============
 
 If you encounter issues with the CLI:
@@ -480,7 +480,7 @@ If you encounter issues with the CLI:
   - Python version (``python --version``)
   - Package version (``ican --version``)
 
-Integration Examples
+Integration examples
 ====================
 
 Git pre-commit hook
@@ -510,7 +510,7 @@ Periodically anonymize shared calendars:
     # Crontab entry: Anonymize daily at 2 AM
     0 2 * * * /usr/bin/ican /path/to/calendar.ics -o /path/to/anon.ics
 
-See Also
+See also
 ========
 
 - :doc:`python-api` - Python API for programmatic usage
