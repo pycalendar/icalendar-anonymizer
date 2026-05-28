@@ -97,7 +97,8 @@ linkcheck_ignore = [
     # Ignore pages that require authentication
     r"https://calendar.google.com/",
     r"https://github.com/pycalendar/icalendar-anonymizer/fork",
-    # Ignore specific anchors
+    # Ignore specific anchors that exist, but can't be found
+    r"https://github.com/sloria/sphinx-issues#usage-inside-the-documentation",
 ]
 linkcheck_anchors = True
 linkcheck_timeout = 5
