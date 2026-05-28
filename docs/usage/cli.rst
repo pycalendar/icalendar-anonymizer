@@ -1,9 +1,9 @@
 .. SPDX-FileCopyrightText: 2025 icalendar-anonymizer contributors
 .. SPDX-License-Identifier: AGPL-3.0-or-later
 
-======================
+**********************
 Command-line interface
-======================
+**********************
 
 The command-line interface (CLI) provides Unix-style tools for anonymizing iCalendar files from the terminal.
 
@@ -21,7 +21,7 @@ Then, clone icalendar-anonymizer and change your working directory to the root o
 
 Then, install the CLI from a local checkout of icalendar-anonymizer with the following command.
 
-.. code-block:: shell
+..  code-block:: shell
 
     uv pip install --group cli
 
@@ -32,8 +32,10 @@ Commands
 
 Two commands are provided as aliases:
 
-- :program:`icalendar-anonymize` - Full command name
-- :program:`ican` - Short alias for convenience
+:program:`icalendar-anonymize`
+    Full command name
+:program:`ican`
+    Short alias for convenience
 
 Both commands work identically.
 
