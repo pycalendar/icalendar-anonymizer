@@ -27,10 +27,19 @@ Then, install the CLI from a local checkout of icalendar-anonymizer with the fol
 
 This installs the Click dependency and both command-line tools.
 
+Verify installation with the following command.
+
+..  code-block:: shell
+
+    ican --version
+
+This should output the package name and its version number.
+
+
 Commands
 ========
 
-Two commands are provided as aliases:
+Two commands are provided.
 
 :program:`icalendar-anonymize`
     Full command name
@@ -42,6 +51,9 @@ Both commands work identically.
 Basic usage
 ===========
 
+This section describes how to use the command-line :program:`icalendar-anonymize` application.
+For brevity, examples use the alias form.
+
 Anonymize a file
 ----------------
 
@@ -49,7 +61,6 @@ Read from a file and write to another file:
 
 .. code-block:: shell
 
-    icalendar-anonymize calendar.ics -o anonymized.ics
     ican calendar.ics -o anonymized.ics
 
 Write to ``stdout``
@@ -59,18 +70,17 @@ Omit the ``-o`` flag to write to ``stdout``:
 
 .. code-block:: shell
 
-    icalendar-anonymize calendar.ics
-    ican calendar.ics > anonymized.ics
+    ican calendar.ics
 
 Read from ``stdin``
 -------------------
 
-Omit the input argument or use ``-`` to read from ``stdin``:
+Omit the input argument, or use ``-``, to read from ``stdin``:
 
 .. code-block:: shell
 
-    cat calendar.ics | icalendar-anonymize > anonymized.ics
-    icalendar-anonymize - -o anonymized.ics
+    cat calendar.ics | ican > anonymized.ics
+    ican - -o anonymized.ics
 
 Unix-style piping
 -----------------
