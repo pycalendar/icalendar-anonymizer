@@ -438,7 +438,7 @@ The CLI follows Unix conventions for exit codes:
      - Input file not found or cannot be opened
    * - 130
      - Interrupted
-     - User pressed Ctrl+C (SIGINT)
+     - User pressed :kbd:`Ctrl+C` (SIGINT)
 
 Troubleshooting
 ===============
