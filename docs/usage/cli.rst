@@ -362,17 +362,17 @@ These properties get preserved for bug reproduction.
 Error handling
 ==============
 
-The CLI provides clear error messages for common issues.
+The CLI provides error messages for common issues, as described in each of the following subsections.
 
 File not found
 --------------
 
-.. code-block:: text
+..  code-block:: text
 
     $ ican nonexistent.ics
     Error: Could not open 'nonexistent.ics': No such file or directory
 
-**Exit code**: 2
+Exit code: ``2``
 
 Invalid ICS file
 ----------------
@@ -382,7 +382,7 @@ Invalid ICS file
     $ echo "invalid content" | ican
     Error: Invalid ICS file - Expected instance of <class 'icalendar.cal.Component'>
 
-**Exit code**: 1
+Exit code: ``1``
 
 Empty input
 -----------
@@ -392,7 +392,7 @@ Empty input
     $ echo "" | ican
     Error: Input is empty
 
-**Exit code**: 1
+Exit code: ``1``
 
 Permission denied
 -----------------
@@ -402,7 +402,7 @@ Permission denied
     $ ican protected.ics -o /root/output.ics
     Error: [Errno 13] Permission denied: '/root/output.ics'
 
-**Exit code**: 1
+Exit code: ``1``
 
 Keyboard interrupt
 ------------------
@@ -413,7 +413,7 @@ Keyboard interrupt
     ^C
     Interrupted
 
-**Exit code**: 130
+Exit code: ``130``
 
 Exit codes
 ==========
