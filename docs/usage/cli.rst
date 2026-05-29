@@ -54,14 +54,39 @@ Basic usage
 This section describes how to use the command-line :program:`icalendar-anonymize` application.
 For brevity, examples use the alias form.
 
+The basic usage syntax calls the program, followed optionally by options, then input, and finally output.
+
+..  code-block:: shell
+
+    ican [OPTIONS] [INPUT] [-o OUTPUT]
+
 Anonymize a file
 ----------------
 
 Read from a file and write to another file:
 
-.. code-block:: shell
+..  code-block:: shell
 
     ican calendar.ics -o anonymized.ics
+
+Write to ``stdout``
+-------------------
+
+Omit the ``-o`` flag to write to ``stdout``:
+
+.. code-block:: shell
+
+    ican calendar.ics
+
+Read from ``stdin``
+-------------------
+
+Omit the input argument, or use ``-``, to read from ``stdin``:
+
+.. code-block:: shell
+
+    cat calendar.ics | ican > anonymized.ics
+    ican - -o anonymized.ics
 
 Options reference
 =================
@@ -186,25 +211,6 @@ Configure how individual fields are anonymized. Four modes: ``keep``, ``remove``
 
 Examples
 ========
-
-Write to ``stdout``
--------------------
-
-Omit the ``-o`` flag to write to ``stdout``:
-
-.. code-block:: shell
-
-    ican calendar.ics
-
-Read from ``stdin``
--------------------
-
-Omit the input argument, or use ``-``, to read from ``stdin``:
-
-.. code-block:: shell
-
-    cat calendar.ics | ican > anonymized.ics
-    ican - -o anonymized.ics
 
 Unix-style piping
 -----------------
