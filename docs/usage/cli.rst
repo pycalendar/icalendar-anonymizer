@@ -63,41 +63,6 @@ Read from a file and write to another file:
 
     ican calendar.ics -o anonymized.ics
 
-Write to ``stdout``
--------------------
-
-Omit the ``-o`` flag to write to ``stdout``:
-
-.. code-block:: shell
-
-    ican calendar.ics
-
-Read from ``stdin``
--------------------
-
-Omit the input argument, or use ``-``, to read from ``stdin``:
-
-.. code-block:: shell
-
-    cat calendar.ics | ican > anonymized.ics
-    ican - -o anonymized.ics
-
-Unix-style piping
------------------
-
-Combine with other Unix tools:
-
-.. code-block:: shell
-
-    # Download and anonymize
-    curl https://example.com/calendar.ics | ican > anonymized.ics
-
-    # Anonymize multiple files
-    for f in *.ics; do ican "$f" -o "anon-$f"; done
-
-    # Anonymize and compress
-    cat calendar.ics | ican | gzip > anonymized.ics.gz
-
 Options reference
 =================
 
@@ -221,6 +186,42 @@ Configure how individual fields are anonymized. Four modes: ``keep``, ``remove``
 
 Examples
 ========
+
+Write to ``stdout``
+-------------------
+
+Omit the ``-o`` flag to write to ``stdout``:
+
+.. code-block:: shell
+
+    ican calendar.ics
+
+Read from ``stdin``
+-------------------
+
+Omit the input argument, or use ``-``, to read from ``stdin``:
+
+.. code-block:: shell
+
+    cat calendar.ics | ican > anonymized.ics
+    ican - -o anonymized.ics
+
+Unix-style piping
+-----------------
+
+Combine with other Unix tools:
+
+.. code-block:: shell
+
+    # Download and anonymize
+    curl https://example.com/calendar.ics | ican > anonymized.ics
+
+    # Anonymize multiple files
+    for f in *.ics; do ican "$f" -o "anon-$f"; done
+
+    # Anonymize and compress
+    cat calendar.ics | ican | gzip > anonymized.ics.gz
+
 
 Basic file conversion
 ---------------------
