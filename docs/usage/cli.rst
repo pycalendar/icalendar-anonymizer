@@ -98,29 +98,29 @@ Options reference
     Input iCalendar file to anonymize.
     Optional positional argument.
  
-    - **Default**: ``stdin`` (``-``)
-    - **Format**: File path or ``-`` for ``stdin``
-    - **Example**: :code:`ican calendar.ics`
+    -   **Default**: ``stdin`` (``-``)
+    -   **Format**: File path or ``-`` for ``stdin``
+    -   **Example**: :code:`ican calendar.ics`
  
 ..  option:: -o <file>, --output <file>
  
     Output file for anonymized calendar.
  
-    - **Default**: ``stdout`` (``-``)
-    - **Format**: File path or ``-`` for ``stdout``
-    - **Example**: :code:`ican input.ics -o output.ics`
+    -   **Default**: ``stdout`` (``-``)
+    -   **Format**: File path or ``-`` for ``stdout``
+    -   **Example**: :code:`ican input.ics -o output.ics`
  
 ..  option:: -v, --verbose
  
     Show processing information on stderr. Displays input/output sources and processing steps.
  
-    - **Flag**: No value required
-    - **Output**: Messages written to stderr (not ``stdout``)
-    - **Example**: :code:`ican -v calendar.ics -o anonymized.ics`
+    -   **Flag**: No value required
+    -   **Output**: Messages written to stderr (not ``stdout``)
+    -   **Example**: :code:`ican -v calendar.ics -o anonymized.ics`
  
-    Example verbose output:
+    The following example shows verbose output:
  
-    .. code-block:: text
+    ..  code-block:: text
  
         Reading from: calendar.ics
         Parsing calendar...
@@ -133,56 +133,60 @@ Field configuration options
 
 Configure how individual fields are anonymized. Four modes: ``keep``, ``remove``, ``randomize``, ``replace``.
 
-.. option:: --summary <mode>
+..  option:: --summary <mode>
+ 
+    Mode for SUMMARY field.
+ 
+    -   **Choices**: ``keep``, ``remove``, ``randomize``, ``replace``
+    -   **Default**: ``randomize``
+    -   **Example**: :code:`ican --summary keep calendar.ics`
+ 
+..  option:: --description <mode>
+ 
+    Mode for DESCRIPTION field.
+ 
+..  option:: --location <mode>
+ 
+    Mode for LOCATION field.
+ 
+..  option:: --comment <mode>
+ 
+    Mode for COMMENT field.
+ 
+..  option:: --contact <mode>
+ 
+    Mode for CONTACT field.
+ 
+..  option:: --resources <mode>
+ 
+    Mode for RESOURCES field.
+ 
+..  option:: --categories <mode>
+ 
+    Mode for CATEGORIES field.
+ 
+..  option:: --attendee <mode>
+ 
+    Mode for ATTENDEE field.
+ 
+..  option:: --organizer <mode>
+ 
+    Mode for ORGANIZER field.
+ 
+..  option:: --uid <mode>
+ 
+    Mode for UID field.
+    
+    .. note::
 
-   Mode for SUMMARY field.
-
-   - **Choices**: ``keep``, ``remove``, ``randomize``, ``replace``
-   - **Default**: ``randomize``
-   - **Example**: ``ican --summary keep calendar.ics``
-
-.. option:: --description <mode>
-
-   Mode for DESCRIPTION field.
-
-.. option:: --location <mode>
-
-   Mode for LOCATION field.
-
-.. option:: --comment <mode>
-
-   Mode for COMMENT field.
-
-.. option:: --contact <mode>
-
-   Mode for CONTACT field.
-
-.. option:: --resources <mode>
-
-   Mode for RESOURCES field.
-
-.. option:: --categories <mode>
-
-   Mode for CATEGORIES field.
-
-.. option:: --attendee <mode>
-
-   Mode for ATTENDEE field.
-
-.. option:: --organizer <mode>
-
-   Mode for ORGANIZER field.
-
-.. option:: --uid <mode>
-
-   Mode for UID field. **Note:** ``remove`` mode not allowed.
-
-   - **Choices**: ``keep``, ``randomize``, ``replace``
-   - **Default**: ``randomize``
+        The ``remove`` mode is not allowed.
+ 
+    -   **Choices**: ``keep``, ``randomize``, ``replace``
+    -   **Default**: ``randomize``
 
 **Examples:**
 
-.. code-block:: shell
+..  code-block:: shell
 
     # Keep summaries, remove locations
     ican --summary keep --location remove calendar.ics
