@@ -223,62 +223,62 @@ Combine multiple field modes.
 
     ican --summary keep --location remove --description replace calendar.ics
 
-Examples
-========
+Usage examples
+==============
 
-Unix-style piping
------------------
-
-Combine with other Unix tools:
-
-.. code-block:: shell
-
-    # Download and anonymize
-    curl https://example.com/calendar.ics | ican > anonymized.ics
-
-    # Anonymize multiple files
-    for f in *.ics; do ican "$f" -o "anon-$f"; done
-
-    # Anonymize and compress
-    cat calendar.ics | ican | gzip > anonymized.ics.gz
-
+This section provides examples of various ways to use icalendar-anonymizer on the command line.
 
 Basic file conversion
 ---------------------
 
+Anonymize a single file.
+
 .. code-block:: shell
 
-    # Anonymize a single file
     ican calendar.ics -o anonymized.ics
 
-    # Verbose output shows progress
+Verbose output shows progress.
+
+.. code-block:: shell
+
     ican -v calendar.ics -o anonymized.ics
 
 Pipeline processing
 -------------------
 
+Read from ``stdin`` and write to ``stdout``.
+
 .. code-block:: shell
 
-    # Read from ``stdin``, write to ``stdout``
     cat calendar.ics | ican > anonymized.ics
 
-    # Explicit ``stdin``/``stdout`` with -
+Explicitly read from ``stdin`` with ``-`` and write to ``stdout``.
+
+.. code-block:: shell
+
     ican - < calendar.ics > anonymized.ics
 
-    # Verbose output to stderr doesn't corrupt ``stdout``
+Verbose output to ``stderr`` doesn't corrupt ``stdout``.
+
+.. code-block:: shell
+
     cat calendar.ics | ican -v > anonymized.ics
 
 Batch processing
 ----------------
 
+Anonymize all ICS files in directory.
+
 .. code-block:: shell
 
-    # Anonymize all ICS files in directory
     for file in *.ics; do
         ican "$file" -o "anonymized-$file"
     done
 
-    # Process files from a list
+Process files from a list.
+
+.. code-block:: shell
+
     while read -r file; do
         ican "$file" -o "anon-$(basename "$file")"
     done < file-list.txt
@@ -286,29 +286,43 @@ Batch processing
 Remote files
 ------------
 
+Download a remote file and anonymize it.
+
 .. code-block:: shell
 
-    # Download and anonymize
     curl https://example.com/calendar.ics | ican > local-anon.ics
 
-    # With error checking
+Do the previous example with error checking.
+
+.. code-block:: shell
+
     curl -f https://example.com/calendar.ics | ican -v > local-anon.ics
 
 Combining with other tools
 ---------------------------
 
+Anonymize and count events.
+
 .. code-block:: shell
 
-    # Anonymize and count events
     ican calendar.ics | grep -c "BEGIN:VEVENT"
 
-    # Anonymize and validate
+Anonymize and validate the input.
+
+.. code-block:: shell
+
     ican calendar.ics | ics-validator
 
-    # Compress anonymized output
+Compress the anonymized output.
+
+.. code-block:: shell
+
     ican calendar.ics | gzip > anonymized.ics.gz
 
-    # Keep summaries for debugging, pipe to file
+Keep summaries for debugging, pipe to a file, and compress it.
+
+.. code-block:: shell
+
     ican --summary keep calendar.ics | gzip > debug-anon.ics.gz
 
 What gets anonymized?
