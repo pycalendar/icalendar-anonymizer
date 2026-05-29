@@ -131,7 +131,8 @@ Options reference
 Field configuration options
 ----------------------------
 
-Configure how individual fields are anonymized. Four modes: ``keep``, ``remove``, ``randomize``, ``replace``.
+Configure how individual fields are anonymized.
+The four modes are ``keep``, ``remove``, ``randomize``, and ``replace``.
 
 ..  option:: --summary <mode>
  
@@ -184,17 +185,25 @@ Configure how individual fields are anonymized. Four modes: ``keep``, ``remove``
     -   **Choices**: ``keep``, ``randomize``, ``replace``
     -   **Default**: ``randomize``
 
-**Examples:**
+Field configuration examples
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Keep summaries, remove locations.
 
 ..  code-block:: shell
 
-    # Keep summaries, remove locations
     ican --summary keep --location remove calendar.ics
 
-    # Replace descriptions with placeholders
+Replace descriptions with placeholders.
+
+..  code-block:: shell
+
     ican --description replace calendar.ics
 
-    # Combine multiple field modes
+Combine multiple field modes.
+
+..  code-block:: shell
+
     ican --summary keep --location remove --description replace calendar.ics
 
 .. option:: --version
