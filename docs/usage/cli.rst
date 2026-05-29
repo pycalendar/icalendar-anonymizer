@@ -81,11 +81,16 @@ Omit the ``-o`` flag to write to ``stdout``:
 Read from ``stdin``
 -------------------
 
-Omit the input argument, or use ``-``, to read from ``stdin``:
+Omit the input argument to read from ``stdin``:
 
 .. code-block:: shell
 
     cat calendar.ics | ican > anonymized.ics
+
+Alternatively, use ``-``. 
+
+.. code-block:: shell
+
     ican - -o anonymized.ics
 
 Options reference
