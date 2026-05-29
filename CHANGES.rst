@@ -63,7 +63,7 @@ New features
 Minor changes
 '''''''''''''
 
-- Revised Contributing documentation. See `Issue 74 <https://github.com/pycalendar/icalendar-anonymizer/issues/74>`_.
+- Revised Contributing documentation. :issue:`74`
 - Adopted :mod:`sphinx_issues` extension for shorter changelog issue and pull request references.
 
 .. _v0.1.5-bug-fixes:
