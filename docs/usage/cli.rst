@@ -100,7 +100,7 @@ Options reference
  
     - **Default**: ``stdin`` (``-``)
     - **Format**: File path or ``-`` for ``stdin``
-    - **Example**: ``ican calendar.ics``
+    - **Example**: :code:`ican calendar.ics`
  
 ..  option:: -o <file>, --output <file>
  
@@ -108,7 +108,7 @@ Options reference
  
     - **Default**: ``stdout`` (``-``)
     - **Format**: File path or ``-`` for ``stdout``
-    - **Example**: ``ican input.ics -o output.ics``
+    - **Example**: :code:`ican input.ics -o output.ics`
  
 ..  option:: -v, --verbose
  
@@ -116,7 +116,7 @@ Options reference
  
     - **Flag**: No value required
     - **Output**: Messages written to stderr (not ``stdout``)
-    - **Example**: ``ican -v calendar.ics -o anonymized.ics``
+    - **Example**: :code:`ican -v calendar.ics -o anonymized.ics`
  
     Example verbose output:
  
