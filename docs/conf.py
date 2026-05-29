@@ -42,7 +42,7 @@ html_theme_options = {
         },
         {
             "name": "PyPI",
-            "url": "https://pypi.org/project/icalendar",
+            "url": "https://pypi.org/project/icalendar-anonymizer",
             "icon": "fa-custom fa-pypi",
             "type": "fontawesome",
             "attributes": {

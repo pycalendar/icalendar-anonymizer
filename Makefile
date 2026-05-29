@@ -129,7 +129,8 @@ vale: .venv  ## Run Vale style, grammar, and spell checks
 		echo; \
 		echo "Vale spell, style, and grammar check failed."; \
 		echo "Read the error messages above to see what didn't pass."; \
-		echo "For guidance of how to correct the errors, see:"; \
+		echo "For guidance of how to correct the errors, see the"; \
+		echo "dependency package icalendar's documentation:"; \
 		echo "https://icalendar.readthedocs.io/en/latest/contribute/documentation/build-check.html#spelling-grammar-and-style"; \
 		exit 1; \
 	fi
@@ -137,7 +138,7 @@ vale: .venv  ## Run Vale style, grammar, and spell checks
 #.PHONY: doctest
 #doctest: .venv  ## Test snippets and docstrings in the documentation
 #	@echo;
-#	@pytest src/icalendar/tests/test_with_doctest.py
+#	@pytest src/icalendar_anonymizer/tests/lib/test_with_doctest.py
 #
 .PHONY: docs-all
 docs-all: .venv clean vale html linkcheckbroken  ## Clean docs build, then run vale, doctest, html, and linkcheckbroken
