@@ -150,6 +150,10 @@ Options reference
  
         ican --help
 
+    ..  note::
+
+        The output for "Usage" is somewhat misleading, as Click merges ``-o, --output FILENAME`` with the options instead of as a positional final optional argument.
+
 Field configuration options
 ----------------------------
 
