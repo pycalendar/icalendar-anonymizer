@@ -91,41 +91,42 @@ Omit the input argument, or use ``-``, to read from ``stdin``:
 Options reference
 =================
 
-.. program:: icalendar-anonymize
-
-.. option:: [INPUT]
-
-   Input iCalendar file to anonymize. Optional positional argument.
-
-   - **Default**: ``stdin`` (``-``)
-   - **Format**: File path or ``-`` for ``stdin``
-   - **Example**: ``ican calendar.ics``
-
-.. option:: -o <file>, --output <file>
-
-   Output file for anonymized calendar.
-
-   - **Default**: ``stdout`` (``-``)
-   - **Format**: File path or ``-`` for ``stdout``
-   - **Example**: ``ican input.ics -o output.ics``
-
-.. option:: -v, --verbose
-
-   Show processing information on stderr. Displays input/output sources and processing steps.
-
-   - **Flag**: No value required
-   - **Output**: Messages written to stderr (not ``stdout``)
-   - **Example**: ``ican -v calendar.ics -o anonymized.ics``
-
-   Example verbose output:
-
-   .. code-block:: text
-
-       Reading from: calendar.ics
-       Parsing calendar...
-       Anonymizing calendar...
-       Writing to: anonymized.ics
-       Done.
+..  program:: icalendar-anonymize
+ 
+..  option:: [INPUT]
+ 
+    Input iCalendar file to anonymize.
+    Optional positional argument.
+ 
+    - **Default**: ``stdin`` (``-``)
+    - **Format**: File path or ``-`` for ``stdin``
+    - **Example**: ``ican calendar.ics``
+ 
+..  option:: -o <file>, --output <file>
+ 
+    Output file for anonymized calendar.
+ 
+    - **Default**: ``stdout`` (``-``)
+    - **Format**: File path or ``-`` for ``stdout``
+    - **Example**: ``ican input.ics -o output.ics``
+ 
+..  option:: -v, --verbose
+ 
+    Show processing information on stderr. Displays input/output sources and processing steps.
+ 
+    - **Flag**: No value required
+    - **Output**: Messages written to stderr (not ``stdout``)
+    - **Example**: ``ican -v calendar.ics -o anonymized.ics``
+ 
+    Example verbose output:
+ 
+    .. code-block:: text
+ 
+        Reading from: calendar.ics
+        Parsing calendar...
+        Anonymizing calendar...
+        Writing to: anonymized.ics
+        Done.
 
 Field configuration options
 ----------------------------
