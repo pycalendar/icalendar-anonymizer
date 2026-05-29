@@ -443,34 +443,24 @@ The CLI follows Unix conventions for exit codes:
 Troubleshooting
 ===============
 
+The following sections provide troubleshooting tips.
+
 Command not found
 -----------------
 
 If you get ``command not found`` after installation:
 
-1. Verify the CLI extra is installed:
-
-   .. code-block:: shell
-
-       pip show icalendar-anonymizer | grep cli
-
-2. Check your PATH includes pip's script directory:
-
-   .. code-block:: shell
-
-       python -m site --user-base
-
-3. Reinstall with CLI extra:
-
-   .. code-block:: shell
-
-       pip install --force-reinstall icalendar-anonymizer[cli]
-
-4. Use the full Python module path:
-
-   .. code-block:: shell
-
-       python -m icalendar_anonymizer.cli calendar.ics
+#.  Reinstall with the CLI dependency group:
+ 
+    ..  code-block:: shell
+ 
+        uv sync --group cli
+ 
+#.  Use the full Python module path:
+ 
+    ..  code-block:: shell
+ 
+        python -m icalendar_anonymizer.cli calendar.ics
 
 Binary mode on windows
 ----------------------
