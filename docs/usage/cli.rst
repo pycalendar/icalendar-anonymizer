@@ -330,29 +330,34 @@ Keep summaries for debugging, pipe to a file, and compress it.
 
     ican --summary keep calendar.ics | gzip > debug-anon.ics.gz
 
-What gets anonymized?
+Anonymization summary
 =====================
 
-.. note::
-   This is a quick reference. See :doc:`python-api` for the complete property reference table.
+The CLI uses the same anonymization as the :doc:`python-api`:
 
-The CLI uses the same anonymization as the Python API:
+..  seealso::
 
-**Anonymized (hashed with SHA-256):**
+    See :ref:`python-api-property-handling-reference` for the complete property reference table.
 
-- Event summaries, descriptions, locations
-- Attendee and organizer names (CN parameter)
-- Comments, categories, resources
-- UIDs (uniqueness preserved)
+Anonymized properties
+---------------------
 
-**Preserved for bug reproduction:**
+These properties get anonymized and hashed with SHA-256.
 
-- All dates and times (DTSTART, DTEND, DUE)
-- Recurrence rules (RRULE, RDATE, EXDATE)
-- Status, priority, sequence numbers
-- Timezones (complete VTIMEZONE)
+-   Event summaries, descriptions, locations
+-   Attendee and organizer names (CN parameter)
+-   Comments, categories, resources
+-   UIDs (uniqueness preserved)
 
-See :doc:`python-api` for complete property reference.
+Preserved properties
+--------------------
+
+These properties get preserved for bug reproduction.
+
+-   All dates and times (DTSTART, DTEND, DUE)
+-   Recurrence rules (RRULE, RDATE, EXDATE)
+-   Status, priority, sequence numbers
+-   Timezones (complete VTIMEZONE)
 
 Error handling
 ==============
