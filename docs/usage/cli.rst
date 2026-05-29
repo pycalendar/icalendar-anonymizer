@@ -128,6 +128,23 @@ Options reference
         Writing to: anonymized.ics
         Done.
 
+..  option:: --version
+ 
+    Display version information and exit.
+ 
+    ..  code-block:: shell
+ 
+        $ ican --version
+        icalendar-anonymizer, version 0.1.0
+ 
+..  option:: --help
+ 
+    Show usage information and exit.
+ 
+    ..  code-block:: shell
+ 
+        ican --help
+
 Field configuration options
 ----------------------------
 
@@ -205,23 +222,6 @@ Combine multiple field modes.
 ..  code-block:: shell
 
     ican --summary keep --location remove --description replace calendar.ics
-
-.. option:: --version
-
-   Display version information and exit.
-
-   .. code-block:: shell
-
-       $ ican --version
-       icalendar-anonymizer, version 0.1.0
-
-.. option:: --help
-
-   Show usage information and exit.
-
-   .. code-block:: shell
-
-       ican --help
 
 Examples
 ========
