@@ -502,16 +502,6 @@ For large files over 100MB in size, the following tips will improve performance.
 
 -   Use the :doc:`python-api` for programmatic control over memory usage.
 
-Hyphen as filename
-------------------
-
-To use a file literally named ``-``:
-
-..  code-block:: shell
-
-    # Use ./ prefix to treat - as a filename
-    ican ./- -o output.ics
-
 Debugging
 ---------
 
