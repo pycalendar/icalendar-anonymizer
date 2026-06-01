@@ -74,7 +74,7 @@ Write to ``stdout``
 
 Omit the ``-o`` flag to write to ``stdout``:
 
-.. code-block:: shell
+..  code-block:: shell
 
     ican calendar.ics
 
@@ -83,13 +83,13 @@ Read from ``stdin``
 
 Omit the input argument to read from ``stdin``:
 
-.. code-block:: shell
+..  code-block:: shell
 
     cat calendar.ics | ican > anonymized.ics
 
 Alternatively, use ``-``. 
 
-.. code-block:: shell
+..  code-block:: shell
 
     ican - -o anonymized.ics
 
@@ -242,13 +242,13 @@ Basic file conversion
 
 Anonymize a single file.
 
-.. code-block:: shell
+..  code-block:: shell
 
     ican calendar.ics -o anonymized.ics
 
 Verbose output shows progress.
 
-.. code-block:: shell
+..  code-block:: shell
 
     ican -v calendar.ics -o anonymized.ics
 
@@ -257,19 +257,19 @@ Pipeline processing
 
 Read from ``stdin`` and write to ``stdout``.
 
-.. code-block:: shell
+..  code-block:: shell
 
     cat calendar.ics | ican > anonymized.ics
 
 Explicitly read from ``stdin`` with ``-`` and write to ``stdout``.
 
-.. code-block:: shell
+..  code-block:: shell
 
     ican - < calendar.ics > anonymized.ics
 
 Verbose output to ``stderr`` doesn't corrupt ``stdout``.
 
-.. code-block:: shell
+..  code-block:: shell
 
     cat calendar.ics | ican -v > anonymized.ics
 
@@ -278,7 +278,7 @@ Batch processing
 
 Anonymize all ICS files in directory.
 
-.. code-block:: shell
+..  code-block:: shell
 
     for file in *.ics; do
         ican "$file" -o "anonymized-$file"
@@ -286,7 +286,7 @@ Anonymize all ICS files in directory.
 
 Process files from a list.
 
-.. code-block:: shell
+..  code-block:: shell
 
     while read -r file; do
         ican "$file" -o "anon-$(basename "$file")"
@@ -297,40 +297,40 @@ Remote files
 
 Download a remote file and anonymize it.
 
-.. code-block:: shell
+..  code-block:: shell
 
     curl https://example.com/calendar.ics | ican > local-anon.ics
 
 Do the previous example with error checking.
 
-.. code-block:: shell
+..  code-block:: shell
 
     curl -f https://example.com/calendar.ics | ican -v > local-anon.ics
 
 Combining with other tools
----------------------------
+--------------------------
 
 Anonymize and count events.
 
-.. code-block:: shell
+..  code-block:: shell
 
     ican calendar.ics | grep -c "BEGIN:VEVENT"
 
 Anonymize and validate the input.
 
-.. code-block:: shell
+..  code-block:: shell
 
     ican calendar.ics | ics-validator
 
 Compress the anonymized output.
 
-.. code-block:: shell
+..  code-block:: shell
 
     ican calendar.ics | gzip > anonymized.ics.gz
 
 Keep summaries for debugging, pipe to a file, and compress it.
 
-.. code-block:: shell
+..  code-block:: shell
 
     ican --summary keep calendar.ics | gzip > debug-anon.ics.gz
 
@@ -381,7 +381,7 @@ Exit code: ``2``
 Invalid ICS file
 ----------------
 
-.. code-block:: text
+..  code-block:: text
 
     $ echo "invalid content" | ican
     Error: Invalid ICS file - Expected instance of <class 'icalendar.cal.Component'>
@@ -391,7 +391,7 @@ Exit code: ``1``
 Empty input
 -----------
 
-.. code-block:: text
+..  code-block:: text
 
     $ echo "" | ican
     Error: Input is empty
@@ -401,7 +401,7 @@ Exit code: ``1``
 Permission denied
 -----------------
 
-.. code-block:: text
+..  code-block:: text
 
     $ ican protected.ics -o /root/output.ics
     Error: [Errno 13] Permission denied: '/root/output.ics'
@@ -411,7 +411,7 @@ Exit code: ``1``
 Keyboard interrupt
 ------------------
 
-.. code-block:: text
+..  code-block:: text
 
     $ ican large-file.ics
     ^C
@@ -473,7 +473,7 @@ The CLI automatically handles binary mode on Windows. You don't need to worry ab
 
 If you encounter encoding issues on Windows:
 
-.. code-block:: shell
+..  code-block:: shell
 
     # Use binary mode with PowerShell
     Get-Content calendar.ics -Raw | ican > anonymized.ics
@@ -485,13 +485,13 @@ The CLI loads the entire file into memory. For very large files (>100MB):
 
 1. **Monitor memory usage**: Use verbose mode to track progress
 
-   .. code-block:: shell
+   ..  code-block:: shell
 
        ican -v large-file.ics -o output.ics
 
 2. **Process in chunks**: Split large calendars before anonymizing
 
-   .. code-block:: shell
+   ..  code-block:: shell
 
        # Example: Split by year, then anonymize
        grep -A 100 "DTSTART:2024" calendar.ics | ican > 2024-anon.ics
@@ -503,7 +503,7 @@ Hyphen as filename
 
 To use a file literally named ``-``:
 
-.. code-block:: shell
+..  code-block:: shell
 
     # Use ./ prefix to treat - as a filename
     ican ./- -o output.ics
@@ -513,13 +513,13 @@ Debugging
 
 Enable verbose mode to see processing steps:
 
-.. code-block:: shell
+..  code-block:: shell
 
     ican -v calendar.ics -o anonymized.ics
 
 Check the exit code after running:
 
-.. code-block:: shell
+..  code-block:: shell
 
     ican calendar.ics
     echo $?  # Unix/macOS/Linux
@@ -548,7 +548,7 @@ Git pre-commit hook
 
 Automatically anonymize calendars before committing:
 
-.. code-block:: shell
+..  code-block:: shell
 
     #!/bin/bash
     # .git/hooks/pre-commit
@@ -565,7 +565,7 @@ cron job
 
 Periodically anonymize shared calendars:
 
-.. code-block:: shell
+..  code-block:: shell
 
     # Crontab entry: Anonymize daily at 2 AM
     0 2 * * * /usr/bin/ican /path/to/calendar.ics -o /path/to/anon.ics
