@@ -3,9 +3,9 @@
 
 .. card::
 
-    .. image:: ./_static/contributing/development-icalendar-git-workflow.svg
+    .. image:: ./_static/contributing/development-icalendar-anonymizer-git-workflow.svg
         :alt: icalendar-anonymizer git workflow
-        :target: ./_static/contributing/development-icalendar-git-workflow.svg
+        :target: ./_static/contributing/development-icalendar-anonymizer-git-workflow.svg
 
     +++
     *icalendar-anonymizer git workflow*
