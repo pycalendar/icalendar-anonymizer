@@ -481,22 +481,26 @@ If you encounter encoding issues on Windows, then use binary mode with PowerShel
 Large files
 -----------
 
-The CLI loads the entire file into memory. For very large files (>100MB):
+The CLI loads the entire file into memory.
+For large files over 100MB in size, the following tips will improve performance.
 
-1. **Monitor memory usage**: Use verbose mode to track progress
+-   Monitor memory usage.
+    Use verbose mode to track progress.
 
-   ..  code-block:: shell
+    ..  code-block:: shell
 
-       ican -v large-file.ics -o output.ics
+        ican -v large-file.ics -o output.ics
 
-2. **Process in chunks**: Split large calendars before anonymizing
+-   Process in chunks.
+    Split large calendars before anonymizing.
 
-   ..  code-block:: shell
+    The following example splits the calendar by year, then anonymizes it.
 
-       # Example: Split by year, then anonymize
-       grep -A 100 "DTSTART:2024" calendar.ics | ican > 2024-anon.ics
+    ..  code-block:: shell
 
-3. **Use the Python API**: For programmatic control over memory usage
+        grep -A 100 "DTSTART:2024" calendar.ics | ican > 2024-anon.ics
+
+-   Use the :doc:`python-api` for programmatic control over memory usage.
 
 Hyphen as filename
 ------------------
