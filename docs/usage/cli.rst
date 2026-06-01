@@ -505,37 +505,56 @@ For large files over 100MB in size, the following tips will improve performance.
 Debugging
 ---------
 
-Enable verbose mode to see processing steps:
+Enable verbose mode with the ``-v`` option to see processing steps.
 
 ..  code-block:: shell
 
     ican -v calendar.ics -o anonymized.ics
 
-Check the exit code after running:
+Check the exit code after running ``ican``, according to your operating system and shell.
 
-..  code-block:: shell
+.. tab-set::
 
-    ican calendar.ics
-    echo $?  # Unix/macOS/Linux
-    echo %ERRORLEVEL%  # Windows cmd
-    echo $LASTEXITCODE  # Windows PowerShell
+    ..  tab-item:: Unix/macOS/Linux
+
+        ..  code-block:: shell
+        
+            ican calendar.ics
+            echo $?
+
+    ..  tab-item:: Windows cmd
+
+        ..  code-block:: batch
+        
+            ican calendar.ics
+            echo %ERRORLEVEL%
+
+    ..  tab-item:: Windows PowerShell
+
+        ..  code-block:: ps1con
+        
+            ican calendar.ics
+            echo $LASTEXITCODE
+
 
 Getting help
 ============
 
 If you encounter issues with the CLI:
 
-- Use ``ican --help`` for usage information
-- Check the `Issue Tracker <https://github.com/pycalendar/icalendar-anonymizer/issues>`_
-- Open a new issue with:
-  - Your command
-  - Error message
-  - Operating system
-  - Python version (``python --version``)
-  - Package version (``ican --version``)
+-   Use ``ican --help`` for usage information.
+-   Check the `Issue Tracker <https://github.com/pycalendar/icalendar-anonymizer/issues>`_.
+-   Open a new issue with:
+    -   Your command
+    -   Error message
+    -   Operating system
+    -   Python version (``python --version``)
+    -   Package version (``ican --version``)
 
 Integration examples
 ====================
+
+The following examples describe how to integrate icalendar-anonymizer with various third-party tools.
 
 Git pre-commit hook
 --------------------
