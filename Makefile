@@ -153,8 +153,8 @@ coverage: .venv
 
 .PHONY: ci
 ci:
-	@uv python install "$(PYTHONVERSION)"
-	@uv venv --python "$(PYTHONVERSION)"
+#	@uv python install "$(PYTHONVERSION)"
+#	@uv venv --python "$(PYTHONVERSION)"
 	@uv sync --group test --group web
 
 #.PHONY: ci-test
