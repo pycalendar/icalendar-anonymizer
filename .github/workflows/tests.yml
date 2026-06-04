@@ -57,7 +57,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          make ci PYTHONVERSION=${{ matrix.python-version }}
+          uv sync --group test --group web
           uv tree
 
       - name: Run tests
