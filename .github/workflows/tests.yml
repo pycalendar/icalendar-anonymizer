@@ -48,7 +48,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install uv with caching and Python ${{ matrix.python-version }}
-        uses: astral-sh/setup-uv@v8.1.0
+        uses: astral-sh/setup-uv@v8.2.0
         with:
           # Install a specific version of uv.
           enable-cache: true
