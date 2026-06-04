@@ -150,6 +150,18 @@ test: .venv  ## Run code tests and coverage
 .PHONY: coverage
 coverage: .venv
 	@$(TESTPATH) '--cov=src/icalendar_anonymizer' '--cov-report=html'
+
+.PHONY: ci
+ci:
+	@uv python install "$(PYTHONVERSION)"
+	@uv venv --python "$(PYTHONVERSION)"
+	@uv sync --group test --group web
+
+#.PHONY: ci-test
+#ci-test:
+#	@uv python update-shell
+#	@$(TESTPATH) --cov --cov-branch --cov-report=xml --cov-report=term --junitxml=junit.xml -o junit_family=legacy
+#	@$(TESTPATH) --cov --cov-branch --cov-report=xml --cov-report=term --junitxml=junit.xml -o junit_family=legacy
 # /test
 
 
@@ -172,8 +184,8 @@ format: .venv  ## Format the code base with ruff
 .PHONY: pc
 pc: .venv
 	@pre-commit run $(PCOPTS) --all-files
-
 # /development
+
 
 # deployment
 .PHONY: rtd-prepare
