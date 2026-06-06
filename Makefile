@@ -39,7 +39,7 @@ help:  # This help message
 .venv:  ## Install required Python, create Python virtual environment, and install package requirements
 	@uv python install "$(PYTHONVERSION)"
 	@uv venv --python "$(PYTHONVERSION)"
-	@uv sync --group all
+	@uv sync --group all --extra all
 	@uv run pre-commit install --hook-type commit-msg
 
 .PHONY: sync
