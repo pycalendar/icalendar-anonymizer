@@ -64,6 +64,7 @@ web = [
     "python-multipart>=0.0.18",
     "httpx>=0.28.1",
 ]
+all = ["icalendar-anonymizer[cli,web]"]
 
 # Local development dependencies
 [dependency-groups]
