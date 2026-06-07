@@ -63,6 +63,7 @@ New features
 Minor changes
 '''''''''''''
 
+- Revised Contributing documentation. :issue:`74`
 - Adopted :mod:`sphinx_issues` extension for shorter changelog issue and pull request references.
 
 .. _v0.1.5-bug-fixes:
@@ -159,7 +160,7 @@ Bug fixes
 New features
 ''''''''''''
 
-- Added Sphinx documentation with PyData theme on Read the Docs. Includes installation guide, Python API reference with property table and autodoc, CLI usage guide, web service API documentation, and contributing guide with commit format reference. Changed bash to shell code-block lexer, converted lists to definition lists, added documentation standards section. Configured :file:`docs/conf.py` with ``sphinx_design``, ``sphinx_copybutton``, ``sphinx.ext.intersphinx``. Updated :file:`pyproject.toml` with doc dependencies. Added badge to :file:`README.md`. Documentation at https://icalendar-anonymizer.readthedocs.io/stable/. :issue:`9` :pr:`60`
+- Added Sphinx documentation with PyData theme on Read the Docs. Includes installation guide, Python API reference with property table and autodoc, CLI usage guide, web service API documentation, and contributing guide with commit format reference. Changed bash to shell code-block lexer, converted lists to definition lists, added documentation standards section. Configured :file:`docs/conf.py` with ``sphinx_design``, ``sphinx_copybutton``, ``sphinx.ext.intersphinx``. Updated :file:`pyproject.toml` with doc dependencies. Added badge to :file:`README.md`. Documentation at https://docs.icalendar-anonymizer.com/stable/. :issue:`9` :pr:`60`
 - Added :file:`.readthedocs.yaml` configuration file with Ubuntu 24.04 build environment and Python 3.13 to enable automatic documentation builds on Read the Docs. :pr:`56`
 - Added command-line interface with :program:`icalendar-anonymize` and :program:`ican` commands. Supports stdin/stdout piping, file I/O, and verbose mode. Uses :program:`Click` for argument parsing with built-in ``-`` convention for Unix-style streams. Binary mode handling for ICS files. Comprehensive error handling with clear messages. Install with ``pip install icalendar-anonymizer[cli]``. :issue:`3`
 

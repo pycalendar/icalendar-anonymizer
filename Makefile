@@ -1,0 +1,200 @@
+# SPDX-FileCopyrightText: 2025 icalendar-anonymizer contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+# Makefile for Sphinx documentation
+.DEFAULT_GOAL   = help
+SHELL           = bash
+
+# You can set these variables from the command line.
+SPHINXOPTS      ?=
+PAPER           ?=
+VERSION			?=
+
+# Internal variables.
+RUFFPATH        = "$(realpath .venv/bin/ruff)"
+SPHINXAUTOBUILD = "$(realpath .venv/bin/sphinx-autobuild)"
+SPHINXBUILD     = "$(realpath .venv/bin/sphinx-build)"
+PCPATH          = "$(realpath .venv/bin/pre-commit)"
+PCOPTS          ?=
+TESTPATH        = "$(realpath .venv/bin/pytest)"
+TESTOPTS        ?=
+#TOWNCRIERPATH   = "$(realpath .venv/bin/towncrier)"
+DOCS_DIR        = ./docs/
+BUILDDIR        = ../_build
+PAPEROPT_a4     = -D latex_paper_size=a4
+PAPEROPT_letter = -D latex_paper_size=letter
+ALLSPHINXOPTS   = -W -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
+VALEFILES       := $(shell find $(DOCS_DIR) -type f -name "*.rst" -print)  # Also add `src` for docstrings.
+VALEOPTS        ?=
+PYTHONVERSION   = >=3.11,<3.14
+
+# Add the following 'help' target to your Makefile
+# And add help text after each target name starting with '\#\#'
+.PHONY: help
+help:  # This help message
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+
+
+# environment management
+.venv:  ## Install required Python, create Python virtual environment, and install package requirements
+	@uv python install "$(PYTHONVERSION)"
+	@uv venv --python "$(PYTHONVERSION)"
+	@uv sync --group all --extra all
+	@uv run pre-commit install --hook-type commit-msg
+
+.PHONY: sync
+sync:  ## Sync package requirements
+	@uv sync
+
+.PHONY: init
+init: clean clean-python .venv  ## Clean docs build directory, Python virtual environment, and initialize Python virtual environment
+
+.PHONY: clean
+clean:  ## Clean docs build directory
+	cd $(DOCS_DIR) && rm -rf $(BUILDDIR)/
+
+.PHONY: clean-python
+clean-python: clean
+	rm -rf .venv/
+# /environment management
+
+
+# documentation builders
+.PHONY: html
+html: .venv  ## Build html
+	cd $(DOCS_DIR) && $(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
+	@echo
+	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
+
+.PHONY: livehtml
+livehtml:  ## .venv  ## Rebuild Sphinx documentation on changes, with live-reload in the browser
+	cd "$(DOCS_DIR)" && ${SPHINXAUTOBUILD} \
+		--watch "../src/icalendar_anonymizer/" \
+		--watch "../CHANGES.rst" \
+		--re-ignore ".*\\.swp|.*\\.typed" \
+		--ignore "../src/icalendar_anonymizer/tests" \
+		--ignore "../src/icalendar_anonymizer/webapp" \
+		--port 8050 \
+		-b html . "$(BUILDDIR)/html" $(SPHINXOPTS) $(O)
+
+.PHONY: dirhtml
+dirhtml: .venv
+	cd $(DOCS_DIR) && $(SPHINXBUILD) -b dirhtml $(ALLSPHINXOPTS) $(BUILDDIR)/dirhtml
+	@echo
+	@echo "Build finished. The HTML pages are in $(BUILDDIR)/dirhtml."
+
+.PHONY: singlehtml
+singlehtml: .venv
+	cd $(DOCS_DIR) && $(SPHINXBUILD) -b singlehtml $(ALLSPHINXOPTS) $(BUILDDIR)/singlehtml
+	@echo
+	@echo "Build finished. The HTML page is in $(BUILDDIR)/singlehtml."
+
+.PHONY: text
+text: .venv
+	cd $(DOCS_DIR) && $(SPHINXBUILD) -b text $(ALLSPHINXOPTS) $(BUILDDIR)/text
+	@echo
+	@echo "Build finished. The text files are in $(BUILDDIR)/text."
+
+.PHONY: sphinx-changes
+sphinx-changes: .venv
+	cd $(DOCS_DIR) && $(SPHINXBUILD) -b changes $(ALLSPHINXOPTS) $(BUILDDIR)/changes
+	@echo
+	@echo "The overview file is in $(BUILDDIR)/changes."
+# /documentation builders
+
+
+# test
+.PHONY: linkcheck
+linkcheck: .venv  ## Run linkcheck
+	cd $(DOCS_DIR) && $(SPHINXBUILD) -b linkcheck $(ALLSPHINXOPTS) $(BUILDDIR)/linkcheck
+	@echo
+	@echo "Link check complete; look for any errors in the above output " \
+		"or in $(BUILDDIR)/linkcheck/ ."
+
+.PHONY: linkcheckbroken
+linkcheckbroken: .venv  ## Run linkcheck and show only broken links
+	cd $(DOCS_DIR) && $(SPHINXBUILD) -b linkcheck $(ALLSPHINXOPTS) $(BUILDDIR)/linkcheck | GREP_COLORS='0;31' grep -wi "[^.]broken\|redirect" --color=always && if test $$? = 0; then exit 1; fi || test $$? = 1
+	@echo
+	@echo "Link check complete; look for any errors in the above output " \
+		"or in $(BUILDDIR)/linkcheck/ ."
+
+.PHONY: vale
+vale: .venv  ## Run Vale style, grammar, and spell checks
+	@uv run vale sync
+	@uv run vale --no-wrap $(VALEOPTS) $(VALEFILES); \
+	if [ $$? = 0 ]; then \
+		echo; \
+		echo "Vale passed!"; \
+	else \
+		echo; \
+		echo "Vale spell, style, and grammar check failed."; \
+		echo "Read the error messages above to see what didn't pass."; \
+		echo "For guidance of how to correct the errors, see the"; \
+		echo "dependency package icalendar's documentation:"; \
+		echo "https://icalendar.readthedocs.io/en/latest/contribute/documentation/build-check.html#spelling-grammar-and-style"; \
+		exit 1; \
+	fi
+
+#.PHONY: doctest
+#doctest: .venv  ## Test snippets and docstrings in the documentation
+#	@echo;
+#	@pytest src/icalendar_anonymizer/tests/lib/test_with_doctest.py
+#
+.PHONY: docs-all
+docs-all: .venv clean vale html linkcheckbroken  ## Clean docs build, then run vale, doctest, html, and linkcheckbroken
+
+.PHONY: test
+test: .venv  ## Run code tests and coverage
+	@$(TESTPATH) $(TESTOPTS)
+
+.PHONY: coverage
+coverage: .venv
+	@$(TESTPATH) '--cov=src/icalendar_anonymizer' '--cov-report=html'
+# /test
+
+
+# development
+.PHONY: dev
+dev: .venv  ## Install required Python, create Python virtual environment, install package and development requirements
+
+.PHONY: lint-check
+lint-check: .venv  ## Format the code base with ruff
+	$(RUFFPATH) check
+
+.PHONY: lint-fix
+lint-fix: .venv  ## Format the code base with ruff
+	$(RUFFPATH) check --fix
+
+.PHONY: format
+format: .venv  ## Format the code base with ruff
+	$(RUFFPATH) format
+
+.PHONY: pc
+pc: .venv
+	@pre-commit run $(PCOPTS) --all-files
+# /development
+
+
+# deployment
+.PHONY: rtd-prepare
+rtd-prepare:  ## Prepare environment on Read the Docs
+	asdf plugin add uv
+	asdf install uv latest
+	asdf global uv latest
+
+.PHONY: rtd-pr-preview
+rtd-pr-preview: rtd-prepare .venv ## Build pull request preview on Read the Docs
+	cd $(DOCS_DIR) && $(SPHINXBUILD) -b html $(ALLSPHINXOPTS) ${READTHEDOCS_OUTPUT}/html/
+# /deployment
+
+# release
+#.PHONY: changes-draft
+#changes-draft: dev
+#	@test -n "$(VERSION)" || (echo "VERSION is not set. Run 'export VERSION=x.y.z' first." && exit 1)
+#	$(TOWNCRIERPATH) build --draft --version ${VERSION} --yes
+#
+#.PHONY: changes
+#changes: dev
+#	@test -n "$(VERSION)" || (echo "VERSION is not set. Run 'export VERSION=x.y.z' first." && exit 1)
+#	$(TOWNCRIERPATH) build --version ${VERSION} --yes
+# /release

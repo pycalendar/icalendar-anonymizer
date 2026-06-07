@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2025 icalendar-anonymizer contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+[Aa]nonymize[dr]
+anonymization
+async
+[Aa]utogenerated
+Caddy
+commitizen
+cron
+[Dd]octests?
+[Dd]ocstrings?
+doctest
+Fernet
+Gunicorn
+i[Cc]alendar
+Nginx
+pre-commit
+pytest
+Ruff
+systemd
+Traefik
+uvicorn

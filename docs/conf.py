@@ -3,17 +3,20 @@
 
 """Sphinx configuration for icalendar-anonymizer documentation."""
 
+import datetime
+
 project = "icalendar-anonymizer"
-copyright = "2025, icalendar-anonymizer contributors"  # noqa: A001
+this_year = datetime.date.today().year  # noqa: DTZ011
+copyright = f"{this_year}, icalendar-anonymizer contributors"  # noqa: A001
 author = "icalendar-anonymizer contributors"
 
 # Extensions
 extensions = [
+    "notfound.extension",
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
-    "sphinx.ext.autosectionlabel",
     "sphinx_copybutton",
     "sphinx_design",
     "sphinx_issues",
@@ -31,14 +34,27 @@ html_theme_options = {
             "url": "https://github.com/pycalendar/icalendar-anonymizer",
             "icon": "fa-brands fa-square-github",
             "type": "fontawesome",
+            "attributes": {
+                "target": "_blank",
+                "rel": "noopener me",
+                "class": "nav-link custom-fancy-css",
+            },
         },
         {
             "name": "PyPI",
             "url": "https://pypi.org/project/icalendar-anonymizer",
-            "icon": "fa-brands fa-python",
+            "icon": "fa-custom fa-pypi",
             "type": "fontawesome",
+            "attributes": {
+                "target": "_blank",
+                "rel": "noopener me",
+                "class": "nav-link custom-fancy-css",
+            },
         },
     ],
+    "footer_start": ["nlnet", "donate"],
+    "footer_center": ["copyright"],
+    "footer_end": ["rtd-pr-previews", "theme-version", "sphinx-version"],
     "logo": {"text": "icalendar-anonymizer"},
     "use_edit_page_button": True,
     "show_toc_level": 2,
@@ -56,11 +72,37 @@ html_context = {
     "doc_path": "docs",
 }
 
+html_static_path = [
+    "_static",
+]
+# Customize the navbar icons
+html_js_files = [
+    ("js/custom-icons.js", {"defer": "defer"}),
+]
+
+templates_path = ["_templates"]
+
 # Intersphinx mapping
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "icalendar": ("https://icalendar.readthedocs.io/en/latest/", None),
 }
+
+# -- linkcheck builder configuration ----------------------------------
+# Ignore localhost
+linkcheck_ignore = [
+    # Ignore local development server
+    r"http://127.0.0.1",
+    r"http://localhost",
+    # Ignore pages that require authentication
+    r"https://calendar.google.com/",
+    r"https://github.com/pycalendar/icalendar-anonymizer/fork",
+    # Ignore specific anchors that exist, but can't be found
+    r"https://github.com/sloria/sphinx-issues#usage-inside-the-documentation",
+]
+linkcheck_anchors = True
+linkcheck_timeout = 5
+linkcheck_retries = 1
 
 # Napoleon settings (Google-style docstrings)
 napoleon_google_docstring = True
@@ -74,5 +116,6 @@ autodoc_default_options = {
     "show-inheritance": True,
 }
 
-# Autosectionlabel settings
-autosectionlabel_prefix_document = True
+# -- notfound.extension configuration ----------------------------------
+# https://sphinx-notfound-page.readthedocs.io/en/latest/configuration.html
+notfound_template = "404.html"

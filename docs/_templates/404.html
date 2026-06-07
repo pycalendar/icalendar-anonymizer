@@ -1,0 +1,22 @@
+<!--- SPDX-FileCopyrightText: 2025 icalendar-anonymizer contributors -->
+<!--- SPDX-License-Identifier: AGPL-3.0-or-later -->
+{% extends "!page.html" %}
+
+{%- block htmltitle %}
+<title>{{ title|striptags|e }}{%- for parent in parents %} – {{ parent.title }}{%- endfor %}{{ titlesuffix }}</title>
+{%- endblock %}
+
+{% block body %}
+<div>
+    <h1>Page not found</h1>
+    <p>We could not find the page you requested in the icalendar-anonymizer documentation.</p>
+    <p>You can <a href="search.html">search</a> the icalendar-anonymizer documentation.</p>
+    <p>You can use the version switcher to go to other versions of icalendar-anonymizer.</p>
+    <h2>Why is this happening?</h2>
+    <p>
+        The icalendar-anonymizer documentation team has restructured documentation to redirect visitors to the most current and accurate information, archive previous versions, and identify outdated pages.
+        If you would like to report an issue or request a redirect be set up, you can <a href="https://github.com/pycalendar/icalendar-anonymizer/issues/new" rel="external">create a new issue in the GitHub issue tracker</a>.
+    </p>
+</div>
+
+{% endblock %}
