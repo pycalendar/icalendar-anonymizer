@@ -57,7 +57,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync --group test --group web
+          uv sync --group test --extra web
           uv tree
 
       - name: Run tests
