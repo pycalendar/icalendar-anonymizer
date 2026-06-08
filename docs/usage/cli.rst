@@ -140,7 +140,8 @@ Options reference
     ..  code-block:: shell
  
         $ ican --version
-        icalendar-anonymizer, version 0.1.0
+        $ ican --version
+        icalendar-anonymizer, version <version>
  
 ..  option:: --help
  
@@ -153,6 +154,7 @@ Options reference
     ..  note::
 
         The output for "Usage" is somewhat misleading, as Click merges ``-o, --output FILENAME`` with the options instead of as a positional final optional argument.
+        See also :issue:`148` for a related Click formatting quirk.
 
 Field configuration options
 ----------------------------
@@ -320,7 +322,7 @@ Anonymize and validate the input.
 
 ..  code-block:: shell
 
-    ican calendar.ics | ics-validator
+    ican calendar.ics | <your-validator>
 
 Compress the anonymized output.
 
@@ -430,7 +432,7 @@ The CLI follows Unix conventions for exit codes:
 
    * - Code
      - Meaning
-     - When Used
+     - When used
    * - 0
      - Success
      - Anonymization completed successfully
