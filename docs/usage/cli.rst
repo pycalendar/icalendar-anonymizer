@@ -12,20 +12,23 @@ Installation
 
 First, install uv as described in :ref:`development-prerequisites`.
 
-Then, clone icalendar-anonymizer and change your working directory to the root of the repository.
+Install the latest Python version and create virtual environment.
 
 ..  code-block:: shell
 
-    git clone https://github.com/pycalendar/icalendar-anonymizer.git
-    cd icalendar-anonymizer
+    uv venv
 
-Then, install the CLI from a local checkout of icalendar-anonymizer with the following command.
+Activate the virtual environment.
 
 ..  code-block:: shell
 
-    uv pip install --group cli
+    source .venv/bin/activate
 
-This installs the Click dependency and both command-line tools.
+Install icalendar-anonymizer, its dependencies, and the CLI extras.
+
+..  code-block:: shell
+
+    uv pip install "icalendar-anonymizer[cli]"
 
 Verify installation with the following command.
 
