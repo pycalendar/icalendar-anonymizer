@@ -93,126 +93,6 @@ Alternatively, use ``-``.
 
     ican - -o anonymized.ics
 
-Options reference
-=================
-
-..  program:: icalendar-anonymize
- 
-..  option:: [INPUT]
- 
-    Input iCalendar file to anonymize.
-    Optional positional argument.
- 
-    -   **Default**: ``stdin`` (``-``)
-    -   **Format**: File path or ``-`` for ``stdin``
-    -   **Example**: :code:`ican calendar.ics`
- 
-..  option:: -o <file>, --output <file>
- 
-    Output file for anonymized calendar.
- 
-    -   **Default**: ``stdout`` (``-``)
-    -   **Format**: File path or ``-`` for ``stdout``
-    -   **Example**: :code:`ican input.ics -o output.ics`
- 
-..  option:: -v, --verbose
- 
-    Show processing information on stderr. Displays input/output sources and processing steps.
- 
-    -   **Flag**: No value required
-    -   **Output**: Messages written to stderr (not ``stdout``)
-    -   **Example**: :code:`ican -v calendar.ics -o anonymized.ics`
- 
-    The following example shows verbose output:
- 
-    ..  code-block:: text
- 
-        Reading from: calendar.ics
-        Parsing calendar...
-        Anonymizing calendar...
-        Writing to: anonymized.ics
-        Done.
-
-..  option:: --version
- 
-    Display version information and exit.
- 
-    ..  code-block:: shell
- 
-        $ ican --version
-        $ ican --version
-        icalendar-anonymizer, version <version>
- 
-..  option:: --help
- 
-    Show usage information and exit.
- 
-    ..  code-block:: shell
- 
-        ican --help
-
-    ..  note::
-
-        The output for "Usage" is somewhat misleading, as Click merges ``-o, --output FILENAME`` with the options instead of as a positional final optional argument.
-        See also :issue:`148` for a related Click formatting quirk.
-
-Field configuration options
-----------------------------
-
-Configure how individual fields are anonymized.
-The four modes are ``keep``, ``remove``, ``randomize``, and ``replace``.
-
-..  option:: --summary <mode>
- 
-    Mode for SUMMARY field.
- 
-    -   **Choices**: ``keep``, ``remove``, ``randomize``, ``replace``
-    -   **Default**: ``randomize``
-    -   **Example**: :code:`ican --summary keep calendar.ics`
- 
-..  option:: --description <mode>
- 
-    Mode for DESCRIPTION field.
- 
-..  option:: --location <mode>
- 
-    Mode for LOCATION field.
- 
-..  option:: --comment <mode>
- 
-    Mode for COMMENT field.
- 
-..  option:: --contact <mode>
- 
-    Mode for CONTACT field.
- 
-..  option:: --resources <mode>
- 
-    Mode for RESOURCES field.
- 
-..  option:: --categories <mode>
- 
-    Mode for CATEGORIES field.
- 
-..  option:: --attendee <mode>
- 
-    Mode for ATTENDEE field.
- 
-..  option:: --organizer <mode>
- 
-    Mode for ORGANIZER field.
- 
-..  option:: --uid <mode>
- 
-    Mode for UID field.
-    
-    .. note::
-
-        The ``remove`` mode is not allowed.
- 
-    -   **Choices**: ``keep``, ``randomize``, ``replace``
-    -   **Default**: ``randomize``
-
 Field configuration examples
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -584,6 +464,132 @@ Periodically anonymize shared calendars:
 
     # Crontab entry: Anonymize daily at 2 AM
     0 2 * * * /usr/bin/ican /path/to/calendar.ics -o /path/to/anon.ics
+
+.. todo::
+
+    Move this subsection into a separate reference section in the documentation.
+    See :issue:`153`.
+
+
+Options reference
+=================
+
+..  program:: icalendar-anonymize
+ 
+..  option:: [INPUT]
+ 
+    Input iCalendar file to anonymize.
+    Optional positional argument.
+ 
+    -   **Default**: ``stdin`` (``-``)
+    -   **Format**: File path or ``-`` for ``stdin``
+    -   **Example**: :code:`ican calendar.ics`
+ 
+..  option:: -o <file>, --output <file>
+ 
+    Output file for anonymized calendar.
+ 
+    -   **Default**: ``stdout`` (``-``)
+    -   **Format**: File path or ``-`` for ``stdout``
+    -   **Example**: :code:`ican input.ics -o output.ics`
+ 
+..  option:: -v, --verbose
+ 
+    Show processing information on stderr. Displays input/output sources and processing steps.
+ 
+    -   **Flag**: No value required
+    -   **Output**: Messages written to stderr (not ``stdout``)
+    -   **Example**: :code:`ican -v calendar.ics -o anonymized.ics`
+ 
+    The following example shows verbose output:
+ 
+    ..  code-block:: text
+ 
+        Reading from: calendar.ics
+        Parsing calendar...
+        Anonymizing calendar...
+        Writing to: anonymized.ics
+        Done.
+
+..  option:: --version
+ 
+    Display version information and exit.
+ 
+    ..  code-block:: shell
+ 
+        $ ican --version
+        $ ican --version
+        icalendar-anonymizer, version <version>
+ 
+..  option:: --help
+ 
+    Show usage information and exit.
+ 
+    ..  code-block:: shell
+ 
+        ican --help
+
+    ..  note::
+
+        The output for "Usage" is somewhat misleading, as Click merges ``-o, --output FILENAME`` with the options instead of as a positional final optional argument.
+        See also :issue:`148` for a related Click formatting quirk.
+
+Field configuration options
+----------------------------
+
+Configure how individual fields are anonymized.
+The four modes are ``keep``, ``remove``, ``randomize``, and ``replace``.
+
+..  option:: --summary <mode>
+ 
+    Mode for SUMMARY field.
+ 
+    -   **Choices**: ``keep``, ``remove``, ``randomize``, ``replace``
+    -   **Default**: ``randomize``
+    -   **Example**: :code:`ican --summary keep calendar.ics`
+ 
+..  option:: --description <mode>
+ 
+    Mode for DESCRIPTION field.
+ 
+..  option:: --location <mode>
+ 
+    Mode for LOCATION field.
+ 
+..  option:: --comment <mode>
+ 
+    Mode for COMMENT field.
+ 
+..  option:: --contact <mode>
+ 
+    Mode for CONTACT field.
+ 
+..  option:: --resources <mode>
+ 
+    Mode for RESOURCES field.
+ 
+..  option:: --categories <mode>
+ 
+    Mode for CATEGORIES field.
+ 
+..  option:: --attendee <mode>
+ 
+    Mode for ATTENDEE field.
+ 
+..  option:: --organizer <mode>
+ 
+    Mode for ORGANIZER field.
+ 
+..  option:: --uid <mode>
+ 
+    Mode for UID field.
+    
+    .. note::
+
+        The ``remove`` mode is not allowed.
+ 
+    -   **Choices**: ``keep``, ``randomize``, ``replace``
+    -   **Default**: ``randomize``
 
 See also
 ========
