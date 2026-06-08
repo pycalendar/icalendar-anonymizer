@@ -87,12 +87,6 @@ Omit the input argument to read from ``stdin``:
 
     cat calendar.ics | ican > anonymized.ics
 
-Alternatively, use ``-``. 
-
-..  code-block:: shell
-
-    ican - -o anonymized.ics
-
 Field configuration examples
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
