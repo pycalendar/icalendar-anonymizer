@@ -373,15 +373,6 @@ For large files over 100MB in size, the following tips will improve performance.
 
         ican -v large-file.ics -o output.ics
 
--   Process in chunks.
-    Split large calendars before anonymizing.
-
-    The following example splits the calendar by year, then anonymizes it.
-
-    ..  code-block:: shell
-
-        grep -A 100 "DTSTART:2024" calendar.ics | ican > 2024-anon.ics
-
 -   Use the :doc:`python-api` for programmatic control over memory usage.
 
 Debugging
