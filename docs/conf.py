@@ -17,6 +17,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
+    "sphinx.ext.todo",
     "sphinx_copybutton",
     "sphinx_design",
     "sphinx_issues",
