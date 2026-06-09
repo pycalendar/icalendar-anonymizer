@@ -63,6 +63,12 @@ The basic usage syntax calls the program, followed optionally by options, then i
 
     ican [OPTIONS] [INPUT] [-o OUTPUT]
 
+For a complete list of command options and field configuration options, either see :ref:`options-reference` or :ref:`field-configuration-options`, or use the following command.
+
+..  code-block:: shell
+
+    make --help
+
 Anonymize a file
 ----------------
 
@@ -458,6 +464,7 @@ Periodically anonymize shared calendars:
     Move this subsection into a separate reference section in the documentation.
     See :issue:`153`.
 
+..  _options-reference:
 
 Options reference
 =================
@@ -520,6 +527,8 @@ Options reference
 
         The output for "Usage" is somewhat misleading, as Click merges ``-o, --output FILENAME`` with the options instead of as a positional final optional argument.
         See also :issue:`148` for a related Click formatting quirk.
+
+..  _field-configuration-options:
 
 Field configuration options
 ----------------------------
