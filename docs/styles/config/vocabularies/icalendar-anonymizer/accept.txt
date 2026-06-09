@@ -21,4 +21,5 @@ Ruff
 systemd
 Traefik
 UIDs
+uv
 uvicorn
