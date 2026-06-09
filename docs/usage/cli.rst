@@ -142,66 +142,168 @@ Combine multiple field modes.
 Pipeline processing
 -------------------
 
-Read from ``stdin`` and write to ``stdout``.
+..  note::
 
-..  code-block:: shell
+    PowerShell examples use the ``-o`` flag instead of ``>``. PowerShell 5.1 encodes ``>`` as UTF-16, which corrupts the output for tools that expect UTF-8.
 
-    cat calendar.ics | ican > anonymized.ics
+    PowerShell 5.1 also re-encodes ``stdin`` pipes through the console code page and can mangle non-ASCII content. For data with accents or non-Latin text on 5.1, prefer the file-argument form (``ican calendar.ics -o anonymized.ics``). PowerShell 7+ handles UTF-8 through pipes correctly.
 
-Explicitly read from ``stdin`` with ``-`` and write to ``stdout``.
+Read from a file and write to a file.
 
-..  code-block:: shell
+..  tab-set::
 
-    ican - < calendar.ics > anonymized.ics
+    ..  tab-item:: Linux and macOS
+
+        ..  code-block:: shell
+
+            cat calendar.ics | ican > anonymized.ics
+
+    ..  tab-item:: Windows PowerShell
+
+        ..  code-block:: powershell
+
+            ican calendar.ics -o anonymized.ics
+
+Read from ``stdin`` explicitly with ``-``.
+
+..  tab-set::
+
+    ..  tab-item:: Linux and macOS
+
+        ..  code-block:: shell
+
+            ican - < calendar.ics > anonymized.ics
+
+    ..  tab-item:: Windows PowerShell
+
+        PowerShell pipes re-encode bytes through the console code page. On 5.1 this corrupts non-ASCII characters even with ``-Encoding utf8``. Pass the file path directly instead.
+
+        ..  code-block:: powershell
+
+            ican calendar.ics -o anonymized.ics
 
 Verbose output to ``stderr`` doesn't corrupt ``stdout``.
 
-..  code-block:: shell
+..  tab-set::
 
-    cat calendar.ics | ican -v > anonymized.ics
+    ..  tab-item:: Linux and macOS
+
+        ..  code-block:: shell
+
+            cat calendar.ics | ican -v > anonymized.ics
+
+    ..  tab-item:: Windows PowerShell
+
+        ..  code-block:: powershell
+
+            ican -v calendar.ics -o anonymized.ics
 
 Batch processing
 ----------------
 
 Anonymize all ICS files in directory.
 
-..  code-block:: shell
+..  tab-set::
 
-    for file in *.ics; do
-        ican "$file" -o "anonymized-$file"
-    done
+    ..  tab-item:: Linux and macOS
+
+        ..  code-block:: shell
+
+            for file in *.ics; do
+                ican "$file" -o "anonymized-$file"
+            done
+
+    ..  tab-item:: Windows PowerShell
+
+        ..  code-block:: powershell
+
+            Get-ChildItem *.ics -File | ForEach-Object {
+                ican $_.Name -o "anonymized-$($_.Name)"
+            }
 
 Process files from a list.
 
-..  code-block:: shell
+..  tab-set::
 
-    while read -r file; do
-        ican "$file" -o "anon-$(basename "$file")"
-    done < file-list.txt
+    ..  tab-item:: Linux and macOS
+
+        ..  code-block:: shell
+
+            while read -r file; do
+                ican "$file" -o "anon-$(basename "$file")"
+            done < file-list.txt
+
+    ..  tab-item:: Windows PowerShell
+
+        ..  code-block:: powershell
+
+            Get-Content file-list.txt -Encoding utf8 | ForEach-Object {
+                $file = $_.Trim()
+                if ($file) {
+                    ican $file -o "anon-$(Split-Path $file -Leaf)"
+                }
+            }
 
 Remote files
 ------------
 
 Download a remote file and anonymize it.
 
-..  code-block:: shell
+..  tab-set::
 
-    curl https://example.com/calendar.ics | ican > local-anon.ics
+    ..  tab-item:: Linux and macOS
+
+        ..  code-block:: shell
+
+            curl https://example.com/calendar.ics | ican > local-anon.ics
+
+    ..  tab-item:: Windows PowerShell
+
+        ..  code-block:: powershell
+
+            Invoke-WebRequest https://example.com/calendar.ics -UseBasicParsing -OutFile remote.ics
+            ican remote.ics -o local-anon.ics
 
 Do the previous example with error checking.
 
-..  code-block:: shell
+..  tab-set::
 
-    curl -f https://example.com/calendar.ics | ican -v > local-anon.ics
+    ..  tab-item:: Linux and macOS
+
+        ..  code-block:: shell
+
+            curl -f https://example.com/calendar.ics | ican -v > local-anon.ics
+
+    ..  tab-item:: Windows PowerShell
+
+        ..  code-block:: powershell
+
+            try {
+                Invoke-WebRequest https://example.com/calendar.ics -UseBasicParsing -OutFile remote.ics -ErrorAction Stop
+                ican -v remote.ics -o local-anon.ics
+            } catch {
+                Write-Error $_.Exception.Message
+                exit 1
+            }
 
 Combining with other tools
 --------------------------
 
 Anonymize and count events.
 
-..  code-block:: shell
+..  tab-set::
 
-    ican calendar.ics | grep -c "BEGIN:VEVENT"
+    ..  tab-item:: Linux and macOS
+
+        ..  code-block:: shell
+
+            ican calendar.ics | grep -c "BEGIN:VEVENT"
+
+    ..  tab-item:: Windows PowerShell
+
+        ..  code-block:: powershell
+
+            (ican calendar.ics | Select-String "BEGIN:VEVENT").Count
 
 Anonymize and validate the input.
 
@@ -211,15 +313,40 @@ Anonymize and validate the input.
 
 Compress the anonymized output.
 
-..  code-block:: shell
+..  tab-set::
 
-    ican calendar.ics | gzip > anonymized.ics.gz
+    ..  tab-item:: Linux and macOS
+
+        ..  code-block:: shell
+
+            ican calendar.ics | gzip > anonymized.ics.gz
+
+    ..  tab-item:: Windows PowerShell
+
+        Windows PowerShell doesn't include a ``gzip`` command by default.
+        Anonymize to a file first, then compress it with a third-party tool such as `7-Zip <https://www.7-zip.org/>`_.
+
+        ..  code-block:: powershell
+
+            ican calendar.ics -o anonymized.ics
+            & "C:\Program Files\7-Zip\7z.exe" a -tgzip anonymized.ics.gz anonymized.ics
 
 Keep summaries for debugging, pipe to a file, and compress it.
 
-..  code-block:: shell
+..  tab-set::
 
-    ican --summary keep calendar.ics | gzip > debug-anon.ics.gz
+    ..  tab-item:: Linux and macOS
+
+        ..  code-block:: shell
+
+            ican --summary keep calendar.ics | gzip > debug-anon.ics.gz
+
+    ..  tab-item:: Windows PowerShell
+
+        ..  code-block:: powershell
+
+            ican --summary keep calendar.ics -o debug-anon.ics
+            & "C:\Program Files\7-Zip\7z.exe" a -tgzip debug-anon.ics.gz debug-anon.ics
 
 Anonymization summary
 =====================
