@@ -25,15 +25,15 @@ Activate the virtual environment.
     ..  tab-item:: Linux and macOS
 
         ..  code-block:: shell
-        
+
             source .venv/bin/activate
-        
+
     ..  tab-item:: Windows PowerShell
 
         ..  code-block:: powershell
-        
+
             .venv\Scripts\Activate.ps1
-        
+
 Install icalendar-anonymizer, its dependencies, and the CLI extras.
 
 ..  code-block:: shell
@@ -77,7 +77,7 @@ For a complete list of command options and field configuration options, either s
 
 ..  code-block:: shell
 
-    make --help
+    ican --help
 
 Anonymize a file
 ----------------
@@ -342,15 +342,15 @@ Command not found
 If you get ``command not found`` after installation:
 
 #.  Reinstall the package with the CLI extras:
- 
+
     ..  code-block:: shell
- 
+
         uv pip install --reinstall "icalendar-anonymizer[cli]"
- 
+
 #.  Use the full Python module path:
- 
+
     ..  code-block:: shell
- 
+
         python -m icalendar_anonymizer.cli calendar.ics
 
 Binary mode on Windows
@@ -359,7 +359,7 @@ Binary mode on Windows
 The CLI automatically handles binary mode on Windows.
 You don't need to worry about CRLF line endings.
 
-If you encounter encoding issues on Windows, then use binary mode with PowerShell. 
+If you encounter encoding issues on Windows, then use binary mode with PowerShell.
 
 ..  code-block:: shell
 
@@ -396,21 +396,21 @@ Check the exit code after running ``ican``, according to your operating system a
     ..  tab-item:: Unix/macOS/Linux
 
         ..  code-block:: shell
-        
+
             ican calendar.ics
             echo $?
 
     ..  tab-item:: Windows cmd
 
         ..  code-block:: batch
-        
+
             ican calendar.ics
             echo %ERRORLEVEL%
 
     ..  tab-item:: Windows PowerShell
 
         ..  code-block:: ps1con
-        
+
             ican calendar.ics
             echo $LASTEXITCODE
 
@@ -472,36 +472,36 @@ Options reference
 =================
 
 ..  program:: icalendar-anonymize
- 
+
 ..  option:: [INPUT]
- 
+
     Input iCalendar file to anonymize.
     Optional positional argument.
- 
+
     -   **Default**: ``stdin`` (``-``)
     -   **Format**: File path or ``-`` for ``stdin``
     -   **Example**: :code:`ican calendar.ics`
- 
+
 ..  option:: -o <file>, --output <file>
- 
+
     Output file for anonymized calendar.
- 
+
     -   **Default**: ``stdout`` (``-``)
     -   **Format**: File path or ``-`` for ``stdout``
     -   **Example**: :code:`ican input.ics -o output.ics`
- 
+
 ..  option:: -v, --verbose
- 
+
     Show processing information on stderr. Displays input/output sources and processing steps.
- 
+
     -   **Flag**: No value required
     -   **Output**: Messages written to stderr (not ``stdout``)
     -   **Example**: :code:`ican -v calendar.ics -o anonymized.ics`
- 
+
     The following example shows verbose output:
- 
+
     ..  code-block:: text
- 
+
         Reading from: calendar.ics
         Parsing calendar...
         Anonymizing calendar...
@@ -509,20 +509,20 @@ Options reference
         Done.
 
 ..  option:: --version
- 
+
     Display version information and exit.
- 
+
     ..  code-block:: shell
- 
+
         $ ican --version
         icalendar-anonymizer, version <version>
- 
+
 ..  option:: --help
- 
+
     Show usage information and exit.
- 
+
     ..  code-block:: shell
- 
+
         ican --help
 
     ..  note::
@@ -539,53 +539,53 @@ Configure how individual fields are anonymized.
 The four modes are ``keep``, ``remove``, ``randomize``, and ``replace``.
 
 ..  option:: --summary <mode>
- 
+
     Mode for SUMMARY field.
- 
+
     -   **Choices**: ``keep``, ``remove``, ``randomize``, ``replace``
     -   **Default**: ``randomize``
     -   **Example**: :code:`ican --summary keep calendar.ics`
- 
+
 ..  option:: --description <mode>
- 
+
     Mode for DESCRIPTION field.
- 
+
 ..  option:: --location <mode>
- 
+
     Mode for LOCATION field.
- 
+
 ..  option:: --comment <mode>
- 
+
     Mode for COMMENT field.
- 
+
 ..  option:: --contact <mode>
- 
+
     Mode for CONTACT field.
- 
+
 ..  option:: --resources <mode>
- 
+
     Mode for RESOURCES field.
- 
+
 ..  option:: --categories <mode>
- 
+
     Mode for CATEGORIES field.
- 
+
 ..  option:: --attendee <mode>
- 
+
     Mode for ATTENDEE field.
- 
+
 ..  option:: --organizer <mode>
- 
+
     Mode for ORGANIZER field.
- 
+
 ..  option:: --uid <mode>
- 
+
     Mode for UID field.
-    
+
     .. note::
 
         The ``remove`` mode is not allowed.
- 
+
     -   **Choices**: ``keep``, ``randomize``, ``replace``
     -   **Default**: ``randomize``
 
