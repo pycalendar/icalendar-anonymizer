@@ -506,7 +506,6 @@ Options reference
     ..  code-block:: shell
  
         $ ican --version
-        $ ican --version
         icalendar-anonymizer, version <version>
  
 ..  option:: --help
