@@ -331,11 +331,11 @@ Command not found
 
 If you get ``command not found`` after installation:
 
-#.  Reinstall with the CLI dependency group:
+#.  Reinstall the package with the CLI extras:
  
     ..  code-block:: shell
  
-        uv sync --group cli
+        uv pip install --reinstall "icalendar-anonymizer[cli]"
  
 #.  Use the full Python module path:
  
