@@ -20,10 +20,20 @@ Install the latest Python version and create virtual environment.
 
 Activate the virtual environment.
 
-..  code-block:: shell
+..  tab-set::
 
-    source .venv/bin/activate
+    ..  tab-item:: Linux and macOS
 
+        ..  code-block:: shell
+        
+            source .venv/bin/activate
+        
+    ..  tab-item:: Windows PowerShell
+
+        ..  code-block:: powershell
+        
+            .venv\Scripts\Activate.ps1
+        
 Install icalendar-anonymizer, its dependencies, and the CLI extras.
 
 ..  code-block:: shell
