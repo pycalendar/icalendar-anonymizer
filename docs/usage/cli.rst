@@ -23,12 +23,14 @@ Activate the virtual environment.
 ..  tab-set::
 
     ..  tab-item:: Linux and macOS
+        :sync: linux
 
         ..  code-block:: shell
 
             source .venv/bin/activate
 
     ..  tab-item:: Windows PowerShell
+        :sync: powershell
 
         ..  code-block:: powershell
 
@@ -153,12 +155,14 @@ Read from a file and write to a file.
 ..  tab-set::
 
     ..  tab-item:: Linux and macOS
+        :sync: linux
 
         ..  code-block:: shell
 
             cat calendar.ics | ican > anonymized.ics
 
     ..  tab-item:: Windows PowerShell
+        :sync: powershell
 
         ..  code-block:: powershell
 
@@ -169,12 +173,14 @@ Read from ``stdin`` explicitly with ``-``.
 ..  tab-set::
 
     ..  tab-item:: Linux and macOS
+        :sync: linux
 
         ..  code-block:: shell
 
             ican - < calendar.ics > anonymized.ics
 
     ..  tab-item:: Windows PowerShell
+        :sync: powershell
 
         PowerShell pipes re-encode bytes through the console code page. On 5.1 this corrupts non-ASCII characters even with ``-Encoding utf8``. Pass the file path directly instead.
 
@@ -187,12 +193,14 @@ Verbose output to ``stderr`` doesn't corrupt ``stdout``.
 ..  tab-set::
 
     ..  tab-item:: Linux and macOS
+        :sync: linux
 
         ..  code-block:: shell
 
             cat calendar.ics | ican -v > anonymized.ics
 
     ..  tab-item:: Windows PowerShell
+        :sync: powershell
 
         ..  code-block:: powershell
 
@@ -206,6 +214,7 @@ Anonymize all ICS files in directory.
 ..  tab-set::
 
     ..  tab-item:: Linux and macOS
+        :sync: linux
 
         ..  code-block:: shell
 
@@ -214,6 +223,7 @@ Anonymize all ICS files in directory.
             done
 
     ..  tab-item:: Windows PowerShell
+        :sync: powershell
 
         ..  code-block:: powershell
 
@@ -226,6 +236,7 @@ Process files from a list.
 ..  tab-set::
 
     ..  tab-item:: Linux and macOS
+        :sync: linux
 
         ..  code-block:: shell
 
@@ -234,6 +245,7 @@ Process files from a list.
             done < file-list.txt
 
     ..  tab-item:: Windows PowerShell
+        :sync: powershell
 
         ..  code-block:: powershell
 
@@ -252,12 +264,14 @@ Download a remote file and anonymize it.
 ..  tab-set::
 
     ..  tab-item:: Linux and macOS
+        :sync: linux
 
         ..  code-block:: shell
 
             curl https://example.com/calendar.ics | ican > local-anon.ics
 
     ..  tab-item:: Windows PowerShell
+        :sync: powershell
 
         ..  code-block:: powershell
 
@@ -269,12 +283,14 @@ Do the previous example with error checking.
 ..  tab-set::
 
     ..  tab-item:: Linux and macOS
+        :sync: linux
 
         ..  code-block:: shell
 
             curl -f https://example.com/calendar.ics | ican -v > local-anon.ics
 
     ..  tab-item:: Windows PowerShell
+        :sync: powershell
 
         ..  code-block:: powershell
 
@@ -294,12 +310,14 @@ Anonymize and count events.
 ..  tab-set::
 
     ..  tab-item:: Linux and macOS
+        :sync: linux
 
         ..  code-block:: shell
 
             ican calendar.ics | grep -c "BEGIN:VEVENT"
 
     ..  tab-item:: Windows PowerShell
+        :sync: powershell
 
         ..  code-block:: powershell
 
@@ -316,12 +334,14 @@ Compress the anonymized output.
 ..  tab-set::
 
     ..  tab-item:: Linux and macOS
+        :sync: linux
 
         ..  code-block:: shell
 
             ican calendar.ics | gzip > anonymized.ics.gz
 
     ..  tab-item:: Windows PowerShell
+        :sync: powershell
 
         Windows PowerShell doesn't include a ``gzip`` command by default.
         Anonymize to a file first, then compress it with a third-party tool such as `7-Zip <https://www.7-zip.org/>`_.
@@ -336,12 +356,14 @@ Keep summaries for debugging, pipe to a file, and compress it.
 ..  tab-set::
 
     ..  tab-item:: Linux and macOS
+        :sync: linux
 
         ..  code-block:: shell
 
             ican --summary keep calendar.ics | gzip > debug-anon.ics.gz
 
     ..  tab-item:: Windows PowerShell
+        :sync: powershell
 
         ..  code-block:: powershell
 
@@ -520,7 +542,8 @@ Check the exit code after running ``ican``, according to your operating system a
 
 .. tab-set::
 
-    ..  tab-item:: Unix/macOS/Linux
+    ..  tab-item:: Linux and macOS
+        :sync: linux
 
         ..  code-block:: shell
 
@@ -528,6 +551,7 @@ Check the exit code after running ``ican``, according to your operating system a
             echo $?
 
     ..  tab-item:: Windows cmd
+        :sync: windows-cmd
 
         ..  code-block:: batch
 
@@ -535,6 +559,7 @@ Check the exit code after running ``ican``, according to your operating system a
             echo %ERRORLEVEL%
 
     ..  tab-item:: Windows PowerShell
+        :sync: powershell
 
         ..  code-block:: ps1con
 
