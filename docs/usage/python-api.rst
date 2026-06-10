@@ -168,6 +168,8 @@ The ``preserve`` parameter is still supported for backward compatibility:
     # After confirming categories contain no personal data
     anonymized_cal = anonymize(cal, preserve={"CATEGORIES"})
 
+..  _python-api-property-handling-reference:
+
 Property Handling Reference
 ===========================
 

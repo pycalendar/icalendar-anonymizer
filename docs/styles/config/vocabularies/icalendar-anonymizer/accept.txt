@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 [Aa]nonymize[dr]
-anonymization
+[Aa]nonymization
 async
 [Aa]utogenerated
 Caddy
@@ -20,4 +20,6 @@ pytest
 Ruff
 systemd
 Traefik
+UIDs
+uv
 uvicorn

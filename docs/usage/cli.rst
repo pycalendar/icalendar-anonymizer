@@ -1,355 +1,465 @@
 .. SPDX-FileCopyrightText: 2025 icalendar-anonymizer contributors
 .. SPDX-License-Identifier: AGPL-3.0-or-later
 
-======================
-Command-Line Interface
-======================
+**********************
+Command-line interface
+**********************
 
-The command-line interface provides Unix-style tools for anonymizing iCalendar files from the terminal.
+The command-line interface (CLI) provides Unix-style tools for anonymizing iCalendar files from the terminal.
 
 Installation
 ============
 
-Install the CLI with:
+First, install uv as described in :ref:`development-prerequisites`.
 
-.. code-block:: shell
+Install the latest Python version and create virtual environment.
 
-    pip install icalendar-anonymizer[cli]
+..  code-block:: shell
 
-This installs the Click 8.3.1+ dependency and both command-line tools.
+    uv venv
+
+Activate the virtual environment.
+
+..  tab-set::
+
+    ..  tab-item:: Linux and macOS
+        :sync: linux
+
+        ..  code-block:: shell
+
+            source .venv/bin/activate
+
+    ..  tab-item:: Windows PowerShell
+        :sync: powershell
+
+        ..  code-block:: powershell
+
+            .venv\Scripts\Activate.ps1
+
+Install icalendar-anonymizer, its dependencies, and the CLI extras.
+
+..  code-block:: shell
+
+    uv pip install "icalendar-anonymizer[cli]"
+
+Verify installation with the following command.
+
+..  code-block:: shell
+
+    ican --version
+
+This should output the package name and its version number.
+
 
 Commands
 ========
 
-Two commands are provided as aliases:
+Two commands are provided.
 
-- :program:`icalendar-anonymize` - Full command name
-- :program:`ican` - Short alias for convenience
+:program:`icalendar-anonymize`
+    Full command name
+:program:`ican`
+    Short alias for convenience
 
 Both commands work identically.
 
-Basic Usage
-===========
+Usage
+=====
 
-Anonymize a File
+This section describes how to use the command-line :program:`icalendar-anonymize` application.
+For brevity, examples use the alias form.
+
+The usage syntax calls the program, followed optionally by options, then input, and finally output.
+
+..  code-block:: shell
+
+    ican [OPTIONS] [INPUT] [-o OUTPUT]
+
+For a complete list of command options and field configuration options, either see :ref:`options-reference` or :ref:`field-configuration-options`, or use the following command.
+
+..  code-block:: shell
+
+    ican --help
+
+Anonymize a file
 ----------------
 
 Read from a file and write to another file:
 
-.. code-block:: shell
+..  code-block:: shell
 
-    icalendar-anonymize calendar.ics -o anonymized.ics
     ican calendar.ics -o anonymized.ics
 
-Write to stdout
----------------
+Verbose output with the ``-v`` option shows progress.
 
-Omit the ``-o`` flag to write to stdout:
+..  code-block:: shell
 
-.. code-block:: shell
-
-    icalendar-anonymize calendar.ics
-    ican calendar.ics > anonymized.ics
-
-Read from stdin
----------------
-
-Omit the input argument or use ``-`` to read from stdin:
-
-.. code-block:: shell
-
-    cat calendar.ics | icalendar-anonymize > anonymized.ics
-    icalendar-anonymize - -o anonymized.ics
-
-Unix-Style Piping
------------------
-
-Combine with other Unix tools:
-
-.. code-block:: shell
-
-    # Download and anonymize
-    curl https://example.com/calendar.ics | ican > anonymized.ics
-
-    # Anonymize multiple files
-    for f in *.ics; do ican "$f" -o "anon-$f"; done
-
-    # Anonymize and compress
-    cat calendar.ics | ican | gzip > anonymized.ics.gz
-
-Options Reference
-=================
-
-.. program:: icalendar-anonymize
-
-.. option:: [INPUT]
-
-   Input iCalendar file to anonymize. Optional positional argument.
-
-   - **Default**: stdin (``-``)
-   - **Format**: File path or ``-`` for stdin
-   - **Example**: ``ican calendar.ics``
-
-.. option:: -o <file>, --output <file>
-
-   Output file for anonymized calendar.
-
-   - **Default**: stdout (``-``)
-   - **Format**: File path or ``-`` for stdout
-   - **Example**: ``ican input.ics -o output.ics``
-
-.. option:: -v, --verbose
-
-   Show processing information on stderr. Displays input/output sources and processing steps.
-
-   - **Flag**: No value required
-   - **Output**: Messages written to stderr (not stdout)
-   - **Example**: ``ican -v calendar.ics -o anonymized.ics``
-
-   Example verbose output:
-
-   .. code-block:: text
-
-       Reading from: calendar.ics
-       Parsing calendar...
-       Anonymizing calendar...
-       Writing to: anonymized.ics
-       Done.
-
-Field Configuration Options
-----------------------------
-
-Configure how individual fields are anonymized. Four modes: ``keep``, ``remove``, ``randomize``, ``replace``.
-
-.. option:: --summary <mode>
-
-   Mode for SUMMARY field.
-
-   - **Choices**: ``keep``, ``remove``, ``randomize``, ``replace``
-   - **Default**: ``randomize``
-   - **Example**: ``ican --summary keep calendar.ics``
-
-.. option:: --description <mode>
-
-   Mode for DESCRIPTION field.
-
-.. option:: --location <mode>
-
-   Mode for LOCATION field.
-
-.. option:: --comment <mode>
-
-   Mode for COMMENT field.
-
-.. option:: --contact <mode>
-
-   Mode for CONTACT field.
-
-.. option:: --resources <mode>
-
-   Mode for RESOURCES field.
-
-.. option:: --categories <mode>
-
-   Mode for CATEGORIES field.
-
-.. option:: --attendee <mode>
-
-   Mode for ATTENDEE field.
-
-.. option:: --organizer <mode>
-
-   Mode for ORGANIZER field.
-
-.. option:: --uid <mode>
-
-   Mode for UID field. **Note:** ``remove`` mode not allowed.
-
-   - **Choices**: ``keep``, ``randomize``, ``replace``
-   - **Default**: ``randomize``
-
-**Examples:**
-
-.. code-block:: shell
-
-    # Keep summaries, remove locations
-    ican --summary keep --location remove calendar.ics
-
-    # Replace descriptions with placeholders
-    ican --description replace calendar.ics
-
-    # Combine multiple field modes
-    ican --summary keep --location remove --description replace calendar.ics
-
-.. option:: --version
-
-   Display version information and exit.
-
-   .. code-block:: shell
-
-       $ ican --version
-       icalendar-anonymizer, version 0.1.0
-
-.. option:: --help
-
-   Show usage information and exit.
-
-   .. code-block:: shell
-
-       ican --help
-
-Examples
-========
-
-Basic File Conversion
----------------------
-
-.. code-block:: shell
-
-    # Anonymize a single file
-    ican calendar.ics -o anonymized.ics
-
-    # Verbose output shows progress
     ican -v calendar.ics -o anonymized.ics
 
-Pipeline Processing
+Write to ``stdout``
 -------------------
 
-.. code-block:: shell
+Omit the ``-o`` flag to write to ``stdout``:
 
-    # Read from stdin, write to stdout
+..  code-block:: shell
+
+    ican calendar.ics
+
+Read from ``stdin``
+-------------------
+
+Omit the input argument to read from ``stdin``:
+
+..  code-block:: shell
+
     cat calendar.ics | ican > anonymized.ics
 
-    # Explicit stdin/stdout with -
-    ican - < calendar.ics > anonymized.ics
+Field configuration
+-------------------
 
-    # Verbose output to stderr doesn't corrupt stdout
-    cat calendar.ics | ican -v > anonymized.ics
+For a complete list of supported fields, use the ``--help`` option.
 
-Batch Processing
+..  code-block:: shell
+
+    ican --help
+
+Keep summaries, remove locations.
+
+..  code-block:: shell
+
+    ican --summary keep --location remove calendar.ics
+
+Replace descriptions with placeholders.
+
+..  code-block:: shell
+
+    ican --description replace calendar.ics
+
+Combine multiple field modes.
+
+..  code-block:: shell
+
+    ican --summary keep --location remove --description replace calendar.ics
+
+Pipeline processing
+-------------------
+
+..  note::
+
+    PowerShell examples use the ``-o`` flag instead of ``>``. PowerShell 5.1 encodes ``>`` as UTF-16, which corrupts the output for tools that expect UTF-8.
+
+    PowerShell 5.1 also re-encodes ``stdin`` pipes through the console code page and can mangle non-ASCII content.
+    For data with accents or non-Latin text on 5.1, prefer the file-argument form (``ican calendar.ics -o anonymized.ics``).
+    PowerShell 7+ handles UTF-8 through pipes correctly.
+
+Read from a file and write to a file.
+
+..  tab-set::
+
+    ..  tab-item:: Linux and macOS
+        :sync: linux
+
+        ..  code-block:: shell
+
+            cat calendar.ics | ican > anonymized.ics
+
+    ..  tab-item:: Windows PowerShell
+        :sync: powershell
+
+        ..  code-block:: powershell
+
+            ican calendar.ics -o anonymized.ics
+
+Read from ``stdin`` explicitly with ``-``.
+
+..  tab-set::
+
+    ..  tab-item:: Linux and macOS
+        :sync: linux
+
+        ..  code-block:: shell
+
+            ican - < calendar.ics > anonymized.ics
+
+    ..  tab-item:: Windows PowerShell
+        :sync: powershell
+
+        PowerShell re-encodes piped bytes from ``stdin`` through the console code page.
+        On 5.1 this corrupts non-ASCII characters, even with ``-Encoding utf8``.
+        Pass the file path directly instead.
+
+        ..  code-block:: powershell
+
+            ican calendar.ics -o anonymized.ics
+
+Verbose output to ``stderr`` doesn't corrupt ``stdout``.
+
+..  tab-set::
+
+    ..  tab-item:: Linux and macOS
+        :sync: linux
+
+        ..  code-block:: shell
+
+            cat calendar.ics | ican -v > anonymized.ics
+
+    ..  tab-item:: Windows PowerShell
+        :sync: powershell
+
+        ..  code-block:: powershell
+
+            ican -v calendar.ics -o anonymized.ics
+
+Batch processing
 ----------------
 
-.. code-block:: shell
+Anonymize all ICS files in directory.
 
-    # Anonymize all ICS files in directory
-    for file in *.ics; do
-        ican "$file" -o "anonymized-$file"
-    done
+..  tab-set::
 
-    # Process files from a list
-    while read -r file; do
-        ican "$file" -o "anon-$(basename "$file")"
-    done < file-list.txt
+    ..  tab-item:: Linux and macOS
+        :sync: linux
 
-Remote Files
+        ..  code-block:: shell
+
+            for file in *.ics; do
+                ican "$file" -o "anonymized-$file"
+            done
+
+    ..  tab-item:: Windows PowerShell
+        :sync: powershell
+
+        ..  code-block:: powershell
+
+            Get-ChildItem *.ics -File | ForEach-Object {
+                ican $_.Name -o "anonymized-$($_.Name)"
+            }
+
+Process files from a list.
+
+..  tab-set::
+
+    ..  tab-item:: Linux and macOS
+        :sync: linux
+
+        ..  code-block:: shell
+
+            while read -r file; do
+                ican "$file" -o "anon-$(basename "$file")"
+            done < file-list.txt
+
+    ..  tab-item:: Windows PowerShell
+        :sync: powershell
+
+        ..  code-block:: powershell
+
+            Get-Content file-list.txt -Encoding utf8 | ForEach-Object {
+                $file = $_.Trim()
+                if ($file) {
+                    ican $file -o "anon-$(Split-Path $file -Leaf)"
+                }
+            }
+
+Remote files
 ------------
 
-.. code-block:: shell
+Download a remote file and anonymize it.
 
-    # Download and anonymize
-    curl https://example.com/calendar.ics | ican > local-anon.ics
+..  tab-set::
 
-    # With error checking
-    curl -f https://example.com/calendar.ics | ican -v > local-anon.ics
+    ..  tab-item:: Linux and macOS
+        :sync: linux
 
-Combining with Other Tools
----------------------------
+        ..  code-block:: shell
 
-.. code-block:: shell
+            curl https://example.com/calendar.ics | ican > local-anon.ics
 
-    # Anonymize and count events
-    ican calendar.ics | grep -c "BEGIN:VEVENT"
+    ..  tab-item:: Windows PowerShell
+        :sync: powershell
 
-    # Anonymize and validate
-    ican calendar.ics | ics-validator
+        ..  code-block:: powershell
 
-    # Compress anonymized output
-    ican calendar.ics | gzip > anonymized.ics.gz
+            Invoke-WebRequest https://example.com/calendar.ics -UseBasicParsing -OutFile remote.ics
+            ican remote.ics -o local-anon.ics
 
-    # Keep summaries for debugging, pipe to file
-    ican --summary keep calendar.ics | gzip > debug-anon.ics.gz
+Do the previous example with error checking.
 
-What Gets Anonymized?
+..  tab-set::
+
+    ..  tab-item:: Linux and macOS
+        :sync: linux
+
+        ..  code-block:: shell
+
+            curl -f https://example.com/calendar.ics | ican -v > local-anon.ics
+
+    ..  tab-item:: Windows PowerShell
+        :sync: powershell
+
+        ..  code-block:: powershell
+
+            try {
+                Invoke-WebRequest https://example.com/calendar.ics -UseBasicParsing -OutFile remote.ics -ErrorAction Stop
+                ican -v remote.ics -o local-anon.ics
+            } catch {
+                Write-Error $_.Exception.Message
+                exit 1
+            }
+
+Combining with other tools
+--------------------------
+
+Anonymize and count events.
+
+..  tab-set::
+
+    ..  tab-item:: Linux and macOS
+        :sync: linux
+
+        ..  code-block:: shell
+
+            ican calendar.ics | grep -c "BEGIN:VEVENT"
+
+    ..  tab-item:: Windows PowerShell
+        :sync: powershell
+
+        ..  code-block:: powershell
+
+            (ican calendar.ics | Select-String "BEGIN:VEVENT").Count
+
+Anonymize and validate the input.
+
+..  code-block:: shell
+
+    ican calendar.ics | <your-validator>
+
+Compress the anonymized output.
+
+..  tab-set::
+
+    ..  tab-item:: Linux and macOS
+        :sync: linux
+
+        ..  code-block:: shell
+
+            ican calendar.ics | gzip > anonymized.ics.gz
+
+    ..  tab-item:: Windows PowerShell
+        :sync: powershell
+
+        Windows PowerShell doesn't include a ``gzip`` command by default.
+        Anonymize to a file first, then compress it with a third-party tool such as `7-Zip <https://www.7-zip.org/>`_.
+
+        ..  code-block:: powershell
+
+            ican calendar.ics -o anonymized.ics
+            & "C:\Program Files\7-Zip\7z.exe" a -tgzip anonymized.ics.gz anonymized.ics
+
+Keep summaries for debugging, pipe to a file, and compress it.
+
+..  tab-set::
+
+    ..  tab-item:: Linux and macOS
+        :sync: linux
+
+        ..  code-block:: shell
+
+            ican --summary keep calendar.ics | gzip > debug-anon.ics.gz
+
+    ..  tab-item:: Windows PowerShell
+        :sync: powershell
+
+        ..  code-block:: powershell
+
+            ican --summary keep calendar.ics -o debug-anon.ics
+            & "C:\Program Files\7-Zip\7z.exe" a -tgzip debug-anon.ics.gz debug-anon.ics
+
+Anonymization summary
 =====================
 
-.. note::
-   This is a quick reference. See :doc:`python-api` for the complete property reference table.
+The CLI uses the same anonymization as the :doc:`python-api`:
 
-The CLI uses the same anonymization as the Python API:
+..  seealso::
 
-**Anonymized (hashed with SHA-256):**
+    See :ref:`python-api-property-handling-reference` for the complete property reference table.
 
-- Event summaries, descriptions, locations
-- Attendee and organizer names (CN parameter)
-- Comments, categories, resources
-- UIDs (uniqueness preserved)
+Anonymized properties
+---------------------
 
-**Preserved for bug reproduction:**
+These properties get anonymized and hashed with SHA-256.
 
-- All dates and times (DTSTART, DTEND, DUE)
-- Recurrence rules (RRULE, RDATE, EXDATE)
-- Status, priority, sequence numbers
-- Timezones (complete VTIMEZONE)
+-   Event summaries, descriptions, locations
+-   Attendee and organizer names (CN parameter)
+-   Comments, categories, resources
+-   UIDs (uniqueness preserved)
 
-See :doc:`python-api` for complete property reference.
+Preserved properties
+--------------------
 
-Error Handling
+These properties get preserved for bug reproduction.
+
+-   All dates and times (DTSTART, DTEND, DUE)
+-   Recurrence rules (RRULE, RDATE, EXDATE)
+-   Status, priority, sequence numbers
+-   Timezones (complete VTIMEZONE)
+
+Error handling
 ==============
 
-The CLI provides clear error messages for common issues.
+The CLI provides error messages for common issues, as described in each of the following subsections.
 
-File Not Found
+File not found
 --------------
 
-.. code-block:: text
+..  code-block:: text
 
     $ ican nonexistent.ics
     Error: Could not open 'nonexistent.ics': No such file or directory
 
-**Exit code**: 2
+Exit code: ``2``.
 
-Invalid ICS File
+Invalid ICS file
 ----------------
 
-.. code-block:: text
+..  code-block:: text
 
     $ echo "invalid content" | ican
     Error: Invalid ICS file - Expected instance of <class 'icalendar.cal.Component'>
 
-**Exit code**: 1
+Exit code: ``1``.
 
-Empty Input
+Empty input
 -----------
 
-.. code-block:: text
+..  code-block:: text
 
     $ echo "" | ican
     Error: Input is empty
 
-**Exit code**: 1
+Exit code: ``1``.
 
-Permission Denied
+Permission denied
 -----------------
 
-.. code-block:: text
+..  code-block:: text
 
     $ ican protected.ics -o /root/output.ics
     Error: [Errno 13] Permission denied: '/root/output.ics'
 
-**Exit code**: 1
+Exit code: ``1``.
 
-Keyboard Interrupt
+Keyboard interrupt
 ------------------
 
-.. code-block:: text
+..  code-block:: text
 
     $ ican large-file.ics
     ^C
     Interrupted
 
-**Exit code**: 130
+Exit code: ``130``.
 
-Exit Codes
+Exit codes
 ==========
 
 The CLI follows Unix conventions for exit codes:
@@ -360,7 +470,7 @@ The CLI follows Unix conventions for exit codes:
 
    * - Code
      - Meaning
-     - When Used
+     - When used
    * - 0
      - Success
      - Anonymization completed successfully
@@ -372,123 +482,120 @@ The CLI follows Unix conventions for exit codes:
      - Input file not found or cannot be opened
    * - 130
      - Interrupted
-     - User pressed Ctrl+C (SIGINT)
+     - User pressed :kbd:`Ctrl+C` (SIGINT)
 
 Troubleshooting
 ===============
 
-Command Not Found
+The following sections provide troubleshooting tips.
+
+Command not found
 -----------------
 
 If you get ``command not found`` after installation:
 
-1. Verify the CLI extra is installed:
+#.  Reinstall the package with the CLI extras:
 
-   .. code-block:: shell
+    ..  code-block:: shell
 
-       pip show icalendar-anonymizer | grep cli
+        uv pip install --reinstall "icalendar-anonymizer[cli]"
 
-2. Check your PATH includes pip's script directory:
+#.  Use the full Python module path:
 
-   .. code-block:: shell
+    ..  code-block:: shell
 
-       python -m site --user-base
+        python -m icalendar_anonymizer.cli calendar.ics
 
-3. Reinstall with CLI extra:
-
-   .. code-block:: shell
-
-       pip install --force-reinstall icalendar-anonymizer[cli]
-
-4. Use the full Python module path:
-
-   .. code-block:: shell
-
-       python -m icalendar_anonymizer.cli calendar.ics
-
-Binary Mode on Windows
+Binary mode on Windows
 ----------------------
 
-The CLI automatically handles binary mode on Windows. You don't need to worry about CRLF line endings.
+The CLI automatically handles binary mode on Windows.
+You don't need to worry about CRLF line endings.
 
-If you encounter encoding issues on Windows:
+If you encounter encoding issues on Windows, then use binary mode with PowerShell.
 
-.. code-block:: shell
+..  code-block:: shell
 
-    # Use binary mode with PowerShell
     Get-Content calendar.ics -Raw | ican > anonymized.ics
 
-Large Files
+Large files
 -----------
 
-The CLI loads the entire file into memory. For very large files (>100MB):
+The CLI loads the entire file into memory.
+For large files over 100MB in size, the following tips will improve performance.
 
-1. **Monitor memory usage**: Use verbose mode to track progress
+-   Monitor memory usage.
+    Use verbose mode to track progress.
 
-   .. code-block:: shell
+    ..  code-block:: shell
 
-       ican -v large-file.ics -o output.ics
+        ican -v large-file.ics -o output.ics
 
-2. **Process in chunks**: Split large calendars before anonymizing
-
-   .. code-block:: shell
-
-       # Example: Split by year, then anonymize
-       grep -A 100 "DTSTART:2024" calendar.ics | ican > 2024-anon.ics
-
-3. **Use the Python API**: For programmatic control over memory usage
-
-Hyphen as Filename
-------------------
-
-To use a file literally named ``-``:
-
-.. code-block:: shell
-
-    # Use ./ prefix to treat - as a filename
-    ican ./- -o output.ics
+-   Use the :doc:`python-api` for programmatic control over memory usage.
 
 Debugging
 ---------
 
-Enable verbose mode to see processing steps:
+Enable verbose mode with the ``-v`` option to see processing steps.
 
-.. code-block:: shell
+..  code-block:: shell
 
     ican -v calendar.ics -o anonymized.ics
 
-Check the exit code after running:
+Check the exit code after running ``ican``, according to your operating system and shell.
 
-.. code-block:: shell
+.. tab-set::
 
-    ican calendar.ics
-    echo $?  # Unix/macOS/Linux
-    echo %ERRORLEVEL%  # Windows cmd
-    echo $LASTEXITCODE  # Windows PowerShell
+    ..  tab-item:: Linux and macOS
+        :sync: linux
 
-Getting Help
+        ..  code-block:: shell
+
+            ican calendar.ics
+            echo $?
+
+    ..  tab-item:: Windows cmd
+        :sync: windows-cmd
+
+        ..  code-block:: batch
+
+            ican calendar.ics
+            echo %ERRORLEVEL%
+
+    ..  tab-item:: Windows PowerShell
+        :sync: powershell
+
+        ..  code-block:: ps1con
+
+            ican calendar.ics
+            echo $LASTEXITCODE
+
+
+Getting help
 ============
 
 If you encounter issues with the CLI:
 
-- Use ``ican --help`` for usage information
-- Check the `Issue Tracker <https://github.com/pycalendar/icalendar-anonymizer/issues>`_
-- Open a new issue with:
-  - Your command
-  - Error message
-  - Operating system
-  - Python version (``python --version``)
-  - Package version (``ican --version``)
+-   Use ``ican --help`` for usage information.
+-   Check the `Issue Tracker <https://github.com/pycalendar/icalendar-anonymizer/issues>`_.
+-   Open a new issue with:
+    -   Your command
+    -   Error message
+    -   Operating system
+    -   Python version (``python --version``)
+    -   Package version (``ican --version``)
 
-Integration Examples
+Integration examples
 ====================
 
-Git Pre-Commit Hook
+The following examples describe how to integrate icalendar-anonymizer with various third-party tools.
+
+Git pre-commit hook
 --------------------
 
 Automatically anonymize calendars before committing:
 
-.. code-block:: shell
+..  code-block:: shell
 
     #!/bin/bash
     # .git/hooks/pre-commit
@@ -500,17 +607,145 @@ Automatically anonymize calendars before committing:
         fi
     done
 
-Cron Job
+cron job
 --------
 
 Periodically anonymize shared calendars:
 
-.. code-block:: shell
+..  code-block:: shell
 
     # Crontab entry: Anonymize daily at 2 AM
     0 2 * * * /usr/bin/ican /path/to/calendar.ics -o /path/to/anon.ics
 
-See Also
+.. todo::
+
+    Move this subsection into a separate reference section in the documentation.
+    See :issue:`153`.
+
+..  _options-reference:
+
+Options reference
+=================
+
+..  program:: icalendar-anonymize
+
+..  option:: [INPUT]
+
+    Input iCalendar file to anonymize.
+    Optional positional argument.
+
+    -   **Default**: ``stdin`` (``-``)
+    -   **Format**: File path or ``-`` for ``stdin``
+    -   **Example**: :code:`ican calendar.ics`
+
+..  option:: -o <file>, --output <file>
+
+    Output file for anonymized calendar.
+
+    -   **Default**: ``stdout`` (``-``)
+    -   **Format**: File path or ``-`` for ``stdout``
+    -   **Example**: :code:`ican input.ics -o output.ics`
+
+..  option:: -v, --verbose
+
+    Show processing information on stderr. Displays input/output sources and processing steps.
+
+    -   **Flag**: No value required
+    -   **Output**: Messages written to stderr (not ``stdout``)
+    -   **Example**: :code:`ican -v calendar.ics -o anonymized.ics`
+
+    The following example shows verbose output:
+
+    ..  code-block:: text
+
+        Reading from: calendar.ics
+        Parsing calendar...
+        Anonymizing calendar...
+        Writing to: anonymized.ics
+        Done.
+
+..  option:: --version
+
+    Display version information and exit.
+
+    ..  code-block:: shell
+
+        $ ican --version
+        icalendar-anonymizer, version <version>
+
+..  option:: --help
+
+    Show usage information and exit.
+
+    ..  code-block:: shell
+
+        ican --help
+
+    ..  note::
+
+        The output for "Usage" is somewhat misleading, as Click merges ``-o, --output FILENAME`` with the options instead of as a positional final optional argument.
+        See also :issue:`148` for a related Click formatting quirk.
+
+..  _field-configuration-options:
+
+Field configuration options
+----------------------------
+
+Configure how individual fields are anonymized.
+The four modes are ``keep``, ``remove``, ``randomize``, and ``replace``.
+
+..  option:: --summary <mode>
+
+    Mode for SUMMARY field.
+
+    -   **Choices**: ``keep``, ``remove``, ``randomize``, ``replace``
+    -   **Default**: ``randomize``
+    -   **Example**: :code:`ican --summary keep calendar.ics`
+
+..  option:: --description <mode>
+
+    Mode for DESCRIPTION field.
+
+..  option:: --location <mode>
+
+    Mode for LOCATION field.
+
+..  option:: --comment <mode>
+
+    Mode for COMMENT field.
+
+..  option:: --contact <mode>
+
+    Mode for CONTACT field.
+
+..  option:: --resources <mode>
+
+    Mode for RESOURCES field.
+
+..  option:: --categories <mode>
+
+    Mode for CATEGORIES field.
+
+..  option:: --attendee <mode>
+
+    Mode for ATTENDEE field.
+
+..  option:: --organizer <mode>
+
+    Mode for ORGANIZER field.
+
+..  option:: --uid <mode>
+
+    Mode for UID field.
+
+    .. note::
+
+        The ``remove`` mode is not allowed.
+
+    -   **Choices**: ``keep``, ``randomize``, ``replace``
+    -   **Default**: ``randomize``
+
+See also
 ========
 
 - :doc:`python-api` - Python API for programmatic usage
