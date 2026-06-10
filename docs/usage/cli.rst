@@ -148,7 +148,9 @@ Pipeline processing
 
     PowerShell examples use the ``-o`` flag instead of ``>``. PowerShell 5.1 encodes ``>`` as UTF-16, which corrupts the output for tools that expect UTF-8.
 
-    PowerShell 5.1 also re-encodes ``stdin`` pipes through the console code page and can mangle non-ASCII content. For data with accents or non-Latin text on 5.1, prefer the file-argument form (``ican calendar.ics -o anonymized.ics``). PowerShell 7+ handles UTF-8 through pipes correctly.
+    PowerShell 5.1 also re-encodes ``stdin`` pipes through the console code page and can mangle non-ASCII content.
+    For data with accents or non-Latin text on 5.1, prefer the file-argument form (``ican calendar.ics -o anonymized.ics``).
+    PowerShell 7+ handles UTF-8 through pipes correctly.
 
 Read from a file and write to a file.
 
@@ -182,7 +184,7 @@ Read from ``stdin`` explicitly with ``-``.
     ..  tab-item:: Windows PowerShell
         :sync: powershell
 
-        PowerShell pipes re-encoded bytes through the console code page.
+        PowerShell re-encodes piped bytes from ``stdin`` through the console code page.
         On 5.1 this corrupts non-ASCII characters, even with ``-Encoding utf8``.
         Pass the file path directly instead.
 
