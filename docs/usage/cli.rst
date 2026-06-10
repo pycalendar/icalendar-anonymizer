@@ -182,7 +182,9 @@ Read from ``stdin`` explicitly with ``-``.
     ..  tab-item:: Windows PowerShell
         :sync: powershell
 
-        PowerShell pipes re-encode bytes through the console code page. On 5.1 this corrupts non-ASCII characters even with ``-Encoding utf8``. Pass the file path directly instead.
+        PowerShell pipes re-encoded bytes through the console code page.
+        On 5.1 this corrupts non-ASCII characters, even with ``-Encoding utf8``.
+        Pass the file path directly instead.
 
         ..  code-block:: powershell
 
