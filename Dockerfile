@@ -4,7 +4,7 @@
 # syntax=docker/dockerfile:1
 
 # Build stage
-FROM python:3.13-slim AS builder
+FROM python:3.14-slim AS builder
 
 WORKDIR /build
 
@@ -23,7 +23,7 @@ RUN pip install --no-cache-dir build && \
     python -m build --wheel
 
 # Runtime stage
-FROM python:3.13-slim
+FROM python:3.14-slim
 
 LABEL org.opencontainers.image.title="icalendar-anonymizer"
 LABEL org.opencontainers.image.description="Strip personal data from iCalendar files while preserving technical properties for bug reproduction"
