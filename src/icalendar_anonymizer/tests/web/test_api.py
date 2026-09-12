@@ -254,19 +254,44 @@ class TestFetchEndpoint:
         test_url = "https://example.com/redirect"
         redirect_url = "http://127.0.0.1/calendar.ics"
 
-        # Mock the redirect chain
+        # Mock the redirect response. The redirect target is never actually
+        # requested: it's blocked before being dialed, since each hop is
+        # validated and resolved before its connection is made.
         httpx_mock.add_response(
             url=test_url,
             status_code=302,
             headers={"Location": redirect_url},
         )
-        httpx_mock.add_response(url=redirect_url, text=VALID_ICS)
 
         response = client.get(f"/fetch?url={test_url}")
 
-        # Should be blocked when final URL is validated
+        # Should be blocked when the redirect target is validated
         assert response.status_code == 400
         assert "private" in response.json()["detail"].lower()
+
+    def test_fetch_redirect_missing_location_header(self, httpx_mock):
+        """A 3xx response with no Location header must be a clean 400, not a 500."""
+        test_url = "https://example.com/redirect"
+        httpx_mock.add_response(url=test_url, status_code=302)
+
+        response = client.get(f"/fetch?url={test_url}")
+
+        assert response.status_code == 400
+        assert "location" in response.json()["detail"].lower()
+
+    def test_fetch_redirect_malformed_location_header(self, httpx_mock):
+        """A malformed Location header must surface as a 400, not a 500.
+
+        httpx raises RemoteProtocolError, a RequestError subclass, while
+        building the redirect request. The endpoint's existing
+        RequestError handler turns that into a clean 400.
+        """
+        test_url = "https://example.com/redirect"
+        httpx_mock.add_response(url=test_url, status_code=302, headers={"Location": "http://[::1"})
+
+        response = client.get(f"/fetch?url={test_url}")
+
+        assert response.status_code == 400
 
     def test_fetch_connection_error(self, httpx_mock):
         """Test handling of connection errors."""
