@@ -468,3 +468,104 @@ class TestFieldModeFlags:
         assert event["summary"] != "Secret Meeting"
         assert event["description"] != "Confidential discussion"
         assert str(event["uid"]) != "test-event-uid@example.com"
+
+
+# Encoding Tests
+
+
+@pytest.fixture
+def sample_ics_latin1():
+    """Realistic ICS body with accented French text, encoded as Latin-1."""
+    ics_text = (
+        "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Test//Test//EN\r\n"
+        "BEGIN:VEVENT\r\nUID:test-event-uid@example.com\r\n"
+        "DTSTART:20240115T140000Z\r\nDTEND:20240115T150000Z\r\n"
+        "SUMMARY:Réunion à café Montréal\r\n"
+        "END:VEVENT\r\nEND:VCALENDAR\r\n"
+    )
+    return ics_text.encode("latin-1")
+
+
+class TestEncodingFlag:
+    """Tests for legacy encoding detection and the --encoding override."""
+
+    def test_latin1_file_anonymizes_correctly(self, cli_runner, sample_ics_latin1, tmp_path):
+        """Test a Latin-1 file with no declared charset is decoded and anonymized."""
+        from icalendar_anonymizer.cli import main
+
+        input_file = tmp_path / "input.ics"
+        input_file.write_bytes(sample_ics_latin1)
+
+        result = cli_runner.invoke(main, [str(input_file), "--summary", "keep"])
+        assert result.exit_code == 0
+
+        output_cal = Calendar.from_ical(result.output_bytes)
+        event = next(iter(output_cal.walk("VEVENT")))
+        assert str(event["summary"]) == "Réunion à café Montréal"
+
+    def test_encoding_flag_forces_explicit_encoding(self, cli_runner, sample_ics_latin1, tmp_path):
+        """Test --encoding overrides detection and still succeeds for the correct codec."""
+        from icalendar_anonymizer.cli import main
+
+        input_file = tmp_path / "input.ics"
+        input_file.write_bytes(sample_ics_latin1)
+
+        result = cli_runner.invoke(
+            main, [str(input_file), "--encoding", "latin-1", "--summary", "keep"]
+        )
+        assert result.exit_code == 0
+
+        output_cal = Calendar.from_ical(result.output_bytes)
+        event = next(iter(output_cal.walk("VEVENT")))
+        assert str(event["summary"]) == "Réunion à café Montréal"
+
+    def test_encoding_flag_wrong_codec_fails_cleanly(self, cli_runner, sample_ics_latin1, tmp_path):
+        """Test --encoding with the wrong codec is a hard error, not a silent guess."""
+        from icalendar_anonymizer.cli import main
+
+        input_file = tmp_path / "input.ics"
+        input_file.write_bytes(sample_ics_latin1)
+
+        result = cli_runner.invoke(main, [str(input_file), "--encoding", "ascii"])
+
+        assert result.exit_code == 1
+        assert "Could not decode input" in result.output
+
+    def test_encoding_flag_unknown_codec_name(self, cli_runner, sample_ics_latin1, tmp_path):
+        """Test --encoding with an unrecognized codec name fails cleanly."""
+        from icalendar_anonymizer.cli import main
+
+        input_file = tmp_path / "input.ics"
+        input_file.write_bytes(sample_ics_latin1)
+
+        result = cli_runner.invoke(main, [str(input_file), "--encoding", "not-a-real-codec"])
+
+        assert result.exit_code == 1
+        assert "Could not decode input" in result.output
+
+    def test_verbose_shows_detected_encoding(self, cli_runner, sample_ics_latin1, tmp_path):
+        """Test -v reports which encoding was actually used."""
+        from icalendar_anonymizer.cli import main
+
+        input_file = tmp_path / "input.ics"
+        input_file.write_bytes(sample_ics_latin1)
+
+        result = cli_runner.invoke(main, ["-v", str(input_file)])
+
+        assert result.exit_code == 0
+        assert "Detected encoding:" in result.output
+
+    def test_verbose_with_encoding_override_says_override_not_detected(
+        self, cli_runner, sample_ics_latin1, tmp_path
+    ):
+        """Test -v with --encoding reports an override, not a false "detected" claim."""
+        from icalendar_anonymizer.cli import main
+
+        input_file = tmp_path / "input.ics"
+        input_file.write_bytes(sample_ics_latin1)
+
+        result = cli_runner.invoke(main, ["-v", "--encoding", "latin-1", str(input_file)])
+
+        assert result.exit_code == 0
+        assert "Using encoding override: latin-1" in result.output
+        assert "Detected encoding:" not in result.output

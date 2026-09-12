@@ -31,6 +31,23 @@ END:VCALENDAR
 
 INVALID_ICS = "This is not a valid ICS file"
 
+# Realistic ICS content with accented French text, for encoding fallback
+# tests. Uses RFC 5545 CRLF line endings, unlike this file's other
+# fixtures, since encoding edge cases are exactly where staying close to
+# real-world calendar output matters.
+VALID_ICS_ACCENTED_TEXT = (
+    "BEGIN:VCALENDAR\r\n"
+    "VERSION:2.0\r\n"
+    "PRODID:-//Test//Test//EN\r\n"
+    "BEGIN:VEVENT\r\n"
+    "UID:test@example.com\r\n"
+    "DTSTART:20250101T100000Z\r\n"
+    "DTEND:20250101T110000Z\r\n"
+    "SUMMARY:Réunion à café Montréal\r\n"
+    "END:VEVENT\r\n"
+    "END:VCALENDAR\r\n"
+)
+
 
 class TestAnonymizeEndpoint:
     """Tests for POST /anonymize endpoint."""
@@ -141,16 +158,51 @@ class TestUploadEndpoint:
 
         assert response.status_code == 200
 
-    def test_upload_invalid_utf8(self):
-        """Test error handling for non-UTF-8 encoded files."""
-        # Invalid UTF-8 bytes
-        invalid_utf8 = b"BEGIN:VCALENDAR\xff\xfeINVALID"
-        files = {"file": ("invalid.ics", io.BytesIO(invalid_utf8), "text/calendar")}
+    def test_upload_latin1_file_decodes_correctly(self):
+        """Test a Latin-1 file with no declared charset is decoded and anonymized."""
+        file_content = VALID_ICS_ACCENTED_TEXT.encode("latin-1")
+        files = {"file": ("legacy.ics", io.BytesIO(file_content), "text/calendar")}
+
+        response = client.post("/upload", files=files, data={"config": '{"summary": "keep"}'})
+
+        assert response.status_code == 200
+        content = response.content.decode("utf-8")
+        assert "Réunion à café Montréal" in content
+
+    def test_upload_honors_declared_charset_outside_detection_scope(self):
+        """Test a client-declared charset (e.g. UTF-16) on the upload is honored."""
+        file_content = VALID_ICS_ACCENTED_TEXT.encode("utf-16")
+        files = {"file": ("legacy.ics", io.BytesIO(file_content), "text/calendar; charset=utf-16")}
+
+        response = client.post("/upload", files=files, data={"config": '{"summary": "keep"}'})
+
+        assert response.status_code == 200
+        content = response.content.decode("utf-8")
+        assert "Réunion à café Montréal" in content
+
+    def test_upload_falls_back_when_declared_charset_is_wrong(self):
+        """Test an upload lying about its own charset falls back to detection, not a crash."""
+        file_content = VALID_ICS_ACCENTED_TEXT.encode("cp1252")
+        files = {"file": ("legacy.ics", io.BytesIO(file_content), "text/calendar; charset=utf-8")}
+
+        response = client.post("/upload", files=files, data={"config": '{"summary": "keep"}'})
+
+        assert response.status_code == 200
+        content = response.content.decode("utf-8")
+        assert "Réunion à café Montréal" in content
+
+    def test_upload_undecodable_bytes_falls_back_and_fails_ics_parsing(self):
+        """Test that non-UTF-8 bytes decode via fallback, then fail ICS parsing, not decoding."""
+        # These bytes are not valid UTF-8, but the encoding fallback chain
+        # (UTF-8 -> detection -> Latin-1) always produces *some* text, so
+        # this now fails as invalid ICS content rather than a decode error.
+        invalid_bytes = b"BEGIN:VCALENDAR\xff\xfeINVALID"
+        files = {"file": ("invalid.ics", io.BytesIO(invalid_bytes), "text/calendar")}
 
         response = client.post("/upload", files=files)
 
         assert response.status_code == 400
-        assert "utf-8" in response.json()["detail"].lower()
+        assert "invalid ics format" in response.json()["detail"].lower()
 
 
 class TestFetchEndpoint:
@@ -169,6 +221,54 @@ class TestFetchEndpoint:
         content = response.content.decode("utf-8")
         assert "BEGIN:VCALENDAR" in content
         assert "Test Event" not in content
+
+    def test_fetch_latin1_url_decodes_correctly(self, httpx_mock):
+        """Test fetching a Latin-1 encoded response decodes correctly."""
+        test_url = "https://example.com/calendar.ics"
+        # content= sends raw bytes over the wire; text= would implicitly
+        # UTF-8-encode the string and defeat the point of this test.
+        httpx_mock.add_response(url=test_url, content=VALID_ICS_ACCENTED_TEXT.encode("latin-1"))
+
+        response = client.get(f"/fetch?url={test_url}&summary=keep")
+
+        assert response.status_code == 200
+        content = response.content.decode("utf-8")
+        assert "Réunion à café Montréal" in content
+        # httpx's own response.text uses errors="replace" and would have
+        # silently corrupted this instead of decoding it correctly.
+        assert "�" not in content
+
+    def test_fetch_honors_declared_charset_outside_detection_scope(self, httpx_mock):
+        """Test a server-declared charset outside cp1252/Latin-1 (e.g. UTF-16) is honored."""
+        test_url = "https://example.com/calendar.ics"
+        httpx_mock.add_response(
+            url=test_url,
+            content=VALID_ICS_ACCENTED_TEXT.encode("utf-16"),
+            headers={"Content-Type": "text/calendar; charset=utf-16"},
+        )
+
+        response = client.get(f"/fetch?url={test_url}&summary=keep")
+
+        assert response.status_code == 200
+        content = response.content.decode("utf-8")
+        assert "Réunion à café Montréal" in content
+
+    def test_fetch_falls_back_when_declared_charset_is_wrong(self, httpx_mock):
+        """Test a server lying about its own charset falls back to detection, not a crash."""
+        test_url = "https://example.com/calendar.ics"
+        # Server claims UTF-8 but actually sends cp1252 bytes that are not
+        # valid UTF-8 - this must not raise an unhandled UnicodeDecodeError.
+        httpx_mock.add_response(
+            url=test_url,
+            content=VALID_ICS_ACCENTED_TEXT.encode("cp1252"),
+            headers={"Content-Type": "text/calendar; charset=utf-8"},
+        )
+
+        response = client.get(f"/fetch?url={test_url}&summary=keep")
+
+        assert response.status_code == 200
+        content = response.content.decode("utf-8")
+        assert "Réunion à café Montréal" in content
 
     def test_fetch_localhost_blocked(self):
         """Test SSRF protection blocks localhost."""

@@ -13,6 +13,7 @@ from typing import BinaryIO
 import click
 from icalendar import Calendar
 
+from ._encoding import decode_ics_bytes
 from .anonymizer import anonymize
 from .version import __version__
 
@@ -45,6 +46,11 @@ from .version import __version__
     is_flag=True,
     default=False,
     help="Show processing information",
+)
+@click.option(
+    "--encoding",
+    default=None,
+    help="Force a specific input encoding (e.g. latin-1, cp1252) instead of auto-detecting.",
 )
 @click.option(
     "--summary",
@@ -101,6 +107,7 @@ def main(
     input: BinaryIO,  # noqa: A002
     output: BinaryIO,
     verbose: bool,  # noqa: FBT001
+    encoding: str | None,
     summary: str | None,
     description: str | None,
     location: str | None,
@@ -138,11 +145,24 @@ def main(
             sys.exit(1)
 
         if verbose:
+            click.echo("Decoding input...", err=True)
+
+        try:
+            ics_text, used_encoding = decode_ics_bytes(ics_data, encoding=encoding)
+        except (UnicodeDecodeError, LookupError) as e:
+            click.echo(f"Error: Could not decode input with encoding {encoding!r} - {e}", err=True)
+            sys.exit(1)
+
+        if verbose:
+            if encoding is not None:
+                click.echo(f"Using encoding override: {used_encoding}", err=True)
+            else:
+                click.echo(f"Detected encoding: {used_encoding}", err=True)
             click.echo("Parsing calendar...", err=True)
 
         # Parse calendar
         try:
-            cal = Calendar.from_ical(ics_data)
+            cal = Calendar.from_ical(ics_text)
         except ValueError as e:
             click.echo(f"Error: Invalid ICS file - {e}", err=True)
             sys.exit(1)

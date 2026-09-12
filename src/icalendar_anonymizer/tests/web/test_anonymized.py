@@ -99,16 +99,40 @@ class TestAnonymizedPostEndpoint:
         assert response.status_code == 400
         assert "Empty request body" in response.json()["detail"]
 
-    def test_post_invalid_utf8(self):
-        """Test POST with invalid UTF-8 returns 400."""
+    def test_post_latin1_body_decodes_correctly(self):
+        """Test a raw Latin-1 encoded body with no declared charset decodes and anonymizes."""
+        latin1_ics = VALID_ICS.replace("Test Event", "Réunion à café Montréal")
+
         response = client.post(
             "/anonymized",
-            content=b"\xff\xfe",  # Invalid UTF-8 bytes
+            content=latin1_ics.encode("latin-1"),
+            headers={"Content-Type": "text/plain"},
+        )
+
+        assert response.status_code == 200
+        content = response.content.decode("utf-8")
+        assert "BEGIN:VEVENT" in content
+        assert "DTSTART:20250101T100000Z" in content
+        # SUMMARY has no field-mode override on this endpoint and is
+        # randomized by default, so the accented text itself won't
+        # survive - the point of this test is that decoding and parsing
+        # succeed at all, rather than crashing or corrupting the whole
+        # document into a parse failure.
+        assert "�" not in content
+
+    def test_post_undecodable_bytes_falls_back_and_fails_ics_parsing(self):
+        """Test that non-UTF-8 bytes decode via fallback, then fail ICS parsing, not decoding."""
+        # These bytes are not valid UTF-8, but the encoding fallback chain
+        # (UTF-8 -> detection -> Latin-1) always produces *some* text, so
+        # this now fails as invalid ICS content rather than a decode error.
+        response = client.post(
+            "/anonymized",
+            content=b"\xff\xfe",
             headers={"Content-Type": "text/plain"},
         )
 
         assert response.status_code == 400
-        assert "Invalid UTF-8 encoding" in response.json()["detail"]
+        assert "invalid ics format" in response.json()["detail"].lower()
 
     def test_post_invalid_ics(self):
         """Test POST with invalid ICS returns 400."""

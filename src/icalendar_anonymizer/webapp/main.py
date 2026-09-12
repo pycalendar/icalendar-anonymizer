@@ -24,6 +24,10 @@ from pydantic import BaseModel, model_validator
 
 from icalendar_anonymizer import anonymize
 from icalendar_anonymizer._config import CONFIGURABLE_FIELDS
+from icalendar_anonymizer._encoding import (
+    decode_ics_bytes_with_content_type,
+    decode_ics_bytes_with_declared_charset,
+)
 from icalendar_anonymizer.version import version
 from icalendar_anonymizer.webapp._ssrf import fetch_with_pinned_redirects, validate_url_shape
 
@@ -340,7 +344,13 @@ async def _fetch_ics_content(
     except httpx.RequestError as e:
         raise HTTPException(status_code=400, detail=f"Failed to fetch {error_context}: {e}") from e
     else:
-        return response.text
+        # response.content (raw bytes) is used instead of response.text,
+        # since httpx's own text decoding silently replaces undecodable
+        # bytes with U+FFFD instead of trying legacy encodings.
+        text, _encoding_used = decode_ics_bytes_with_declared_charset(
+            response.content, response.charset_encoding
+        )
+        return text
 
 
 def _anonymize_calendar(
@@ -365,7 +375,7 @@ def _anonymize_calendar(
         raise HTTPException(status_code=400, detail="Input is empty")
 
     try:
-        cal = Calendar.from_ical(ics_content.encode("utf-8"))
+        cal = Calendar.from_ical(ics_content)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid ICS format: {e}") from e
 
@@ -407,13 +417,7 @@ async def _anonymize_from_upload(
             )
         content.extend(chunk)
 
-    try:
-        ics_content = content.decode("utf-8")
-    except UnicodeDecodeError as e:
-        raise HTTPException(
-            status_code=400,
-            detail="Uploaded file is not valid UTF-8 encoded text",
-        ) from e
+    ics_content = decode_ics_bytes_with_content_type(content, file.content_type)
 
     return _anonymize_calendar(ics_content, field_modes=field_modes)
 
@@ -473,10 +477,7 @@ async def anonymized_endpoint(
         body = await request.body()
         if not body:
             raise HTTPException(status_code=400, detail="Empty request body")
-        try:
-            content = body.decode("utf-8")
-        except UnicodeDecodeError as e:
-            raise HTTPException(status_code=400, detail="Invalid UTF-8 encoding") from e
+        content = decode_ics_bytes_with_content_type(body, request.headers.get("content-type"))
 
     anonymized_cal = _anonymize_calendar(content)
 
