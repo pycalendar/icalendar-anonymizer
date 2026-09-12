@@ -58,6 +58,8 @@ New features
 - Added Open Web Calendar tutorial at :file:`docs/tutorials/open-web-calendar.rst`. :issue:`93`
 - Added :file:`docs/examples.rst` with real-world workflows. :issue:`59`
 - Added optional Basic and Bearer authentication for fetching URLs, via ``POST /fetch`` and Fernet live-proxy links. Credentials are dropped on cross-origin redirects. :issue:`79`
+- Added encoding detection for non-UTF-8 iCalendar input, such as Latin-1 and Windows-1252 exports from Lotus Notes and pre-Unicode Outlook. Output is always UTF-8. :issue:`160`
+- Added a ``--encoding`` CLI flag to force a specific input encoding instead of auto-detecting. :issue:`160`
 
 .. _v0.1.5-minor-changes:
 
@@ -66,6 +68,7 @@ Minor changes
 
 - Revised Contributing documentation. :issue:`74`
 - Adopted :mod:`sphinx_issues` extension for shorter changelog issue and pull request references.
+- Changed ``POST /upload`` and ``POST /anonymized`` to attempt encoding detection before rejecting non-UTF-8 input. Bytes that still can't be parsed as a calendar now fail with an ``Invalid ICS format`` error instead of an encoding-specific one. :issue:`160`
 
 .. _v0.1.5-bug-fixes:
 
@@ -74,6 +77,7 @@ Bug fixes
 
 - Ignored Ruff's ``CPY001`` rule, which flagged every file's existing SPDX header as missing a copyright notice.
 - Fixed a DNS rebinding vulnerability in ``/fetch`` and ``/fernet/{token}``. URLs were validated before DNS resolution, so an attacker's domain could resolve to a public IP during validation and a private one during the actual request. Every hop now resolves DNS once, checks the result, and connects to that address directly. :issue:`70`
+- Fixed ``/fetch`` and ``/fernet/{token}`` silently corrupting non-UTF-8 calendars into replacement characters instead of decoding them; they now use the same encoding detection as ``/upload`` and ``/anonymized``. :issue:`160`
 
 0.1.4 (2026-04-20)
 ------------------
