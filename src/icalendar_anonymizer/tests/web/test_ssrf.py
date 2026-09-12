@@ -102,6 +102,15 @@ class TestValidateUrlShape:
         assert exc_info.value.status_code == 400
         assert "hostname" in exc_info.value.detail.lower()
 
+    def test_rejects_embedded_credentials(self):
+        # A same-host redirect to a URL with embedded userinfo would
+        # otherwise still count as same-origin and receive our real
+        # Authorization header alongside attacker-supplied userinfo.
+        with pytest.raises(HTTPException) as exc_info:
+            _ssrf.validate_url_shape("https://mallory@example.com/x")
+        assert exc_info.value.status_code == 400
+        assert "credentials" in exc_info.value.detail.lower()
+
     @pytest.mark.parametrize(
         "url",
         [
@@ -238,6 +247,19 @@ class TestPinnedNetworkBackend:
 class TestFetchWithPinnedRedirects:
     """Tests for fetch_with_pinned_redirects()."""
 
+    async def test_malformed_initial_url_with_headers_is_400_not_500(self):
+        # Regression test: origin tracking for header forwarding must not
+        # parse the URL before validate_url_shape() has a chance to turn a
+        # parse failure into a clean HTTPException.
+        with pytest.raises(HTTPException) as exc_info:
+            await _ssrf.fetch_with_pinned_redirects(
+                "http://example.com/\x00",
+                timeout=5.0,
+                max_response_size=1024,
+                headers={"Authorization": "Bearer abc123"},
+            )
+        assert exc_info.value.status_code == 400
+
     async def test_stops_at_max_redirects(self, monkeypatch, httpx_mock):
         monkeypatch.setattr(
             _ssrf,
@@ -320,3 +342,129 @@ class TestFetchWithPinnedRedirects:
             "https://example.com/ok", timeout=5.0, max_response_size=1024
         )
         assert response.status_code == 200
+
+    async def test_attaches_caller_provided_headers(self, monkeypatch, httpx_mock):
+        # _ssrf.py never builds an Authorization value itself - it only
+        # attaches whatever header dict the caller (main.py) passes in.
+        monkeypatch.setattr(_ssrf, "resolve_hostname", AsyncMock(return_value=[_PUBLIC_IPV4]))
+        httpx_mock.add_response(url="https://example.com/a", text="ok")
+
+        await _ssrf.fetch_with_pinned_redirects(
+            "https://example.com/a",
+            timeout=5.0,
+            max_response_size=1024,
+            headers={"Authorization": "Bearer abc123"},
+        )
+
+        request = httpx_mock.get_request(url="https://example.com/a")
+        assert request.headers["authorization"] == "Bearer abc123"
+
+    async def test_no_auth_header_without_headers(self, monkeypatch, httpx_mock):
+        monkeypatch.setattr(_ssrf, "resolve_hostname", AsyncMock(return_value=[_PUBLIC_IPV4]))
+        httpx_mock.add_response(url="https://example.com/a", text="ok")
+
+        await _ssrf.fetch_with_pinned_redirects(
+            "https://example.com/a", timeout=5.0, max_response_size=1024
+        )
+
+        request = httpx_mock.get_request(url="https://example.com/a")
+        assert "authorization" not in request.headers
+
+    async def test_keeps_headers_on_same_origin_redirect(self, monkeypatch, httpx_mock):
+        monkeypatch.setattr(_ssrf, "resolve_hostname", AsyncMock(return_value=[_PUBLIC_IPV4]))
+        httpx_mock.add_response(
+            url="https://example.com/a",
+            status_code=302,
+            headers={"Location": "https://example.com/b"},
+        )
+        httpx_mock.add_response(url="https://example.com/b", text="ok")
+
+        await _ssrf.fetch_with_pinned_redirects(
+            "https://example.com/a",
+            timeout=5.0,
+            max_response_size=1024,
+            headers={"Authorization": "Bearer abc123"},
+        )
+
+        first_hop = httpx_mock.get_request(url="https://example.com/a")
+        second_hop = httpx_mock.get_request(url="https://example.com/b")
+        assert first_hop.headers["authorization"] == "Bearer abc123"
+        assert second_hop.headers["authorization"] == "Bearer abc123"
+
+    async def test_drops_headers_on_cross_origin_redirect(self, monkeypatch, httpx_mock):
+        monkeypatch.setattr(_ssrf, "resolve_hostname", AsyncMock(return_value=[_PUBLIC_IPV4]))
+        httpx_mock.add_response(
+            url="https://example.com/a",
+            status_code=302,
+            headers={"Location": "https://other.example/b"},
+        )
+        httpx_mock.add_response(url="https://other.example/b", text="ok")
+
+        await _ssrf.fetch_with_pinned_redirects(
+            "https://example.com/a",
+            timeout=5.0,
+            max_response_size=1024,
+            headers={"Authorization": "Bearer should-not-leak"},
+        )
+
+        first_hop = httpx_mock.get_request(url="https://example.com/a")
+        second_hop = httpx_mock.get_request(url="https://other.example/b")
+        assert first_hop.headers["authorization"] == "Bearer should-not-leak"
+        assert "authorization" not in second_hop.headers
+
+    async def test_drops_headers_on_scheme_change_redirect(self, monkeypatch, httpx_mock):
+        monkeypatch.setattr(_ssrf, "resolve_hostname", AsyncMock(return_value=[_PUBLIC_IPV4]))
+        httpx_mock.add_response(
+            url="https://example.com/a",
+            status_code=302,
+            headers={"Location": "http://example.com/b"},
+        )
+        httpx_mock.add_response(url="http://example.com/b", text="ok")
+
+        await _ssrf.fetch_with_pinned_redirects(
+            "https://example.com/a",
+            timeout=5.0,
+            max_response_size=1024,
+            headers={"Authorization": "Bearer should-not-leak"},
+        )
+
+        second_hop = httpx_mock.get_request(url="http://example.com/b")
+        assert "authorization" not in second_hop.headers
+
+    async def test_rejects_redirect_to_url_with_embedded_credentials(self, monkeypatch, httpx_mock):
+        # Same host/port as the original request, so origin comparison alone
+        # would treat this as safe to keep sending our real headers to.
+        monkeypatch.setattr(_ssrf, "resolve_hostname", AsyncMock(return_value=[_PUBLIC_IPV4]))
+        httpx_mock.add_response(
+            url="https://example.com/a",
+            status_code=302,
+            headers={"Location": "https://mallory@example.com/b"},
+        )
+
+        with pytest.raises(HTTPException) as exc_info:
+            await _ssrf.fetch_with_pinned_redirects(
+                "https://example.com/a",
+                timeout=5.0,
+                max_response_size=1024,
+                headers={"Authorization": "Bearer should-not-leak"},
+            )
+        assert exc_info.value.status_code == 400
+
+
+class TestOrigin:
+    """Tests for _origin()."""
+
+    def test_normalizes_default_https_port(self):
+        assert _ssrf._origin("https://example.com/a") == _ssrf._origin("https://example.com:443/a")
+
+    def test_normalizes_default_http_port(self):
+        assert _ssrf._origin("http://example.com/a") == _ssrf._origin("http://example.com:80/a")
+
+    def test_differs_by_scheme(self):
+        assert _ssrf._origin("http://example.com/a") != _ssrf._origin("https://example.com/a")
+
+    def test_differs_by_host(self):
+        assert _ssrf._origin("https://example.com/a") != _ssrf._origin("https://other.example/a")
+
+    def test_differs_by_non_default_port(self):
+        assert _ssrf._origin("https://example.com:8443/a") != _ssrf._origin("https://example.com/a")

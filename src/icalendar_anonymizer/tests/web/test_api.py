@@ -6,9 +6,11 @@
 import io
 
 import httpx
+import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
-from icalendar_anonymizer.webapp.main import app
+from icalendar_anonymizer.webapp.main import _credentials_to_header, app
 
 client = TestClient(app)
 
@@ -302,6 +304,160 @@ class TestFetchEndpoint:
 
         assert response.status_code == 400
         assert "failed" in response.json()["detail"].lower()
+
+
+class TestCredentialsToHeader:
+    """Tests for _credentials_to_header()."""
+
+    def test_basic_credentials_produce_base64_header(self):
+        header = _credentials_to_header(
+            {"type": "basic", "username": "alice", "password": "secret"}
+        )
+        assert header == {"Authorization": "Basic YWxpY2U6c2VjcmV0"}
+
+    def test_bearer_credentials_produce_plain_token_header(self):
+        header = _credentials_to_header({"type": "bearer", "token": "abc123"})
+        assert header == {"Authorization": "Bearer abc123"}
+
+    def test_none_credentials_produce_no_header(self):
+        assert _credentials_to_header(None) is None
+
+    def test_rejects_unknown_type_instead_of_guessing(self):
+        # A capitalized or unexpected "type" must not silently fall through
+        # to the bearer branch and produce a wrong-but-valid-looking header.
+        # Reachable from a stale/malformed Fernet token payload, which isn't
+        # revalidated against FetchAuth on read.
+        with pytest.raises(HTTPException) as exc_info:
+            _credentials_to_header({"type": "Basic", "token": "x"})
+        assert exc_info.value.status_code == 400
+
+    def test_rejects_basic_credentials_missing_password(self):
+        with pytest.raises(HTTPException) as exc_info:
+            _credentials_to_header({"type": "basic", "username": "alice"})
+        assert exc_info.value.status_code == 400
+
+    def test_rejects_bearer_credentials_missing_token(self):
+        with pytest.raises(HTTPException) as exc_info:
+            _credentials_to_header({"type": "bearer"})
+        assert exc_info.value.status_code == 400
+
+
+class TestFetchAuth:
+    """Tests for POST /fetch with auth credentials."""
+
+    def test_get_fetch_still_works_unauthenticated(self, httpx_mock):
+        """GET /fetch is unaffected by adding POST /fetch."""
+        test_url = "https://example.com/calendar.ics"
+        httpx_mock.add_response(url=test_url, text=VALID_ICS)
+
+        response = client.get(f"/fetch?url={test_url}")
+
+        assert response.status_code == 200
+
+    def test_post_basic_auth_sends_authorization_header(self, httpx_mock):
+        test_url = "https://example.com/calendar.ics"
+        httpx_mock.add_response(url=test_url, text=VALID_ICS)
+
+        response = client.post(
+            "/fetch",
+            json={
+                "url": test_url,
+                "auth": {"type": "basic", "username": "alice", "password": "secret"},
+            },
+        )
+
+        assert response.status_code == 200
+        request = httpx_mock.get_request(url=test_url)
+        assert request.headers["authorization"] == "Basic YWxpY2U6c2VjcmV0"
+
+    def test_post_bearer_auth_sends_authorization_header(self, httpx_mock):
+        test_url = "https://example.com/calendar.ics"
+        httpx_mock.add_response(url=test_url, text=VALID_ICS)
+
+        response = client.post(
+            "/fetch", json={"url": test_url, "auth": {"type": "bearer", "token": "abc123"}}
+        )
+
+        assert response.status_code == 200
+        request = httpx_mock.get_request(url=test_url)
+        assert request.headers["authorization"] == "Bearer abc123"
+
+    def test_post_without_auth_matches_get_response(self, httpx_mock):
+        test_url = "https://example.com/calendar.ics"
+        httpx_mock.add_response(url=test_url, text=VALID_ICS)
+
+        response = client.post("/fetch", json={"url": test_url})
+
+        assert response.status_code == 200
+        content = response.content.decode("utf-8")
+        assert "Test Event" not in content
+        assert "20250101T100000Z" in content
+
+    def test_post_basic_auth_missing_password_returns_400(self):
+        response = client.post(
+            "/fetch",
+            json={"url": "https://example.com/x", "auth": {"type": "basic", "username": "alice"}},
+        )
+
+        assert response.status_code == 400
+        assert "password" in response.json()["detail"].lower()
+
+    def test_post_bearer_auth_missing_token_returns_400(self):
+        response = client.post(
+            "/fetch", json={"url": "https://example.com/x", "auth": {"type": "bearer"}}
+        )
+
+        assert response.status_code == 400
+        assert "token" in response.json()["detail"].lower()
+
+    def test_post_wrong_credentials_returns_401(self, httpx_mock):
+        test_url = "https://example.com/calendar.ics"
+        httpx_mock.add_response(url=test_url, status_code=401)
+
+        response = client.post(
+            "/fetch",
+            json={
+                "url": test_url,
+                "auth": {"type": "basic", "username": "alice", "password": "wrong"},
+            },
+        )
+
+        assert response.status_code == 401
+
+    def test_post_applies_field_modes(self, httpx_mock):
+        test_url = "https://example.com/calendar.ics"
+        httpx_mock.add_response(url=test_url, text=VALID_ICS)
+
+        response = client.post("/fetch", json={"url": test_url, "config": {"summary": "keep"}})
+
+        assert response.status_code == 200
+        content = response.content.decode("utf-8")
+        assert "Test Event" in content
+
+    def test_post_basic_auth_rejects_stray_token_field(self):
+        # A basic-auth payload carrying a bearer-only field is a client
+        # mistake, not a valid request with an ignored extra - reject it
+        # instead of silently dropping the field.
+        response = client.post(
+            "/fetch",
+            json={
+                "url": "https://example.com/x",
+                "auth": {"type": "basic", "username": "alice", "password": "secret", "token": "x"},
+            },
+        )
+
+        assert response.status_code == 422
+
+    def test_post_bearer_auth_rejects_stray_username_field(self):
+        response = client.post(
+            "/fetch",
+            json={
+                "url": "https://example.com/x",
+                "auth": {"type": "bearer", "token": "abc123", "username": "alice"},
+            },
+        )
+
+        assert response.status_code == 422
 
 
 class TestSSRFProtection:

@@ -163,6 +163,55 @@ class TestFernetGenerate:
 
             assert payload.get("field_modes") == expected
 
+    @pytest.mark.parametrize(
+        ("body", "expected"),
+        [
+            (
+                {
+                    "url": "https://example.com/calendar.ics",
+                    "auth": {"type": "basic", "username": "alice", "password": "secret"},
+                },
+                {"type": "basic", "username": "alice", "password": "secret"},
+            ),
+            (
+                {
+                    "url": "https://example.com/calendar.ics",
+                    "auth": {"type": "bearer", "token": "abc123"},
+                },
+                {"type": "bearer", "token": "abc123"},
+            ),
+            ({"url": "https://example.com/calendar.ics"}, None),
+        ],
+        ids=["basic", "bearer", "no_auth"],
+    )
+    def test_generate_field_auth_in_payload(self, body, expected):
+        """auth is stored in the payload when provided, omitted otherwise."""
+        key = Fernet.generate_key().decode()
+
+        with patch.dict(os.environ, {"FERNET_KEY": key}):
+            response = client.post("/fernet-generate", json=body)
+
+            assert response.status_code == 200
+            token = _extract_token_from_url(response.json()["url"])
+            payload = json.loads(Fernet(key.encode()).decrypt(token.encode()).decode())
+
+            assert payload.get("auth") == expected
+
+    def test_generate_with_basic_auth_missing_password_returns_400(self):
+        key = Fernet.generate_key().decode()
+
+        with patch.dict(os.environ, {"FERNET_KEY": key}):
+            response = client.post(
+                "/fernet-generate",
+                json={
+                    "url": "https://example.com/calendar.ics",
+                    "auth": {"type": "basic", "username": "alice"},
+                },
+            )
+
+            assert response.status_code == 400
+            assert "password" in response.json()["detail"].lower()
+
 
 class TestFernetFetch:
     """Tests for GET /fernet/{token} endpoint."""
@@ -354,6 +403,78 @@ class TestFernetFetch:
             assert fetch_response.status_code == 200
             content = fetch_response.content.decode("utf-8")
             assert "BEGIN:VCALENDAR" in content
+
+    def test_fetch_applies_auth_header(self, httpx_mock):
+        """Auth credentials encoded in the token are sent as an Authorization header."""
+        key = Fernet.generate_key().decode()
+        calendar_url = "https://example.com/calendar.ics"
+
+        httpx_mock.add_response(url=calendar_url, text=VALID_ICS)
+
+        cipher = Fernet(key.encode())
+        payload = {
+            "url": calendar_url,
+            "salt": base64.b64encode(b"\x00" * 32).decode(),
+            "auth": {"type": "bearer", "token": "abc123"},
+        }
+        token = cipher.encrypt(json.dumps(payload).encode()).decode()
+
+        with patch.dict(os.environ, {"FERNET_KEY": key}):
+            response = client.get(f"/fernet/{token}")
+
+            assert response.status_code == 200
+            request = httpx_mock.get_request(url=calendar_url)
+            assert request.headers["authorization"] == "Bearer abc123"
+
+    def test_fetch_with_malformed_stored_auth_returns_400_not_500(self):
+        """A malformed auth payload (e.g. from a stale or corrupted token) is a clean 400.
+
+        The stored auth dict isn't revalidated against FetchAuth on read, so
+        this must fail closed rather than crash or guess at intent.
+        """
+        key = Fernet.generate_key().decode()
+        calendar_url = "https://example.com/calendar.ics"
+
+        cipher = Fernet(key.encode())
+        payload = {
+            "url": calendar_url,
+            "salt": base64.b64encode(b"\x00" * 32).decode(),
+            "auth": {"type": "basic", "username": "alice"},  # missing password
+        }
+        token = cipher.encrypt(json.dumps(payload).encode()).decode()
+
+        with patch.dict(os.environ, {"FERNET_KEY": key}):
+            response = client.get(f"/fernet/{token}")
+
+            assert response.status_code == 400
+
+    def test_fetch_cross_origin_redirect_drops_credentials(self, httpx_mock):
+        """Auth credentials are not forwarded to a redirect target on a different origin."""
+        key = Fernet.generate_key().decode()
+        original_url = "https://example.com/calendar"
+        redirect_url = "https://other.example/calendar.ics"
+
+        httpx_mock.add_response(
+            url=original_url, status_code=302, headers={"Location": redirect_url}
+        )
+        httpx_mock.add_response(url=redirect_url, text=VALID_ICS)
+
+        cipher = Fernet(key.encode())
+        payload = {
+            "url": original_url,
+            "salt": base64.b64encode(b"\x00" * 32).decode(),
+            "auth": {"type": "bearer", "token": "should-not-leak"},
+        }
+        token = cipher.encrypt(json.dumps(payload).encode()).decode()
+
+        with patch.dict(os.environ, {"FERNET_KEY": key}):
+            response = client.get(f"/fernet/{token}")
+
+            assert response.status_code == 200
+            first_hop = httpx_mock.get_request(url=original_url)
+            second_hop = httpx_mock.get_request(url=redirect_url)
+            assert first_hop.headers["authorization"] == "Bearer should-not-leak"
+            assert "authorization" not in second_hop.headers
 
     def test_fetch_redirect_to_private_ip_blocked(self, httpx_mock):
         """Test that redirects to private IPs are blocked by the event hook."""

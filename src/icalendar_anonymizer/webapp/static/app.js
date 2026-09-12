@@ -6,6 +6,37 @@
 // Store blobs per section
 const blobs = {};
 
+// Error carrying a message already extracted from a server response body,
+// distinct from a network-level failure (fetch() itself throws a plain
+// TypeError, e.g. "Failed to fetch", when the request never reaches a
+// server at all - DNS failure, CORS, connection refused). Kept as a
+// separate class rather than pattern-matching error text, since a
+// server-provided detail can itself contain that same phrase (this
+// app's own "Failed to fetch URL: ..." error details did exactly that).
+class ApiError extends Error {}
+
+// Read an error detail from a non-ok fetch Response, falling back to the
+// status code if the body isn't JSON or has no "detail" field.
+async function apiErrorFromResponse(response) {
+    let msg = `Error ${response.status}`;
+    try {
+        const data = await response.json();
+        if (data.detail) msg = data.detail;
+    } catch {}
+    return new ApiError(msg);
+}
+
+// Turn a caught error into a display message: the server's own message
+// for an ApiError, "Network error" for a fetch()-level TypeError (DNS
+// failure, CORS, connection refused), or a generic fallback for anything
+// else, which would otherwise be a silently mislabeled client-side bug.
+function displayMessageFor(err) {
+    if (err instanceof ApiError) return err.message;
+    if (err instanceof TypeError) return 'Network error';
+    console.error(err);
+    return 'Unexpected error';
+}
+
 // Tab switching
 function initTabs() {
     const tabs = document.querySelectorAll('[role="tab"]');
@@ -121,6 +152,41 @@ function getFieldConfig(section) {
     return Object.keys(config).length > 0 ? config : null;
 }
 
+/**
+ * Read the selected auth type and its credential fields from the Fetch URL tab.
+ *
+ * @returns {Object|null} { type, username, password } for basic, { type, token } for
+ *   bearer, or null when no auth is selected
+ */
+function getFetchAuth() {
+    const type = document.getElementById('fetch-auth-type').value;
+
+    if (type === 'basic') {
+        return {
+            type,
+            username: document.getElementById('fetch-auth-username').value,
+            password: document.getElementById('fetch-auth-password').value
+        };
+    }
+    if (type === 'bearer') {
+        return { type, token: document.getElementById('fetch-auth-token').value };
+    }
+    return null;
+}
+
+/**
+ * Build a JSON request body for POST /fetch or POST /fernet-generate,
+ * omitting config/auth when not set rather than sending null values.
+ *
+ * @param {string} url - The calendar URL to fetch
+ * @param {Object|null} config - Field configuration from getFieldConfig(), if any
+ * @param {Object|null} auth - Auth credentials from getFetchAuth(), if any
+ * @returns {Object} Request body
+ */
+function buildFetchBody(url, config, auth) {
+    return { url, ...(config && { config }), ...(auth && { auth }) };
+}
+
 // Form handlers
 async function handleUpload(e) {
     e.preventDefault();
@@ -208,6 +274,7 @@ async function handleFetch(e) {
     }
 
     const config = getFieldConfig('fetch');
+    const auth = getFetchAuth();
 
     if (shareCheckbox.checked) {
         if (!shareType) {
@@ -215,11 +282,14 @@ async function handleFetch(e) {
             return;
         }
         if (shareType === 'fernet') {
-            await fetchAndShareFernet('fetch', url, config);
+            await fetchAndShareFernet('fetch', url, config, auth);
         } else {
             // R2 workflow
-            await fetchAndShare('fetch', url, config);
+            await fetchAndShare('fetch', url, config, auth);
         }
+    } else if (auth) {
+        const body = buildFetchBody(url, config, auth);
+        await submit('fetch', '/fetch', JSON.stringify(body), 'application/json', 'POST');
     } else {
         let fetchUrl = `/fetch?url=${encodeURIComponent(url)}`;
         if (config) {
@@ -242,30 +312,22 @@ async function shareFile(section, formData) {
         });
 
         if (!response.ok) {
-            let msg = `Error ${response.status}`;
-            try {
-                const data = await response.json();
-                if (data.detail) msg = data.detail;
-            } catch {}
-            throw new Error(msg);
+            throw await apiErrorFromResponse(response);
         }
 
         const { url } = await response.json();
         showShareResult(section, url);
     } catch (err) {
-        const msg = err.message.includes('Failed to fetch')
-            ? 'Network error'
-            : err.message;
-        showResult(section, 'error', msg);
+        showResult(section, 'error', displayMessageFor(err));
     }
 }
 
 // Fetch URL then share via Fernet (live proxy)
-async function fetchAndShareFernet(section, url, config) {
+async function fetchAndShareFernet(section, url, config, auth) {
     showResult(section, 'loading', 'Generating live proxy link...');
 
     try {
-        const body = config ? { url, config } : { url };
+        const body = buildFetchBody(url, config, auth);
         const response = await fetch('/fernet-generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -273,45 +335,42 @@ async function fetchAndShareFernet(section, url, config) {
         });
 
         if (!response.ok) {
-            let msg = `Error ${response.status}`;
-            try {
-                const data = await response.json();
-                if (data.detail) msg = data.detail;
-            } catch {}
-            throw new Error(msg);
+            throw await apiErrorFromResponse(response);
         }
 
         const { url: shareUrl } = await response.json();
         showFernetShareResult(section, shareUrl);
     } catch (err) {
-        const msg = err.message.includes('Failed to fetch')
-            ? 'Network error'
-            : err.message;
-        showResult(section, 'error', msg);
+        showResult(section, 'error', displayMessageFor(err));
     }
 }
 
 // Fetch URL then share via R2 (static snapshot)
-async function fetchAndShare(section, url, config) {
+async function fetchAndShare(section, url, config, auth) {
     showResult(section, 'loading', 'Fetching and generating shareable link...');
 
     try {
         // First fetch the calendar
-        let fetchUrl = `/fetch?url=${encodeURIComponent(url)}`;
-        if (config) {
-            for (const [field, mode] of Object.entries(config)) {
-                fetchUrl += `&${field}=${mode}`;
+        let fetchResponse;
+        if (auth) {
+            const body = buildFetchBody(url, config, auth);
+            fetchResponse = await fetch('/fetch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+        } else {
+            let fetchUrl = `/fetch?url=${encodeURIComponent(url)}`;
+            if (config) {
+                for (const [field, mode] of Object.entries(config)) {
+                    fetchUrl += `&${field}=${mode}`;
+                }
             }
+            fetchResponse = await fetch(fetchUrl);
         }
-        const fetchResponse = await fetch(fetchUrl);
 
         if (!fetchResponse.ok) {
-            let msg = `Error ${fetchResponse.status}`;
-            try {
-                const data = await fetchResponse.json();
-                if (data.detail) msg = data.detail;
-            } catch {}
-            throw new Error(msg);
+            throw await apiErrorFromResponse(fetchResponse);
         }
 
         // Convert response to file
@@ -326,31 +385,23 @@ async function fetchAndShare(section, url, config) {
         });
 
         if (!shareResponse.ok) {
-            let msg = `Error ${shareResponse.status}`;
-            try {
-                const data = await shareResponse.json();
-                if (data.detail) msg = data.detail;
-            } catch {}
-            throw new Error(msg);
+            throw await apiErrorFromResponse(shareResponse);
         }
 
         const { url: shareUrl } = await shareResponse.json();
         showShareResult(section, shareUrl);
     } catch (err) {
-        const msg = err.message.includes('Failed to fetch')
-            ? 'Network error'
-            : err.message;
-        showResult(section, 'error', msg);
+        showResult(section, 'error', displayMessageFor(err));
     }
 }
 
 // Generic submit
-async function submit(section, endpoint, body, contentType) {
+async function submit(section, endpoint, body, contentType, method) {
     showResult(section, 'loading', 'Processing...');
 
     try {
         const options = {
-            method: endpoint.startsWith('/fetch') ? 'GET' : 'POST'
+            method: method || (endpoint.startsWith('/fetch') && !body ? 'GET' : 'POST')
         };
 
         if (body && options.method === 'POST') {
@@ -363,21 +414,13 @@ async function submit(section, endpoint, body, contentType) {
         const response = await fetch(endpoint, options);
 
         if (!response.ok) {
-            let msg = `Error ${response.status}`;
-            try {
-                const data = await response.json();
-                if (data.detail) msg = data.detail;
-            } catch {}
-            throw new Error(msg);
+            throw await apiErrorFromResponse(response);
         }
 
         blobs[section] = await response.blob();
         showResult(section, 'success', 'Done', true);
     } catch (err) {
-        const msg = err.message.includes('Failed to fetch')
-            ? 'Network error'
-            : err.message;
-        showResult(section, 'error', msg);
+        showResult(section, 'error', displayMessageFor(err));
     }
 }
 
@@ -622,6 +665,18 @@ function initShareOptionsToggle() {
     });
 }
 
+// Toggle auth credential fields when the auth type selection changes
+function initAuthTypeToggle() {
+    const authSelect = document.getElementById('fetch-auth-type');
+    const basicFields = document.getElementById('fetch-auth-basic-fields');
+    const bearerFields = document.getElementById('fetch-auth-bearer-fields');
+
+    authSelect.addEventListener('change', () => {
+        basicFields.hidden = authSelect.value !== 'basic';
+        bearerFields.hidden = authSelect.value !== 'bearer';
+    });
+}
+
 // Init
 document.addEventListener('DOMContentLoaded', () => {
     initTabs();
@@ -629,6 +684,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCopyrightYear();
     checkShareableLinks();
     initShareOptionsToggle();
+    initAuthTypeToggle();
     initFieldPersistence();
     initFieldSync();
     document.getElementById('upload-form').addEventListener('submit', handleUpload);

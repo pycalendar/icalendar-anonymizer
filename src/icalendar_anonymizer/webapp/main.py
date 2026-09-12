@@ -20,7 +20,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from icalendar import Calendar
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 from icalendar_anonymizer import anonymize
 from icalendar_anonymizer._config import CONFIGURABLE_FIELDS
@@ -143,6 +143,33 @@ class FieldConfig(BaseModel):
     uid: Literal["keep", "randomize", "replace"] | None = None  # No "remove"
 
 
+class FetchAuth(BaseModel):
+    """Credentials to attach to a URL fetch."""
+
+    model_config = {"extra": "forbid"}
+
+    type: Literal["basic", "bearer"]
+    username: str | None = None
+    password: str | None = None
+    token: str | None = None
+
+    @model_validator(mode="after")
+    def _check_fields_match_type(self) -> "FetchAuth":
+        if self.type == "basic" and self.token is not None:
+            raise ValueError("token is not valid when type is 'basic'")
+        if self.type == "bearer" and (self.username is not None or self.password is not None):
+            raise ValueError("username/password are not valid when type is 'bearer'")
+        return self
+
+
+class UrlFetchRequest(BaseModel):
+    """Shared fields for endpoints that fetch a URL: POST /fetch and /fernet-generate."""
+
+    url: str
+    config: FieldConfig | None = None
+    auth: FetchAuth | None = None
+
+
 @app.get("/health")
 async def health(request: Request) -> HealthResponse:
     """Health check endpoint for Docker and monitoring.
@@ -192,6 +219,128 @@ def _build_field_modes(config: FieldConfig | None) -> dict[str, str] | None:
         if val:
             modes[field] = val
     return modes or None
+
+
+def _build_fetch_credentials(auth: FetchAuth | None) -> dict[str, str] | None:
+    """Convert a FetchAuth model to a stored credentials dict.
+
+    This is the type-tagged shape kept in a Fernet token's encrypted
+    payload - self-describing and independent of how it's later turned
+    into an actual `Authorization` header (see `_credentials_to_header`).
+
+    Args:
+        auth: Optional auth configuration
+
+    Returns:
+        `{"type": "basic", "username": ..., "password": ...}` or
+        `{"type": "bearer", "token": ...}`, or `None`
+
+    Raises:
+        HTTPException: If the selected auth type is missing required fields
+    """
+    if auth is None:
+        return None
+    if auth.type == "basic":
+        if not (auth.username and auth.password):
+            raise HTTPException(status_code=400, detail="Basic auth requires username and password")
+        return {"type": "basic", "username": auth.username, "password": auth.password}
+    if not auth.token:
+        raise HTTPException(status_code=400, detail="Bearer auth requires a token")
+    return {"type": "bearer", "token": auth.token}
+
+
+def _credentials_to_header(credentials: dict[str, str] | None) -> dict[str, str] | None:
+    """Convert a stored credentials dict into an `Authorization` header.
+
+    Keeps `_ssrf.py` auth-scheme-agnostic: it only ever receives a plain
+    header dict to attach or drop per hop, never Basic/Bearer knowledge.
+
+    Args:
+        credentials: Dict built by `_build_fetch_credentials`, or a dict
+            read back from a Fernet token's payload (not revalidated
+            against `FetchAuth`, so this fails closed on a bad shape
+            instead of guessing or raising `KeyError`)
+
+    Returns:
+        `{"Authorization": "..."}`, or `None` if `credentials` is `None`
+
+    Raises:
+        HTTPException: If `credentials` isn't one of the two expected shapes
+    """
+    if credentials is None:
+        return None
+    auth_type = credentials.get("type")
+    if auth_type == "basic":
+        username = credentials.get("username")
+        password = credentials.get("password")
+        if not (username and password):
+            raise HTTPException(status_code=400, detail="Malformed basic auth credentials")
+        raw = f"{username}:{password}".encode()
+        return {"Authorization": "Basic " + base64.b64encode(raw).decode()}
+    if auth_type == "bearer":
+        token = credentials.get("token")
+        if not token:
+            raise HTTPException(status_code=400, detail="Malformed bearer auth credentials")
+        return {"Authorization": "Bearer " + token}
+    raise HTTPException(status_code=400, detail=f"Unknown auth type {auth_type!r}")
+
+
+def _build_field_modes_and_credentials(
+    body: UrlFetchRequest,
+) -> tuple[dict[str, str] | None, dict[str, str] | None]:
+    """Convert a UrlFetchRequest's config and auth into the shapes fetching needs.
+
+    Args:
+        body: Request containing optional field configuration and auth
+
+    Returns:
+        A (field_modes, credentials) tuple
+
+    Raises:
+        HTTPException: If the selected auth type is missing required fields
+    """
+    return _build_field_modes(body.config), _build_fetch_credentials(body.auth)
+
+
+async def _fetch_ics_content(
+    url: str, *, credentials: dict[str, str] | None = None, error_context: str = "URL"
+) -> str:
+    """Fetch a URL and return its text, translating httpx errors into HTTPExceptions.
+
+    Args:
+        url: The URL to fetch
+        credentials: Optional stored credentials dict (see
+            `_build_fetch_credentials`), converted to an `Authorization`
+            header here before fetching
+        error_context: Noun used in error details ("URL" or "calendar")
+
+    Returns:
+        The response body as text
+
+    Raises:
+        HTTPException: If the auth credentials are malformed, or the fetch
+            is blocked, times out, or fails
+    """
+    try:
+        response = await fetch_with_pinned_redirects(
+            url,
+            timeout=FETCH_TIMEOUT,
+            max_response_size=MAX_RESPONSE_SIZE,
+            headers=_credentials_to_header(credentials),
+        )
+        response.raise_for_status()
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(
+            status_code=e.response.status_code, detail=f"Failed to fetch {error_context}: {e}"
+        ) from e
+    except httpx.TimeoutException as e:
+        raise HTTPException(
+            status_code=408, detail=f"Request timeout after {FETCH_TIMEOUT}s"
+        ) from e
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=400, detail=f"Failed to fetch {error_context}: {e}") from e
+    else:
+        return response.text
 
 
 def _anonymize_calendar(
@@ -423,24 +572,42 @@ async def fetch_endpoint(
     }
     field_modes = {field: val for field, val in params.items() if val}
 
-    try:
-        response = await fetch_with_pinned_redirects(
-            url, timeout=FETCH_TIMEOUT, max_response_size=MAX_RESPONSE_SIZE
-        )
-        response.raise_for_status()
-        ics_content = response.text
+    ics_content = await _fetch_ics_content(url, error_context="URL")
+    anonymized_cal = _anonymize_calendar(ics_content, field_modes=field_modes or None)
 
-    except httpx.HTTPStatusError as e:
-        raise HTTPException(
-            status_code=e.response.status_code, detail=f"Failed to fetch URL: {e}"
-        ) from e
-    except httpx.TimeoutException as e:
-        raise HTTPException(
-            status_code=408, detail=f"Request timeout after {FETCH_TIMEOUT}s"
-        ) from e
-    except httpx.RequestError as e:
-        raise HTTPException(status_code=400, detail=f"Failed to fetch URL: {e}") from e
+    return Response(
+        content=anonymized_cal.to_ical(),
+        media_type="text/calendar",
+        headers={"Content-Disposition": 'attachment; filename="anonymized.ics"'},
+    )
 
+
+class FetchRequest(UrlFetchRequest):
+    """Request model for POST /fetch endpoint."""
+
+
+@app.post("/fetch")
+async def fetch_endpoint_post(body: FetchRequest) -> Response:
+    """Fetch and anonymize iCalendar from URL, with optional auth credentials.
+
+    Credentials never appear in a URL or query string, unlike GET /fetch,
+    since access logs (gunicorn, Cloudflare Workers) record request lines
+    including the query string.
+
+    Args:
+        body: Request containing the URL, optional field configuration, and
+            optional auth credentials
+
+    Returns:
+        Response with anonymized ICS file
+
+    Raises:
+        HTTPException: If the URL or auth is invalid, blocked, unreachable,
+            or the content is invalid
+    """
+    field_modes, credentials = _build_field_modes_and_credentials(body)
+
+    ics_content = await _fetch_ics_content(body.url, credentials=credentials, error_context="URL")
     anonymized_cal = _anonymize_calendar(ics_content, field_modes=field_modes or None)
 
     return Response(
@@ -456,11 +623,8 @@ class ShareResponse(BaseModel):
     url: str
 
 
-class FernetGenerateRequest(BaseModel):
+class FernetGenerateRequest(UrlFetchRequest):
     """Request model for /fernet-generate endpoint."""
-
-    url: str
-    config: FieldConfig | None = None
 
 
 class FernetShareResponse(BaseModel):
@@ -589,7 +753,7 @@ async def generate_fernet_token(
         FernetShareResponse with shareable URL
 
     Raises:
-        HTTPException: If Fernet not configured or URL invalid
+        HTTPException: If Fernet not configured, or the URL or auth is invalid
     """
     from icalendar_anonymizer.webapp.vendored.fernet_compat import Fernet
 
@@ -604,14 +768,16 @@ async def generate_fernet_token(
     # revalidates and resolves DNS for every hop when it fetches for real.
     validate_url_shape(body.url)
 
-    # Create payload with URL, random salt, and optional field modes
+    # Create payload with URL, random salt, and optional field modes/auth
     payload = {
         "url": body.url,
         "salt": base64.b64encode(secrets.token_bytes(SALT_SIZE_BYTES)).decode(),
     }
-    field_modes = _build_field_modes(body.config)
+    field_modes, credentials = _build_field_modes_and_credentials(body)
     if field_modes:
         payload["field_modes"] = field_modes
+    if credentials:
+        payload["auth"] = credentials
 
     # Encrypt payload
     cipher = Fernet(fernet_key.encode())
@@ -666,28 +832,9 @@ async def fernet_fetch(token: str) -> Response:
     if not url:
         raise HTTPException(status_code=400, detail="Token missing URL")
 
-    try:
-        response = await fetch_with_pinned_redirects(
-            url, timeout=FETCH_TIMEOUT, max_response_size=MAX_RESPONSE_SIZE
-        )
-        response.raise_for_status()
-        ics_content = response.text
-
-    except httpx.HTTPStatusError as e:
-        raise HTTPException(
-            status_code=e.response.status_code,
-            detail=f"Failed to fetch calendar: {e}",
-        ) from e
-    except httpx.TimeoutException as e:
-        raise HTTPException(
-            status_code=408,
-            detail=f"Request timeout after {FETCH_TIMEOUT}s",
-        ) from e
-    except httpx.RequestError as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Failed to fetch calendar: {e}",
-        ) from e
+    ics_content = await _fetch_ics_content(
+        url, credentials=payload.get("auth"), error_context="calendar"
+    )
 
     # Validate and decode salt
     salt_b64 = payload.get("salt")

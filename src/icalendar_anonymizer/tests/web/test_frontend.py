@@ -117,6 +117,44 @@ class TestFrontendIntegration:
         assert 'id="fetch-panel"' in html
 
 
+class TestFetchAuthMarkup:
+    """Tests for the Fetch URL tab's auth markup."""
+
+    def test_auth_inputs_are_not_inside_field_config_grid(self):
+        """Auth inputs must stay outside the Fetch tab's .field-config-grid.
+
+        initFieldPersistence() in app.js listens for change events inside
+        .field-config-grid and writes every select's value to localStorage.
+        If the auth markup were ever moved inside that grid, a password or
+        token could end up persisted to the browser's local storage.
+
+        The grid markup is duplicated across all three tabs (upload-,
+        paste-, fetch-), so the search must be scoped to start after
+        id="fetch-panel" - otherwise it finds the Upload tab's grid
+        instead and never actually checks the Fetch tab at all.
+        """
+        html = client.get("/").text
+
+        fetch_panel_start = html.index('id="fetch-panel"')
+        grid_start = html.index('class="field-config-grid"', fetch_panel_start)
+        grid_end = html.index("</details>", grid_start)
+        grid_section = html[grid_start:grid_end]
+
+        assert "fetch-auth-username" not in grid_section
+        assert "fetch-auth-password" not in grid_section
+        assert "fetch-auth-token" not in grid_section
+
+    def test_auth_dropdown_and_credential_fields_present(self):
+        html = client.get("/").text
+
+        assert 'id="fetch-auth-type"' in html
+        assert 'id="fetch-auth-basic-fields"' in html
+        assert 'id="fetch-auth-bearer-fields"' in html
+        assert 'id="fetch-auth-username"' in html
+        assert 'id="fetch-auth-password"' in html
+        assert 'id="fetch-auth-token"' in html
+
+
 class TestNoJSFallback:
     """Tests for progressive enhancement without JavaScript."""
 
