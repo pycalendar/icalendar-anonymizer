@@ -57,6 +57,7 @@ New features
 - Added ``field_modes`` support to Fernet live-proxy tokens so per-field UI choices are applied on fetch. :issue:`139`
 - Added Open Web Calendar tutorial at :file:`docs/tutorials/open-web-calendar.rst`. :issue:`93`
 - Added :file:`docs/examples.rst` with real-world workflows. :issue:`59`
+- Added optional Basic and Bearer authentication for fetching URLs, via ``POST /fetch`` and Fernet live-proxy links. Credentials are dropped on cross-origin redirects. :issue:`79`
 
 .. _v0.1.5-minor-changes:
 

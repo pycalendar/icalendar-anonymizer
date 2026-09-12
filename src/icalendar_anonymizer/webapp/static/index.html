@@ -384,6 +384,30 @@
                         </div>
                     </div>
                 </details>
+                <div class="field-option">
+                    <label for="fetch-auth-type">Authentication</label>
+                    <select id="fetch-auth-type">
+                        <option value="" selected>None</option>
+                        <option value="basic">Basic (username/password)</option>
+                        <option value="bearer">Bearer token</option>
+                    </select>
+                </div>
+                <div class="auth-fields" id="fetch-auth-basic-fields" hidden>
+                    <div class="auth-field">
+                        <label for="fetch-auth-username">Username</label>
+                        <input type="text" id="fetch-auth-username" autocomplete="username">
+                    </div>
+                    <div class="auth-field">
+                        <label for="fetch-auth-password">Password</label>
+                        <input type="password" id="fetch-auth-password" autocomplete="current-password">
+                    </div>
+                </div>
+                <div class="auth-fields" id="fetch-auth-bearer-fields" hidden>
+                    <div class="auth-field">
+                        <label for="fetch-auth-token">Bearer token</label>
+                        <input type="password" id="fetch-auth-token" autocomplete="off">
+                    </div>
+                </div>
                 <label class="share-checkbox">
                     <input type="checkbox" id="fetch-share" aria-label="Generate shareable link">
                     Generate shareable link

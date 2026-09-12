@@ -71,6 +71,16 @@ def validate_url_shape(url: str) -> str:
             detail=f"Invalid URL scheme: {parsed.scheme}. Only http:// and https:// allowed",
         )
 
+    if parsed.userinfo:
+        # Credentials are supplied separately via the auth parameter, never
+        # embedded in the URL. This also closes a same-origin loophole: a
+        # redirect target like https://mallory@example.com/b has the same
+        # (scheme, host, port) as the original request, so it would
+        # otherwise still receive our real Authorization header.
+        raise HTTPException(
+            status_code=400, detail="URLs with embedded credentials are not allowed"
+        )
+
     hostname = parsed.host
     if not hostname:
         raise HTTPException(status_code=400, detail="Invalid URL: missing hostname")
@@ -206,11 +216,28 @@ class _PinnedTransport(httpx.AsyncHTTPTransport):
         self._pool._network_backend = _PinnedNetworkBackend(pinned_ip)  # noqa: SLF001
 
 
+def _origin(url: str) -> tuple[str, str | None, int | None]:
+    """Return a URL's (scheme, host, port) for same-origin comparisons.
+
+    `httpx.URL.port` normalizes default ports to `None`, so
+    `https://example.com` and `https://example.com:443` compare equal.
+
+    Args:
+        url: The URL to extract the origin from
+
+    Returns:
+        A (scheme, host, port) tuple
+    """
+    parsed = httpx.URL(url)
+    return (parsed.scheme, parsed.host, parsed.port)
+
+
 async def fetch_with_pinned_redirects(
     url: str,
     *,
     timeout: float,  # noqa: ASYNC109 -- passed through to httpx.AsyncClient, not a cancellation scope
     max_response_size: int,
+    headers: dict[str, str] | None = None,
 ) -> httpx.Response:
     """Fetch a URL, resolving and pinning DNS fresh for every redirect hop.
 
@@ -222,6 +249,11 @@ async def fetch_with_pinned_redirects(
         url: The URL to fetch
         timeout: Per-request timeout in seconds
         max_response_size: Maximum allowed response body size in bytes
+        headers: Optional extra headers (for example, a caller-built
+            `Authorization` header). Only sent to the original request's
+            origin - dropped on any redirect to a different scheme, host,
+            or port, since this module has no way to know whether a header
+            is safe to forward to a different origin.
 
     Returns:
         The final, non-redirect response
@@ -234,16 +266,23 @@ async def fetch_with_pinned_redirects(
         httpx.RequestError: Propagated from the underlying request
     """
     current_url = url
+    original_origin = None
 
     for _ in range(MAX_REDIRECTS):
         hostname = validate_url_shape(current_url)
         pinned_ip = await pick_validated_ip(hostname)
 
+        current_origin = _origin(current_url)
+        if original_origin is None:
+            original_origin = current_origin
+
+        request_headers = headers if headers and current_origin == original_origin else None
+
         transport = _PinnedTransport(pinned_ip=str(pinned_ip))
         async with httpx.AsyncClient(
             transport=transport, follow_redirects=False, timeout=timeout
         ) as client:
-            response = await client.get(current_url)
+            response = await client.get(current_url, headers=request_headers)
 
         if response.is_redirect:
             location = response.headers.get("location")
