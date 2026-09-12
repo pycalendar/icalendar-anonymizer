@@ -72,6 +72,7 @@ Bug fixes
 '''''''''
 
 - Ignored Ruff's ``CPY001`` rule, which flagged every file's existing SPDX header as missing a copyright notice.
+- Fixed a DNS rebinding vulnerability in ``/fetch`` and ``/fernet/{token}``. URLs were validated before DNS resolution, so an attacker's domain could resolve to a public IP during validation and a private one during the actual request. Every hop now resolves DNS once, checks the result, and connects to that address directly. :issue:`70`
 
 0.1.4 (2026-04-20)
 ------------------

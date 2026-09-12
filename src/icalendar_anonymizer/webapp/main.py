@@ -8,13 +8,11 @@ file upload, and URL fetching with SSRF protection.
 """
 
 import base64
-import ipaddress
 import json
 import os
 import secrets
 from pathlib import Path
 from typing import Annotated, Literal
-from urllib.parse import urlparse
 
 import httpx
 from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile
@@ -27,6 +25,7 @@ from pydantic import BaseModel
 from icalendar_anonymizer import anonymize
 from icalendar_anonymizer._config import CONFIGURABLE_FIELDS
 from icalendar_anonymizer.version import version
+from icalendar_anonymizer.webapp._ssrf import fetch_with_pinned_redirects, validate_url_shape
 
 # Constants (configurable via environment variables)
 try:
@@ -38,18 +37,6 @@ except ValueError as e:
 FETCH_TIMEOUT = 10.0  # seconds
 MAX_RESPONSE_SIZE = MAX_FILE_SIZE  # Match file size limit
 SALT_SIZE_BYTES = 32  # Size of salt for anonymization (32 bytes = 256 bits)
-
-# Private IP ranges to block for SSRF protection
-PRIVATE_IP_RANGES = [
-    ipaddress.ip_network("127.0.0.0/8"),  # Loopback
-    ipaddress.ip_network("10.0.0.0/8"),  # Private
-    ipaddress.ip_network("172.16.0.0/12"),  # Private
-    ipaddress.ip_network("192.168.0.0/16"),  # Private
-    ipaddress.ip_network("169.254.0.0/16"),  # Link-local
-    ipaddress.ip_network("::1/128"),  # IPv6 loopback
-    ipaddress.ip_network("fc00::/7"),  # IPv6 private
-    ipaddress.ip_network("fe80::/10"),  # IPv6 link-local
-]
 
 app = FastAPI(
     title="iCalendar Anonymizer API",
@@ -205,61 +192,6 @@ def _build_field_modes(config: FieldConfig | None) -> dict[str, str] | None:
         if val:
             modes[field] = val
     return modes or None
-
-
-def _is_private_ip(hostname: str) -> bool:
-    """Check if hostname string is a private IP address.
-
-    Does not perform DNS resolution. Hostnames will return False and be
-    resolved later by httpx.
-
-    Args:
-        hostname: Hostname or IP address to check
-
-    Returns:
-        True if hostname is private/blocked, False otherwise
-    """
-    try:
-        ip = ipaddress.ip_address(hostname)
-    except ValueError:
-        # Not a valid IP, likely a hostname - will be resolved by httpx
-        return False
-
-    return any(ip in network for network in PRIVATE_IP_RANGES)
-
-
-def _validate_url(url: str) -> None:
-    """Validate URL for SSRF protection.
-
-    Args:
-        url: URL to validate
-
-    Raises:
-        HTTPException: If URL is invalid or blocked for security reasons
-    """
-    parsed = urlparse(url)
-
-    # Only allow http and https schemes
-    if parsed.scheme not in ("http", "https"):
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid URL scheme: {parsed.scheme}. Only http:// and https:// allowed",
-        )
-
-    # Check if hostname is localhost or private IP
-    hostname = parsed.hostname
-    if not hostname:
-        raise HTTPException(status_code=400, detail="Invalid URL: missing hostname")
-
-    # Block localhost variations
-    if hostname.lower() in ("localhost", "0.0.0.0"):  # noqa: S104
-        raise HTTPException(status_code=400, detail="Access to localhost is not allowed")
-
-    # Block private IPs
-    if _is_private_ip(hostname):
-        raise HTTPException(
-            status_code=400, detail=f"Access to private IP {hostname} is not allowed"
-        )
 
 
 def _anonymize_calendar(
@@ -491,31 +423,12 @@ async def fetch_endpoint(
     }
     field_modes = {field: val for field, val in params.items() if val}
 
-    # Validate URL for SSRF protection
-    _validate_url(url)
-
-    # Fetch URL with timeout and size limit
-    # Note: Known TOCTOU vulnerability with DNS rebinding - see Issue #70
-    # URL validation occurs before DNS resolution, attacker could use DNS rebinding
-    # to bypass private IP checks. Requires custom DNS resolver to fully mitigate.
     try:
-        async with httpx.AsyncClient(follow_redirects=True, timeout=FETCH_TIMEOUT) as client:
-            response = await client.get(url)  # lgtm[py/full-ssrf]
-
-            # Check final URL after redirects
-            final_url = str(response.url)
-            _validate_url(final_url)
-
-            response.raise_for_status()
-
-            # Check content size
-            if len(response.content) > MAX_RESPONSE_SIZE:
-                raise HTTPException(
-                    status_code=413,
-                    detail=f"Response too large (max {MAX_RESPONSE_SIZE} bytes)",
-                )
-
-            ics_content = response.text
+        response = await fetch_with_pinned_redirects(
+            url, timeout=FETCH_TIMEOUT, max_response_size=MAX_RESPONSE_SIZE
+        )
+        response.raise_for_status()
+        ics_content = response.text
 
     except httpx.HTTPStatusError as e:
         raise HTTPException(
@@ -687,8 +600,9 @@ async def generate_fernet_token(
             detail="Encrypted sharing is not configured",
         )
 
-    # Validate URL for SSRF protection
-    _validate_url(body.url)
+    # Rejects obviously bad URLs at token creation time. /fernet/{token}
+    # revalidates and resolves DNS for every hop when it fetches for real.
+    validate_url_shape(body.url)
 
     # Create payload with URL, random salt, and optional field modes
     payload = {
@@ -748,36 +662,16 @@ async def fernet_fetch(token: str) -> Response:
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Malformed token payload") from None
 
-    # Validate URL (defense in depth - Fernet authenticates payload preventing tampering)
     url = payload.get("url")
     if not url:
         raise HTTPException(status_code=400, detail="Token missing URL")
 
-    _validate_url(url)
-
-    # Fetch calendar from source
     try:
-        # Validate redirect targets for SSRF protection (defense in depth)
-        async def validate_redirect(request: httpx.Request) -> None:
-            """Validate redirect URLs for SSRF protection (defense in depth)."""
-            _validate_url(str(request.url))
-
-        async with httpx.AsyncClient(
-            follow_redirects=True,
-            timeout=FETCH_TIMEOUT,
-            event_hooks={"request": [validate_redirect]},
-        ) as client:
-            response = await client.get(url)
-            response.raise_for_status()
-
-            # Check content size
-            if len(response.content) > MAX_RESPONSE_SIZE:
-                raise HTTPException(
-                    status_code=413,
-                    detail=f"Response too large (max {MAX_RESPONSE_SIZE} bytes)",
-                )
-
-            ics_content = response.text
+        response = await fetch_with_pinned_redirects(
+            url, timeout=FETCH_TIMEOUT, max_response_size=MAX_RESPONSE_SIZE
+        )
+        response.raise_for_status()
+        ics_content = response.text
 
     except httpx.HTTPStatusError as e:
         raise HTTPException(
