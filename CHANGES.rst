@@ -71,6 +71,8 @@ Minor changes
 Bug fixes
 '''''''''
 
+- Ignored Ruff's ``CPY001`` rule, which flagged every file's existing SPDX header as missing a copyright notice.
+
 0.1.4 (2026-04-20)
 ------------------
 
