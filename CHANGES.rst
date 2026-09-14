@@ -60,6 +60,9 @@ New features
 - Added optional Basic and Bearer authentication for fetching URLs, via ``POST /fetch`` and Fernet live-proxy links. Credentials are dropped on cross-origin redirects. :issue:`79`
 - Added encoding detection for non-UTF-8 iCalendar input, such as Latin-1 and Windows-1252 exports from Lotus Notes and pre-Unicode Outlook. Output is always UTF-8. :issue:`160`
 - Added a ``--encoding`` CLI flag to force a specific input encoding instead of auto-detecting. :issue:`160`
+- Added JSCalendar (RFC 8984) anonymization support via ``anonymize_jscal()``. :issue:`159`
+- Added jCal (RFC 7265) anonymization support via ``anonymize_jcal()``, reusing the existing iCalendar anonymization engine unchanged. :issue:`159`
+- Added CLI auto-detection of ``.json`` input as JSCalendar or jCal, with a ``--format`` flag to override it. :issue:`159`
 
 .. _v0.1.5-minor-changes:
 
@@ -78,6 +81,7 @@ Bug fixes
 - Ignored Ruff's ``CPY001`` rule, which flagged every file's existing SPDX header as missing a copyright notice.
 - Fixed a DNS rebinding vulnerability in ``/fetch`` and ``/fernet/{token}``. URLs were validated before DNS resolution, so an attacker's domain could resolve to a public IP during validation and a private one during the actual request. Every hop now resolves DNS once, checks the result, and connects to that address directly. :issue:`70`
 - Fixed ``/fetch`` and ``/fernet/{token}`` silently corrupting non-UTF-8 calendars into replacement characters instead of decoding them; they now use the same encoding detection as ``/upload`` and ``/anonymized``. :issue:`160`
+- Bumped the minimum ``icalendar`` version to 7.3.0. Earlier versions wrote a raw carriage return or line feed in a jCal ``URL``, ``ATTENDEE``, or ``ORGANIZER`` value straight into the serialized content line, unescaped, and re-emitted jCal property, parameter, and RRULE part names on serialization without validating them first. :issue:`159`
 
 0.1.4 (2026-04-20)
 ------------------

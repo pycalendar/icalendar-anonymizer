@@ -52,7 +52,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "icalendar>=7.0.0",
+    "icalendar>=7.3.0",
 ]
 
 [project.optional-dependencies]

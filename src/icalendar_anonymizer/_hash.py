@@ -95,6 +95,30 @@ def hash_email(email: str, salt: bytes) -> str:
     return f"{local_hash}@{domain_anon}"
 
 
+def hash_mailto_address(email: str, salt: bytes) -> str:
+    """Hash an email address, preserving a leading mailto: if present.
+
+    Args:
+        email: The address to anonymize, with or without a mailto: prefix
+        salt: Salt bytes for this anonymization session
+
+    Returns:
+        Anonymized address with the mailto: prefix preserved if it was present
+
+    Examples:
+        >>> salt = b"test_salt"
+        >>> hash_mailto_address("mailto:alice@example.com", salt).startswith("mailto:")
+        True
+        >>> hash_mailto_address("alice@example.com", salt).startswith("mailto:")
+        False
+        >>> hash_mailto_address("MAILTO:Alice@Example.com", salt).startswith("MAILTO:")
+        True
+    """
+    if email.lower().startswith("mailto:"):
+        return email[:7] + hash_email(email[7:], salt)
+    return hash_email(email, salt)
+
+
 def hash_uid(uid: str, salt: bytes, uid_map: dict[str, str]) -> str:
     """Hash UID while maintaining uniqueness across the calendar.
 
