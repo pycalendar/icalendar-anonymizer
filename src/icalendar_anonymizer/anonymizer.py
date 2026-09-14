@@ -20,6 +20,7 @@ from ._hash import (
     generate_salt,
     hash_caladdress_cn,
     hash_email,
+    hash_mailto_address,
     hash_text,
     hash_uid,
 )
@@ -275,16 +276,7 @@ def _anonymize_caladdress(caladdress: vCalAddress, salt: bytes) -> vCalAddress:
     Returns:
         New anonymized vCalAddress
     """
-    # Get the email address
-    email = str(caladdress)
-
-    # Hash the email while preserving mailto: prefix
-    if email.startswith("mailto:"):
-        email_part = email[7:]  # Remove mailto: prefix
-        hashed_email = hash_email(email_part, salt)
-        new_email = f"mailto:{hashed_email}"
-    else:
-        new_email = hash_email(email, salt)
+    new_email = hash_mailto_address(str(caladdress), salt)
 
     # Create new vCalAddress
     new_caladdress = vCalAddress(new_email)

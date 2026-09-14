@@ -3,11 +3,14 @@
 
 """Tests for CLI functionality."""
 
+import json
 from datetime import datetime
 
 import pytest
 from click.testing import CliRunner
 from icalendar import Calendar, Event
+
+from icalendar_anonymizer.cli import main
 
 
 @pytest.fixture
@@ -40,7 +43,6 @@ def cli_runner():
 
 def test_anonymize_file_to_stdout(cli_runner, sample_ics, tmp_path):
     """Test reading from file and writing to stdout."""
-    from icalendar_anonymizer.cli import main
 
     # Create input file
     input_file = tmp_path / "input.ics"
@@ -66,7 +68,6 @@ def test_anonymize_file_to_stdout(cli_runner, sample_ics, tmp_path):
 
 def test_anonymize_stdin_to_file(cli_runner, sample_ics, tmp_path):
     """Test reading from stdin and writing to file."""
-    from icalendar_anonymizer.cli import main
 
     output_file = tmp_path / "output.ics"
 
@@ -84,7 +85,6 @@ def test_anonymize_stdin_to_file(cli_runner, sample_ics, tmp_path):
 
 def test_anonymize_stdin_to_stdout(cli_runner, sample_ics):
     """Test reading from stdin and writing to stdout."""
-    from icalendar_anonymizer.cli import main
 
     # Run CLI with stdin
     result = cli_runner.invoke(main, input=sample_ics)
@@ -99,7 +99,6 @@ def test_anonymize_stdin_to_stdout(cli_runner, sample_ics):
 
 def test_anonymize_file_to_file(cli_runner, sample_ics, tmp_path):
     """Test reading from file and writing to file."""
-    from icalendar_anonymizer.cli import main
 
     input_file = tmp_path / "input.ics"
     input_file.write_bytes(sample_ics)
@@ -122,7 +121,6 @@ def test_anonymize_file_to_file(cli_runner, sample_ics, tmp_path):
 
 def test_version_flag(cli_runner):
     """Test --version flag."""
-    from icalendar_anonymizer.cli import main
 
     result = cli_runner.invoke(main, ["--version"])
 
@@ -133,7 +131,6 @@ def test_version_flag(cli_runner):
 
 def test_help_flag(cli_runner):
     """Test --help flag."""
-    from icalendar_anonymizer.cli import main
 
     result = cli_runner.invoke(main, ["--help"])
 
@@ -148,7 +145,6 @@ def test_help_flag(cli_runner):
 
 def test_verbose_output(cli_runner, sample_ics, tmp_path):
     """Test verbose mode shows processing information."""
-    from icalendar_anonymizer.cli import main
 
     input_file = tmp_path / "input.ics"
     input_file.write_bytes(sample_ics)
@@ -165,7 +161,6 @@ def test_verbose_output(cli_runner, sample_ics, tmp_path):
 
 def test_verbose_doesnt_corrupt_stdout(cli_runner, sample_ics, tmp_path):
     """Test that verbose output doesn't corrupt stdout."""
-    from icalendar_anonymizer.cli import main
 
     # Use output file to avoid CliRunner mixing streams
     output_file = tmp_path / "output.ics"
@@ -187,7 +182,6 @@ def test_verbose_doesnt_corrupt_stdout(cli_runner, sample_ics, tmp_path):
 
 def test_invalid_ics_data(cli_runner):
     """Test error handling for invalid ICS data."""
-    from icalendar_anonymizer.cli import main
 
     invalid_ics = b"This is not a valid ICS file"
 
@@ -202,7 +196,6 @@ def test_invalid_ics_data(cli_runner):
 
 def test_empty_input(cli_runner):
     """Test error handling for empty input."""
-    from icalendar_anonymizer.cli import main
 
     result = cli_runner.invoke(main, input=b"")
 
@@ -213,7 +206,6 @@ def test_empty_input(cli_runner):
 
 def test_file_not_found(cli_runner):
     """Test error handling for missing input file."""
-    from icalendar_anonymizer.cli import main
 
     result = cli_runner.invoke(main, ["/nonexistent/file.ics"])
 
@@ -227,7 +219,6 @@ def test_file_not_found(cli_runner):
 
 def test_output_is_valid_ics(cli_runner, sample_ics):
     """Test that output is valid ICS format."""
-    from icalendar_anonymizer.cli import main
 
     result = cli_runner.invoke(main, input=sample_ics)
 
@@ -241,7 +232,6 @@ def test_output_is_valid_ics(cli_runner, sample_ics):
 
 def test_output_is_anonymized(cli_runner, sample_ics):
     """Test that personal data is removed."""
-    from icalendar_anonymizer.cli import main
 
     result = cli_runner.invoke(main, input=sample_ics)
 
@@ -260,7 +250,6 @@ def test_output_is_anonymized(cli_runner, sample_ics):
 
 def test_preserves_dates(cli_runner, sample_ics):
     """Test that dates are preserved during anonymization."""
-    from icalendar_anonymizer.cli import main
 
     result = cli_runner.invoke(main, input=sample_ics)
 
@@ -279,7 +268,6 @@ def test_preserves_dates(cli_runner, sample_ics):
 
 def test_success_exit_code(cli_runner, sample_ics):
     """Test that successful execution returns exit code 0."""
-    from icalendar_anonymizer.cli import main
 
     result = cli_runner.invoke(main, input=sample_ics)
     assert result.exit_code == 0
@@ -287,7 +275,6 @@ def test_success_exit_code(cli_runner, sample_ics):
 
 def test_error_exit_code(cli_runner):
     """Test that errors return exit code 1."""
-    from icalendar_anonymizer.cli import main
 
     result = cli_runner.invoke(main, input=b"invalid")
     assert result.exit_code == 1
@@ -298,7 +285,6 @@ def test_error_exit_code(cli_runner):
 
 def test_output_to_file(cli_runner, sample_ics, tmp_path):
     """Test writing output to a file."""
-    from icalendar_anonymizer.cli import main
 
     output_file = tmp_path / "output.ics"
 
@@ -320,7 +306,6 @@ class TestFieldModeFlags:
 
     def test_summary_keep(self, cli_runner, sample_ics, tmp_path):
         """Test --summary keep preserves summary value."""
-        from icalendar_anonymizer.cli import main
 
         input_file = tmp_path / "input.ics"
         input_file.write_bytes(sample_ics)
@@ -334,7 +319,6 @@ class TestFieldModeFlags:
 
     def test_location_remove(self, cli_runner, sample_ics, tmp_path):
         """Test --location remove strips location property."""
-        from icalendar_anonymizer.cli import main
 
         input_file = tmp_path / "input.ics"
         input_file.write_bytes(sample_ics)
@@ -348,7 +332,6 @@ class TestFieldModeFlags:
 
     def test_description_replace(self, cli_runner, sample_ics, tmp_path):
         """Test --description replace uses placeholder."""
-        from icalendar_anonymizer.cli import main
 
         input_file = tmp_path / "input.ics"
         input_file.write_bytes(sample_ics)
@@ -362,7 +345,6 @@ class TestFieldModeFlags:
 
     def test_summary_randomize_default(self, cli_runner, sample_ics, tmp_path):
         """Test --summary randomize produces hashed value."""
-        from icalendar_anonymizer.cli import main
 
         input_file = tmp_path / "input.ics"
         input_file.write_bytes(sample_ics)
@@ -378,7 +360,6 @@ class TestFieldModeFlags:
 
     def test_combined_flags(self, cli_runner, sample_ics, tmp_path):
         """Test multiple field flags work together."""
-        from icalendar_anonymizer.cli import main
 
         input_file = tmp_path / "input.ics"
         input_file.write_bytes(sample_ics)
@@ -407,7 +388,6 @@ class TestFieldModeFlags:
 
     def test_uid_keep(self, cli_runner, sample_ics, tmp_path):
         """Test --uid keep preserves UID."""
-        from icalendar_anonymizer.cli import main
 
         input_file = tmp_path / "input.ics"
         input_file.write_bytes(sample_ics)
@@ -421,7 +401,6 @@ class TestFieldModeFlags:
 
     def test_uid_replace(self, cli_runner, sample_ics, tmp_path):
         """Test --uid replace uses placeholder."""
-        from icalendar_anonymizer.cli import main
 
         input_file = tmp_path / "input.ics"
         input_file.write_bytes(sample_ics)
@@ -437,7 +416,6 @@ class TestFieldModeFlags:
 
     def test_uid_randomize(self, cli_runner, sample_ics, tmp_path):
         """Test --uid randomize produces hashed UID."""
-        from icalendar_anonymizer.cli import main
 
         input_file = tmp_path / "input.ics"
         input_file.write_bytes(sample_ics)
@@ -453,7 +431,6 @@ class TestFieldModeFlags:
 
     def test_no_flags_uses_defaults(self, cli_runner, sample_ics, tmp_path):
         """Test that no flags results in default randomize behavior."""
-        from icalendar_anonymizer.cli import main
 
         input_file = tmp_path / "input.ics"
         input_file.write_bytes(sample_ics)
@@ -491,7 +468,6 @@ class TestEncodingFlag:
 
     def test_latin1_file_anonymizes_correctly(self, cli_runner, sample_ics_latin1, tmp_path):
         """Test a Latin-1 file with no declared charset is decoded and anonymized."""
-        from icalendar_anonymizer.cli import main
 
         input_file = tmp_path / "input.ics"
         input_file.write_bytes(sample_ics_latin1)
@@ -505,7 +481,6 @@ class TestEncodingFlag:
 
     def test_encoding_flag_forces_explicit_encoding(self, cli_runner, sample_ics_latin1, tmp_path):
         """Test --encoding overrides detection and still succeeds for the correct codec."""
-        from icalendar_anonymizer.cli import main
 
         input_file = tmp_path / "input.ics"
         input_file.write_bytes(sample_ics_latin1)
@@ -521,7 +496,6 @@ class TestEncodingFlag:
 
     def test_encoding_flag_wrong_codec_fails_cleanly(self, cli_runner, sample_ics_latin1, tmp_path):
         """Test --encoding with the wrong codec is a hard error, not a silent guess."""
-        from icalendar_anonymizer.cli import main
 
         input_file = tmp_path / "input.ics"
         input_file.write_bytes(sample_ics_latin1)
@@ -533,7 +507,6 @@ class TestEncodingFlag:
 
     def test_encoding_flag_unknown_codec_name(self, cli_runner, sample_ics_latin1, tmp_path):
         """Test --encoding with an unrecognized codec name fails cleanly."""
-        from icalendar_anonymizer.cli import main
 
         input_file = tmp_path / "input.ics"
         input_file.write_bytes(sample_ics_latin1)
@@ -545,7 +518,6 @@ class TestEncodingFlag:
 
     def test_verbose_shows_detected_encoding(self, cli_runner, sample_ics_latin1, tmp_path):
         """Test -v reports which encoding was actually used."""
-        from icalendar_anonymizer.cli import main
 
         input_file = tmp_path / "input.ics"
         input_file.write_bytes(sample_ics_latin1)
@@ -559,7 +531,6 @@ class TestEncodingFlag:
         self, cli_runner, sample_ics_latin1, tmp_path
     ):
         """Test -v with --encoding reports an override, not a false "detected" claim."""
-        from icalendar_anonymizer.cli import main
 
         input_file = tmp_path / "input.ics"
         input_file.write_bytes(sample_ics_latin1)
@@ -569,3 +540,203 @@ class TestEncodingFlag:
         assert result.exit_code == 0
         assert "Using encoding override: latin-1" in result.output
         assert "Detected encoding:" not in result.output
+
+
+# Format Detection Tests
+
+
+@pytest.fixture
+def sample_jcal():
+    """Create sample jCal data (a real .ics fixture converted via to_jcal())."""
+    cal = Calendar()
+    cal.add("prodid", "-//Test//Test//EN")
+    cal.add("version", "2.0")
+
+    event = Event()
+    event.add("summary", "Secret Meeting")
+    event.add("uid", "test-event-uid@example.com")
+    event.add("dtstart", datetime(2024, 1, 15, 14, 0, 0))
+
+    cal.add_component(event)
+
+    return json.dumps(cal.to_jcal()).encode("utf-8")
+
+
+@pytest.fixture
+def sample_jscal():
+    """Create sample JSCalendar data."""
+
+    data = {
+        "@type": "Event",
+        "uid": "test-event-uid@example.com",
+        "title": "Secret Meeting",
+        "start": "2024-01-15T14:00:00",
+    }
+    return json.dumps(data).encode("utf-8")
+
+
+class TestFormatDetection:
+    """Tests for CLI format auto-detection and the --format override."""
+
+    def test_detects_ics_extension(self, cli_runner, sample_ics, tmp_path):
+        input_file = tmp_path / "input.ics"
+        input_file.write_bytes(sample_ics)
+
+        result = cli_runner.invoke(main, [str(input_file)])
+        assert result.exit_code == 0
+        output_cal = Calendar.from_ical(result.output_bytes)
+        assert output_cal is not None
+
+    def test_detects_json_dict_as_jscal(self, cli_runner, sample_jscal, tmp_path):
+        input_file = tmp_path / "input.json"
+        input_file.write_bytes(sample_jscal)
+
+        verbose_result = cli_runner.invoke(main, ["-v", str(input_file)])
+        assert verbose_result.exit_code == 0
+        assert "Format: jscal" in verbose_result.output
+
+        result = cli_runner.invoke(main, [str(input_file)])
+        assert result.exit_code == 0
+
+        output = json.loads(result.output_bytes)
+        assert output["title"] != "Secret Meeting"
+        assert output["start"] == "2024-01-15T14:00:00"
+
+    def test_detects_json_array_as_jcal(self, cli_runner, sample_jcal, tmp_path):
+        input_file = tmp_path / "input.json"
+        input_file.write_bytes(sample_jcal)
+
+        verbose_result = cli_runner.invoke(main, ["-v", str(input_file)])
+        assert verbose_result.exit_code == 0
+        assert "Format: jcal" in verbose_result.output
+
+        result = cli_runner.invoke(main, [str(input_file)])
+        assert result.exit_code == 0
+
+        output = json.loads(result.output_bytes)
+        cal = Calendar.from_jcal(output)
+        event = next(iter(cal.walk("VEVENT")))
+        assert str(event.get("SUMMARY")) != "Secret Meeting"
+
+    def test_malformed_json_raises_clean_error(self, cli_runner, tmp_path):
+        input_file = tmp_path / "input.json"
+        input_file.write_bytes(b'{"not": "valid json')
+
+        result = cli_runner.invoke(main, [str(input_file)])
+        assert result.exit_code == 1
+        assert "Error" in result.output
+
+    def test_json_neither_dict_nor_list_raises_clean_error(self, cli_runner, tmp_path):
+        input_file = tmp_path / "input.json"
+        input_file.write_bytes(b'"just a string"')
+
+        result = cli_runner.invoke(main, [str(input_file)])
+        assert result.exit_code == 1
+        assert "must be a JSON object" in result.output
+
+    def test_format_override_flag(self, cli_runner, sample_jscal):
+        # No .json extension for detection to key off, so --format is required.
+        result = cli_runner.invoke(main, ["--format", "jscal"], input=sample_jscal)
+        assert result.exit_code == 0
+
+        output = json.loads(result.output_bytes)
+        assert output["title"] != "Secret Meeting"
+
+    def test_stdin_defaults_to_ics(self, cli_runner, sample_ics):
+        result = cli_runner.invoke(main, input=sample_ics)
+        assert result.exit_code == 0
+        output_cal = Calendar.from_ical(result.output_bytes)
+        assert output_cal is not None
+
+    def test_jscal_input_ignores_ics_field_flags_with_warning(
+        self, cli_runner, sample_jscal, tmp_path
+    ):
+        input_file = tmp_path / "input.json"
+        input_file.write_bytes(sample_jscal)
+
+        result = cli_runner.invoke(main, ["--summary", "keep", str(input_file)])
+        assert result.exit_code == 0
+        assert "ignored for JSCalendar input" in result.output
+
+    def test_jcal_input_honors_ics_field_flags(self, cli_runner, sample_jcal, tmp_path):
+        # Unlike JSCalendar, jCal is a direct JSON encoding of iCalendar's
+        # own property model, so anonymize_jcal() supports the exact same
+        # field_modes vocabulary as .ics input, and the CLI's --summary/etc.
+        # flags must reach it rather than being dropped as "JSON input".
+
+        input_file = tmp_path / "input.json"
+        input_file.write_bytes(sample_jcal)
+
+        result = cli_runner.invoke(main, ["--summary", "keep", str(input_file)])
+        assert result.exit_code == 0
+        assert "ignored" not in result.output
+        assert "Secret Meeting" in result.output
+
+    def test_jscal_output_is_valid_json(self, cli_runner, sample_jscal, tmp_path):
+        input_file = tmp_path / "input.json"
+        input_file.write_bytes(sample_jscal)
+
+        result = cli_runner.invoke(main, [str(input_file)])
+        assert result.exit_code == 0
+
+        output = json.loads(result.output_bytes)
+        assert isinstance(output, dict)
+
+    def test_jcal_output_is_valid_json_and_valid_jcal_shape(
+        self, cli_runner, sample_jcal, tmp_path
+    ):
+        input_file = tmp_path / "input.json"
+        input_file.write_bytes(sample_jcal)
+
+        result = cli_runner.invoke(main, [str(input_file)])
+        assert result.exit_code == 0
+
+        output = json.loads(result.output_bytes)
+        assert isinstance(output, list)
+        assert output[0] == "vcalendar"
+        # Confirms it round-trips through icalendar's own jCal parser.
+        Calendar.from_jcal(output)
+
+    def test_json_input_bypasses_encoding_fallback(self, cli_runner, tmp_path):
+        input_file = tmp_path / "input.json"
+        # Invalid UTF-8 bytes inside what looks like JSON content.
+        input_file.write_bytes('{"title": "Café"}'.encode("cp1252"))
+
+        result = cli_runner.invoke(main, [str(input_file)])
+        assert result.exit_code == 1
+        assert "Error" in result.output
+
+    def test_explicit_format_with_encoding_flag_warns(self, cli_runner):
+        result = cli_runner.invoke(
+            main,
+            ["--format", "jscal", "--encoding", "latin-1"],
+            input=b'{"@type": "Event", "uid": "x", "title": "y"}',
+        )
+        assert result.exit_code == 0
+        assert "--encoding is ignored for JSON input" in result.output
+
+    def test_explicit_format_with_invalid_utf8_fails_cleanly(self, cli_runner):
+        # --format bypasses extension-based auto-detection entirely, so this
+        # exercises a different code path than the .json-extension case above.
+        result = cli_runner.invoke(
+            main, ["--format", "jscal"], input='{"title": "Café"}'.encode("cp1252")
+        )
+        assert result.exit_code == 1
+        assert "Error" in result.output
+
+    def test_explicit_format_with_malformed_json_fails_cleanly(self, cli_runner):
+        result = cli_runner.invoke(main, ["--format", "jscal"], input=b'{"not": "valid json')
+        assert result.exit_code == 1
+        assert "Error" in result.output
+
+    def test_explicit_format_jscal_anonymization_error(self, cli_runner):
+        # Not a dict, so anonymize_jscal() raises TypeError.
+        result = cli_runner.invoke(main, ["--format", "jscal"], input=b"[1, 2, 3]")
+        assert result.exit_code == 1
+        assert "Anonymization failed" in result.output
+
+    def test_explicit_format_jcal_anonymization_error(self, cli_runner):
+        # Not a list, so anonymize_jcal() raises TypeError.
+        result = cli_runner.invoke(main, ["--format", "jcal"], input=b'{"a": 1}')
+        assert result.exit_code == 1
+        assert "Anonymization failed" in result.output

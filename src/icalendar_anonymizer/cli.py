@@ -7,14 +7,17 @@ Provides the `icalendar-anonymize` and `ican` commands for anonymizing
 iCalendar files from the command line.
 """
 
+import json
 import sys
-from typing import BinaryIO
+from typing import BinaryIO, Literal, NoReturn, cast
 
 import click
 from icalendar import Calendar
 
 from ._encoding import decode_ics_bytes
 from .anonymizer import anonymize
+from .formats.jcal import anonymize_jcal
+from .formats.jscal import anonymize_jscal
 from .version import __version__
 
 
@@ -51,6 +54,16 @@ from .version import __version__
     "--encoding",
     default=None,
     help="Force a specific input encoding (e.g. latin-1, cp1252) instead of auto-detecting.",
+)
+@click.option(
+    "--format",
+    "format_",
+    type=click.Choice(["auto", "ics", "jscal", "jcal"]),
+    default="auto",
+    help=(
+        "Input format. auto detects from the file extension (.ics, .json as a "
+        "JSCalendar object or jCal array). Required to override for stdin."
+    ),
 )
 @click.option(
     "--summary",
@@ -108,6 +121,7 @@ def main(
     output: BinaryIO,
     verbose: bool,  # noqa: FBT001
     encoding: str | None,
+    format_: str,
     summary: str | None,
     description: str | None,
     location: str | None,
@@ -137,41 +151,19 @@ def main(
         if verbose:
             click.echo(f"Reading from: {input_name}", err=True)
 
-        # Read ICS data
-        ics_data = input.read()
+        raw_data = input.read()
 
-        if not ics_data:
-            click.echo("Error: Input is empty", err=True)
-            sys.exit(1)
-
-        if verbose:
-            click.echo("Decoding input...", err=True)
+        if not raw_data:
+            _fail("Input is empty")
 
         try:
-            ics_text, used_encoding = decode_ics_bytes(ics_data, encoding=encoding)
-        except (UnicodeDecodeError, LookupError) as e:
-            click.echo(f"Error: Could not decode input with encoding {encoding!r} - {e}", err=True)
-            sys.exit(1)
-
-        if verbose:
-            if encoding is not None:
-                click.echo(f"Using encoding override: {used_encoding}", err=True)
-            else:
-                click.echo(f"Detected encoding: {used_encoding}", err=True)
-            click.echo("Parsing calendar...", err=True)
-
-        # Parse calendar
-        try:
-            cal = Calendar.from_ical(ics_text)
+            detected_format, parsed_json = _detect_format(format_, input, raw_data)
         except ValueError as e:
-            click.echo(f"Error: Invalid ICS file - {e}", err=True)
-            sys.exit(1)
+            _fail(str(e))
 
         if verbose:
-            click.echo("Anonymizing calendar...", err=True)
+            click.echo(f"Format: {detected_format}", err=True)
 
-        # Build field_modes from CLI flags
-        field_modes = {}
         field_mapping = {
             "SUMMARY": summary,
             "DESCRIPTION": description,
@@ -186,18 +178,76 @@ def main(
         }
         field_modes = {field: value for field, value in field_mapping.items() if value}
 
-        # Anonymize (uses random salt by default)
-        try:
-            anonymized_cal = anonymize(cal, field_modes=field_modes or None)
-        except (TypeError, ValueError) as e:
-            click.echo(f"Error: Anonymization failed - {e}", err=True)
-            sys.exit(1)
+        if detected_format == "jscal" and field_modes:
+            click.echo(
+                f"Warning: {', '.join(f'--{f.lower()}' for f in field_modes)} "
+                "ignored for JSCalendar input",
+                err=True,
+            )
+            field_modes = {}
+
+        if detected_format == "ics":
+            if verbose:
+                click.echo("Decoding input...", err=True)
+
+            try:
+                ics_text, used_encoding = decode_ics_bytes(raw_data, encoding=encoding)
+            except (UnicodeDecodeError, LookupError) as e:
+                _fail(f"Could not decode input with encoding {encoding!r} - {e}")
+
+            if verbose:
+                if encoding is not None:
+                    click.echo(f"Using encoding override: {used_encoding}", err=True)
+                else:
+                    click.echo(f"Detected encoding: {used_encoding}", err=True)
+                click.echo("Parsing calendar...", err=True)
+
+            try:
+                cal = Calendar.from_ical(ics_text)
+            except ValueError as e:
+                _fail(f"Invalid ICS file - {e}")
+
+            if verbose:
+                click.echo("Anonymizing calendar...", err=True)
+
+            try:
+                anonymized_cal = anonymize(cal, field_modes=field_modes or None)
+            except (TypeError, ValueError) as e:
+                _fail(f"Anonymization failed - {e}")
+
+            result_bytes = anonymized_cal.to_ical()
+        else:
+            if encoding is not None:
+                click.echo("Warning: --encoding is ignored for JSON input", err=True)
+
+            if parsed_json is not None:
+                parsed = parsed_json
+            else:
+                try:
+                    parsed = json.loads(raw_data.decode("utf-8"))
+                except UnicodeDecodeError as e:
+                    _fail(f"Could not decode JSON input as UTF-8 - {e}")
+                except json.JSONDecodeError as e:
+                    _fail(f"Could not parse input as JSON - {e}")
+
+            if verbose:
+                click.echo("Anonymizing calendar...", err=True)
+
+            try:
+                if detected_format == "jscal":
+                    result = anonymize_jscal(parsed)
+                else:
+                    result = anonymize_jcal(parsed, field_modes=field_modes or None)
+            except (TypeError, ValueError) as e:
+                _fail(f"Anonymization failed - {e}")
+
+            result_bytes = json.dumps(result).encode("utf-8")
 
         if verbose:
             click.echo(f"Writing to: {output_name}", err=True)
 
         # Write output
-        output.write(anonymized_cal.to_ical())
+        output.write(result_bytes)
 
         if verbose:
             click.echo("Done.", err=True)
@@ -218,6 +268,64 @@ def main(
             err=True,
         )
         sys.exit(1)
+
+
+def _fail(message: str) -> NoReturn:
+    """Print a CLI error and exit(1)."""
+    click.echo(f"Error: {message}", err=True)
+    sys.exit(1)
+
+
+def _detect_format(
+    format_: str, input_stream: BinaryIO, raw_data: bytes
+) -> tuple[Literal["ics", "jscal", "jcal"], dict | list | None]:
+    """Detect the input format from an explicit override or the file extension.
+
+    For "auto" detection on a .json file, this parses the JSON to tell
+    JSCalendar (an object) apart from jCal (an array), and returns that
+    parsed value so the caller doesn't need to parse it again.
+
+    Args:
+        format_: The --format option value ("auto", "ics", "jscal", or "jcal")
+        input_stream: The input stream, used to read its name/extension for "auto"
+        raw_data: The raw input bytes, parsed as JSON when detecting between
+            JSCalendar and jCal
+
+    Returns:
+        A (format, parsed_json) tuple. parsed_json is None unless format
+        was auto-detected from .json content, in which case it's already
+        parsed and the caller should reuse it instead of parsing again.
+
+    Raises:
+        ValueError: If the input can't be parsed as JSON for a .json file,
+            or parses to neither a JSON object nor a JSON array
+    """
+    if format_ != "auto":
+        # format_ is a plain str at the type level (Click has no Literal
+        # return type for click.Choice), but the "auto", "ics", "jscal",
+        # "jcal" choice is enforced at runtime by the --format option's
+        # click.Choice, so this narrowing is safe.
+        return cast("Literal['ics', 'jscal', 'jcal']", format_), None
+
+    # getattr, not direct attribute access: under click.testing.CliRunner,
+    # piped stdin is a raw BytesIO with no .name attribute at all.
+    name = getattr(input_stream, "name", None) or ""
+    if not name.lower().endswith(".json"):
+        return "ics", None
+
+    try:
+        parsed = json.loads(raw_data.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as e:
+        raise ValueError(f"Could not parse .json input as JSON - {e}") from e
+
+    if isinstance(parsed, dict):
+        return "jscal", parsed
+    if isinstance(parsed, list):
+        return "jcal", parsed
+    raise ValueError(
+        ".json input must be a JSON object (JSCalendar) or array (jCal), "
+        f"got {type(parsed).__name__}"
+    )
 
 
 def _get_stream_name(stream: BinaryIO) -> str:
