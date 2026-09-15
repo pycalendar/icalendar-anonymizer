@@ -6,6 +6,8 @@
 async
 [Aa]utogenerated
 Caddy
+charsets?
+codecs?
 commitizen
 cron
 [Dd]octests?
@@ -13,7 +15,10 @@ cron
 doctest
 Fernet
 Gunicorn
+hostname
 i[Cc]alendar
+jCal
+JSCalendar
 Nginx
 pre-commit
 pytest

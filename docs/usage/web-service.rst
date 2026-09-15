@@ -84,6 +84,7 @@ Paste Content
 Fetch from URL
     Enter a URL to fetch and anonymize a remote calendar.
     Subject to SSRF protection (see security considerations).
+    An Authentication dropdown offers None, Basic, and Bearer for password-protected feeds, calling ``POST /fetch`` instead of ``GET /fetch`` when credentials are set.
 
 Advanced Options
 ----------------
@@ -363,6 +364,7 @@ This endpoint includes SSRF (Server-Side Request Forgery) protection:
 - 10-second timeout
 - 10 MB size limit
 - Validates redirect destinations
+- Follows at most 10 redirects, then fails with ``400 Too many redirects``
 
 **Request**
 
@@ -411,10 +413,73 @@ Each accepts: ``keep``, ``remove``, ``randomize``, ``replace``
     curl "http://localhost:8000/fetch?url=https://example.com/calendar.ics&summary=keep&location=remove" \
       -o anonymized.ics
 
-**Known Limitations**
+**DNS Rebinding Protection**
 
-The SSRF protection has a Time-of-Check-Time-of-Use (TOCTOU) vulnerability to DNS rebinding attacks.
-See `Issue #70 <https://github.com/pycalendar/icalendar-anonymizer/issues/70>`_ for future enhancements.
+- Resolves the hostname once per request or redirect hop
+- Validates every resolved address, not just the hostname
+- Connects to the validated address directly, without re-resolving it
+- Repeats resolve, validate, connect on each redirect hop
+
+See :issue:`70`.
+
+POST /fetch
+-----------
+
+Fetch an iCalendar file from a URL and anonymize it. Same as ``GET /fetch``, plus optional credentials for password-protected feeds.
+
+**Security Features**
+
+- Credentials go in the request body, not the query string
+- Rejects URLs with embedded credentials (``https://alice:secret@example.com/...``)
+- Drops credentials before following any redirect that changes scheme, host, or port
+
+**Request**
+
+.. code-block:: http
+
+    POST /fetch HTTP/1.1
+    Content-Type: application/json
+
+    {
+      "url": "https://example.com/calendar.ics",
+      "auth": {"type": "basic", "username": "alice", "password": "secret"}
+    }
+
+For a bearer token, use ``"auth": {"type": "bearer", "token": "abc123"}`` instead.
+
+``config`` accepts the same per-field options as ``GET /fetch``'s query parameters, as a JSON object instead:
+
+.. code-block:: http
+
+    POST /fetch HTTP/1.1
+    Content-Type: application/json
+
+    {
+      "url": "https://example.com/calendar.ics",
+      "config": {"summary": "keep", "location": "remove"}
+    }
+
+**Response (200 OK)**
+
+Same shape as ``GET /fetch``: the anonymized calendar, served as ``text/calendar``.
+
+**Error Responses**
+
+- ``400 Bad Request`` - Invalid URL, embedded credentials, private IP, malformed auth, or invalid ICS format
+- ``408 Request Timeout`` - Request exceeded 10-second timeout
+- ``413 Payload Too Large`` - Response exceeds 10 MB size limit
+- ``422 Unprocessable Entity`` - Invalid ``auth`` shape, such as a bearer token with a username, or invalid field config
+
+**Example with curl**
+
+.. code-block:: shell
+
+    curl -X POST http://localhost:8000/fetch \
+      -H "Content-Type: application/json" \
+      -d '{"url": "https://example.com/calendar.ics", "auth": {"type": "basic", "username": "alice", "password": "secret"}}' \
+      -o anonymized.ics
+
+See :issue:`79`.
 
 POST /share
 -----------
@@ -476,6 +541,19 @@ Generate an encrypted Fernet token for live calendar proxying. Only available wh
       "url": "https://example.com/calendar.ics"
     }
 
+This endpoint accepts the same optional ``config`` and ``auth`` fields as ``POST /fetch``.
+If the source calendar needs credentials, encrypt them into the token instead of putting them in the plain URL:
+
+.. code-block:: http
+
+    POST /fernet-generate HTTP/1.1
+    Content-Type: application/json
+
+    {
+      "url": "https://example.com/calendar.ics",
+      "auth": {"type": "basic", "username": "alice", "password": "secret"}
+    }
+
 **Response (200 OK)**
 
 .. code-block:: json
@@ -484,12 +562,10 @@ Generate an encrypted Fernet token for live calendar proxying. Only available wh
       "url": "https://icalendar-anonymizer.com/fernet/gAAAAABl..."
     }
 
-The returned URL contains an encrypted token with the source calendar URL and a random salt.
-Anyone with this URL can fetch the calendar, which will be fetched from the source and anonymized on-the-fly.
-
 **Error Responses**
 
 - ``400 Bad Request`` - Invalid URL scheme, localhost, or private IP
+- ``422 Unprocessable Entity`` - Invalid ``auth`` shape, such as a bearer token with a username
 - ``503 Service Unavailable`` - Fernet not configured (``FERNET_KEY`` not set)
 
 **Example with curl**
@@ -506,8 +582,10 @@ Anyone with this URL can fetch the calendar, which will be fetched from the sour
 
 - Source URL validated for SSRF protection (same rules as ``/fetch``)
 - Token encrypted with Fernet symmetric encryption
-- Unique random salt per token ensures different anonymization
-- Token contains authenticated data preventing tampering
+- Unique random salt per token
+- Token contains authenticated data, preventing tampering
+- Any auth credentials are encrypted into the token, not exposed in the plain URL
+- Treat the token URL like a password: anyone with it can read the source calendar
 
 GET /fernet/{token}
 -------------------
@@ -549,10 +627,10 @@ Fetch and anonymize a calendar using an encrypted Fernet token.
 
 **How It Works**
 
-1. Token is decrypted to retrieve source URL and salt
-2. Source URL is validated for SSRF protection
-3. Calendar is fetched from source (with redirect validation)
-4. Calendar is anonymized using the salt from token
+1. Token is decrypted to retrieve the source URL, salt, and any stored auth credentials
+2. Source URL is validated and its DNS resolved and pinned, same as ``POST /fetch``
+3. Calendar is fetched from the pinned address, with any stored credentials attached, re-validating and re-pinning DNS on every redirect
+4. Calendar is anonymized using the salt from the token
 5. Anonymized calendar is returned
 
 This provides **live proxying** - the source is fetched each time, so the anonymized calendar stays up-to-date.
@@ -813,15 +891,13 @@ Security Considerations
 
 **SSRF Protection**
 
-The ``/fetch`` endpoint implements SSRF protection but has known limitations.
-For high-security deployments:
+``/fetch``, ``/fernet-generate``, and ``/fernet/{token}`` resolve DNS once per hop, validate every resolved address, and pin the connection to a validated address, closing the DNS rebinding gap described under ``GET /fetch`` above.
+For high-security deployments, add further layers on top of this:
 
 - Use network-level firewall rules
 - Deploy in an isolated network segment
 - Implement additional rate limiting
 - Monitor for suspicious URL patterns
-
-See `Issue #70 <https://github.com/pycalendar/icalendar-anonymizer/issues/70>`_ for planned enhancements.
 
 **Input Validation**
 

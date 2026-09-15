@@ -72,6 +72,10 @@ Minor changes
 - Revised Contributing documentation. :issue:`74`
 - Adopted :mod:`sphinx_issues` extension for shorter changelog issue and pull request references.
 - Changed ``POST /upload`` and ``POST /anonymized`` to attempt encoding detection before rejecting non-UTF-8 input. Bytes that still can't be parsed as a calendar now fail with an ``Invalid ICS format`` error instead of an encoding-specific one. :issue:`160`
+- Documented ``POST /fetch`` and Fernet ``auth`` credentials in :file:`docs/usage/web-service.rst`. :issue:`79`
+- Documented the DNS rebinding fix's resolve, validate, and pin mechanism in :file:`docs/usage/web-service.rst` and :file:`docs/usage/self-hosting.rst`. :issue:`70`
+- Documented the ``--encoding`` and ``--format`` CLI flags in :file:`docs/usage/cli.rst`. :issue:`160`
+- Documented JSCalendar and jCal anonymization (``anonymize_jscal()``, ``anonymize_jcal()``) in :file:`docs/usage/python-api.rst` and a new :file:`docs/api/formats.rst`. :issue:`159`
 
 .. _v0.1.5-bug-fixes:
 

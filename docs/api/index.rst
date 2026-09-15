@@ -9,5 +9,6 @@ API Reference
    :maxdepth: 2
 
    anonymizer
+   formats
    config
    version

@@ -211,7 +211,7 @@ URL fetching includes SSRF protection that blocks:
 - Loopback addresses (127.0.0.1, localhost)
 - Link-local addresses (169.254.0.0/16)
 
-Known limitation: DNS rebinding attacks may bypass these checks. See Issue #70 for details.
+DNS resolves once per request or redirect hop, and the connection is pinned to the validated address. See :doc:`web-service` for details and :issue:`70`.
 
 File Size Limits
 ----------------
@@ -225,7 +225,7 @@ For production environments:
 
 1. **Use HTTPS**: Put the service behind a reverse proxy (nginx, Caddy, Traefik) with TLS
 2. **Tighten CORS**: Edit ``main.py`` to allow only specific origins instead of ``*``
-3. **Add authentication**: See Issue #79 for planned authentication support
+3. **Require credentials on fetched feeds**: Use ``POST /fetch``'s ``auth`` field for calendars that need Basic or Bearer authentication, see :doc:`web-service`
 4. **Monitor logs**: Set up log aggregation and monitoring
 5. **Regular updates**: Subscribe to security advisories and update promptly
 

@@ -617,6 +617,62 @@ Here's a complete example putting it all together:
     print(f"Original UID: {event['uid']}")
     print(f"Anonymized UID: {list(anonymized_cal.walk('VEVENT'))[0]['uid']}")
 
+JSCalendar and jCal support
+============================
+
+``icalendar_anonymizer`` also anonymizes JSCalendar (RFC 8984) and jCal (RFC 7265) documents, the JSON formats used by JMAP calendar servers.
+See :issue:`159`.
+
+jCal is a JSON encoding of the same property model as iCalendar. :py:func:`icalendar_anonymizer.anonymize_jcal` reuses :py:func:`icalendar_anonymizer.anonymize` directly.
+
+.. autofunction:: icalendar_anonymizer.anonymize_jcal
+
+.. code-block:: python
+
+    from icalendar import Calendar
+    from icalendar_anonymizer import anonymize_jcal
+
+    with open('calendar.ics', 'rb') as f:
+        cal = Calendar.from_ical(f.read())
+
+    jcal_document = cal.to_jcal()
+    anonymized = anonymize_jcal(jcal_document)
+
+JSCalendar has a different shape from iCalendar.
+Participants are one map covering both organizers and attendees, rather than separate ATTENDEE and ORGANIZER properties, and locations are a map rather than a single value.
+:py:func:`icalendar_anonymizer.anonymize_jscal` walks a JSCalendar document directly to handle this, instead of converting it to iCalendar first.
+
+.. autofunction:: icalendar_anonymizer.anonymize_jscal
+
+.. code-block:: python
+
+    from icalendar_anonymizer import anonymize_jscal
+
+    event = {
+        "@type": "Event",
+        "uid": "meeting-with-dr-smith@example.com",
+        "title": "Dentist appointment with Dr. Smith",
+        "start": "2025-01-15T14:00:00",
+        "duration": "PT1H",
+    }
+
+    anonymized = anonymize_jscal(event)
+
+``field_modes`` works the same way it does for :py:func:`icalendar_anonymizer.anonymize`, but with JSCalendar's own field names instead of iCalendar's.
+
+.. autodata:: icalendar_anonymizer.JSCAL_CONFIGURABLE_FIELDS
+
+.. code-block:: python
+
+    # Keep the title, remove the locations
+    anonymized = anonymize_jscal(event, field_modes={
+        "TITLE": "keep",
+        "LOCATIONS": "remove",
+    })
+
+jCal reuses iCalendar's own field names instead.
+Use :py:func:`icalendar_anonymizer.anonymize`'s ``CONFIGURABLE_FIELDS`` (``SUMMARY``, ``DESCRIPTION``, and so on, see :doc:`../api/config`) with ``anonymize_jcal``, not JSCalendar's field names.
+
 See Also
 ========
 

@@ -664,6 +664,28 @@ Options reference
         Writing to: anonymized.ics
         Done.
 
+..  option:: --encoding <codec>
+
+    Force a specific input encoding instead of auto-detecting it.
+
+    -   **Default**: auto-detect (UTF-8, then Windows-1252, then Latin-1)
+    -   **Format**: A Python codec name, such as ``latin-1`` or ``cp1252``
+    -   **Example**: :code:`ican --encoding latin-1 old-export.ics`
+
+    Ignored for JSCalendar and jCal input, which must be valid UTF-8; see :ref:`jscalendar-and-jcal-support`.
+    See :ref:`encoding-support` for details.
+
+..  option:: --format <auto|ics|jscal|jcal>
+
+    Set the input format instead of detecting it from the file extension.
+
+    -   **Default**: ``auto``
+    -   **Values**: ``auto``, ``ics``, ``jscal``, ``jcal``
+    -   **Example**: :code:`cat calendar.json | ican --format jscal`
+
+    Required for standard input, which has no file extension to detect from.
+    See :ref:`jscalendar-and-jcal-support` for details.
+
 ..  option:: --version
 
     Display version information and exit.
@@ -744,6 +766,56 @@ The four modes are ``keep``, ``remove``, ``randomize``, and ``replace``.
 
     -   **Choices**: ``keep``, ``randomize``, ``replace``
     -   **Default**: ``randomize``
+
+..  _encoding-support:
+
+Encoding support
+================
+
+Older calendar exports, from Lotus Notes or a pre-Unicode version of Outlook for example, are sometimes saved as Windows-1252 or Latin-1 with no declared charset.
+``ican`` detects the input encoding automatically, trying UTF-8, then Windows-1252, then Latin-1.
+Output is always UTF-8.
+
+..  code-block:: shell
+
+    ican -v old-export.ics
+
+..  code-block:: text
+
+    Reading from: old-export.ics
+    Format: ics
+    Decoding input...
+    Detected encoding: cp1252
+    Parsing calendar...
+    Anonymizing calendar...
+    Writing to: <stdout>
+    Done.
+
+..  note::
+
+    A file in a different legacy encoding, Polish text saved as cp1250 for example, still decodes without an error, but the result can contain the wrong characters.
+    There is no reliable way to tell this apart from correctly decoded text using only the short property values in a calendar file.
+    Use :option:`--encoding` if you know which codec a file actually uses.
+
+..  _jscalendar-and-jcal-support:
+
+JSCalendar and jCal support
+============================
+
+``ican`` also anonymizes JSCalendar (RFC 8984) and jCal (RFC 7265) files, the JSON formats used by JMAP calendar servers.
+A ``.json`` file is read as JSCalendar if it contains a JSON object, and as jCal if it contains a JSON array.
+Use :option:`--format` to set the format explicitly for standard input.
+
+..  code-block:: shell
+
+    ican calendar.json -o anonymized.json
+    cat calendar.json | ican --format jscal -o anonymized.json
+
+The field configuration options above, ``--summary`` and the rest, apply to iCalendar and jCal input.
+They have no effect on JSCalendar input, which uses its own field vocabulary; configuring it is available through the Python API today, see :doc:`python-api`.
+
+JSON input must be valid UTF-8; :option:`--encoding` and the auto-detection described in :ref:`encoding-support` apply only to iCalendar (``.ics``) input.
+A non-UTF-8 ``.json`` file fails with an error rather than falling back to another codec.
 
 See also
 ========
