@@ -73,9 +73,14 @@ Minor changes
 - Adopted :mod:`sphinx_issues` extension for shorter changelog issue and pull request references.
 - Changed ``POST /upload`` and ``POST /anonymized`` to attempt encoding detection before rejecting non-UTF-8 input. Bytes that still can't be parsed as a calendar now fail with an ``Invalid ICS format`` error instead of an encoding-specific one. :issue:`160`
 - Documented ``POST /fetch`` and Fernet ``auth`` credentials in :file:`docs/usage/web-service.rst`. :issue:`79`
-- Documented the DNS rebinding fix's resolve, validate, and pin mechanism in :file:`docs/usage/web-service.rst` and :file:`docs/usage/self-hosting.rst`. :issue:`70`
+- Documented the DNS rebinding fix, including its actual SSRF and redirect-limit rules, in :file:`docs/usage/web-service.rst` and :file:`docs/usage/self-hosting.rst`. :issue:`70`
 - Documented the ``--encoding`` and ``--format`` CLI flags in :file:`docs/usage/cli.rst`. :issue:`160`
 - Documented JSCalendar and jCal anonymization (``anonymize_jscal()``, ``anonymize_jcal()``) in :file:`docs/usage/python-api.rst` and a new :file:`docs/api/formats.rst`. :issue:`159`
+- Corrected :file:`docs/usage/python-api.rst`'s preserved-properties table, error-handling examples, and ATTENDEE/ORGANIZER example, and documented the hash functions' edge-case behavior.
+- Documented the frontend's cross-tab field syncing, ``localStorage`` persistence, and the Docker image's Gunicorn/uvloop setup, in :file:`docs/usage/web-service.rst` and :file:`docs/usage/self-hosting.rst`.
+- Added a Cloudflare Workers deployment section for contributors to :file:`docs/contributing.rst`.
+- Documented the full charset-detection behavior, including declared-charset precedence and its safe fallback, across the web service's endpoints in :file:`docs/usage/web-service.rst`.
+- Documented that ``FERNET_KEY`` must decode to exactly 32 bytes, in :file:`docs/usage/self-hosting.rst`.
 
 .. _v0.1.5-bug-fixes:
 

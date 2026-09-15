@@ -106,6 +106,9 @@ Configurable fields (10 total):
 
 The UID field cannot use ``remove`` mode (would break recurring events).
 
+Changing a field's mode on one tab mirrors it to the same field on the other two tabs, and the selections are saved in the browser's ``localStorage`` so they survive a page reload.
+The Fetch tab's authentication fields (username, password, bearer token) are never included in this saved data.
+
 Shareable Links
 ---------------
 
@@ -207,9 +210,12 @@ curl-friendly endpoint for scripting and testing. Returns raw ICS without JSON w
 
 No ``Content-Disposition`` header, allowing direct piping to files.
 
+For a POST body, a ``charset`` declared in the request's own ``Content-Type`` header (for example ``Content-Type: text/calendar; charset=iso-8859-7``) is used to decode it.
+Otherwise it falls back to the same UTF-8/Windows-1252/Latin-1 detection as the CLI; see :ref:`encoding-support`.
+
 **Error Responses**
 
-- ``400 Bad Request`` - Missing ``ics`` parameter (GET), empty body (POST), invalid UTF-8, or invalid ICS format
+- ``400 Bad Request`` - Missing ``ics`` parameter (GET), empty body (POST), or invalid ICS format
 
 **Examples with curl**
 
@@ -314,6 +320,10 @@ Anonymize an uploaded iCalendar file. Optionally configure per-field anonymizati
 
 The ``config`` field is optional JSON string. If omitted, all fields use default randomize behavior.
 
+If the uploaded file's part declares a ``charset`` in its own ``Content-Type``, that charset is used to decode it, and any Python codec name is accepted, not just Windows-1252 or Latin-1 (for example ``Content-Type: text/calendar; charset=utf-16``).
+A declared charset that fails to decode the actual bytes is not trusted blindly: decoding falls back to the same detection used when no charset is declared, rather than crashing or returning corrupted text.
+See :doc:`cli` for how that fallback chain works, and :ref:`encoding-support` for its known limitation with other legacy encodings.
+
 **Response (200 OK)**
 
 .. code-block:: http
@@ -328,7 +338,7 @@ The ``config`` field is optional JSON string. If omitted, all fields use default
 
 **Error Responses**
 
-- ``400 Bad Request`` - Invalid ICS format, empty file, non-UTF-8 encoding, or invalid config JSON
+- ``400 Bad Request`` - Invalid ICS format, empty file, or invalid config JSON
 - ``413 Payload Too Large`` - File exceeds size limit
 - ``422 Unprocessable Entity`` - Invalid field config
 - ``500 Internal Server Error`` - Anonymization failed
@@ -357,9 +367,9 @@ Fetch an iCalendar file from a URL and anonymize it. Optionally configure per-fi
 
 This endpoint includes SSRF (Server-Side Request Forgery) protection:
 
-- Blocks private IP ranges (10.x, 172.16.x, 192.168.x, 169.254.x)
-- Blocks localhost (127.0.0.1, ::1, 0.0.0.0)
-- Blocks IPv6 private ranges (fc00::/7, fe80::/10)
+- Blocks any address that isn't globally routable: private, loopback, link-local, CGNAT, reserved, and documentation/benchmarking ranges, for both IPv4 and IPv6
+- Blocks multicast addresses
+- Blocks ``localhost`` and ``0.0.0.0`` by name, before DNS resolution
 - Only allows ``http://`` and ``https://`` schemes
 - 10-second timeout
 - 10 MB size limit
@@ -379,6 +389,9 @@ Field configuration parameters (all optional):
 - ``attendee``, ``organizer``, ``uid``
 
 Each accepts: ``keep``, ``remove``, ``randomize``, ``replace``
+
+If the source server declares a ``charset`` in its response's ``Content-Type``, that charset is used to decode the calendar.
+Otherwise it falls back to the same UTF-8/Windows-1252/Latin-1 detection as the CLI; see :ref:`encoding-support`.
 
 **Response (200 OK)**
 
@@ -511,7 +524,7 @@ Anonymize a calendar and generate a shareable link. Only available on the hosted
 
 **Error Responses**
 
-- ``400 Bad Request`` - Invalid ICS format, empty file, or non-UTF-8 encoding
+- ``400 Bad Request`` - Invalid ICS format or empty file
 - ``413 Payload Too Large`` - File exceeds size limit
 - ``500 Internal Server Error`` - Anonymization or storage failed
 - ``503 Service Unavailable`` - R2 storage not configured (self-hosted instances)
@@ -591,6 +604,7 @@ GET /fernet/{token}
 -------------------
 
 Fetch and anonymize a calendar using an encrypted Fernet token.
+Fetches the source the same way ``GET /fetch`` does, including its encoding detection.
 
 **Request**
 
@@ -903,7 +917,7 @@ For high-security deployments, add further layers on top of this:
 
 All endpoints validate:
 
-- UTF-8 encoding (no binary corruption)
+- Text encoding: UTF-8 first, then Windows-1252 and Latin-1 as a fallback for older calendar exports, see :doc:`cli` for details
 - iCalendar format (BEGIN:VCALENDAR required)
 - File size limits (10 MB for URL fetching)
 
@@ -926,7 +940,7 @@ Test coverage includes:
 
 - All three endpoints with valid and invalid inputs
 - SSRF protection (private IPs, localhost, redirects)
-- UTF-8 encoding validation
+- Encoding detection (UTF-8, Windows-1252, Latin-1, declared charsets)
 - Error handling scenarios
 - Large file handling
 

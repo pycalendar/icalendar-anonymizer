@@ -165,6 +165,9 @@ Fix lint errors
 
     make lint-fix
 
+This project sets ``unsafe-fixes = true`` in :file:`pyproject.toml`, so ``make lint-fix`` applies Ruff's unsafe fixes too, not only the safe ones.
+Review the diff before committing.
+
 Format code
 -----------
 
@@ -532,6 +535,26 @@ You can also run the check manually:
     reuse lint
 
 All files must pass REUSE compliance before merge.
+
+Cloudflare Workers deployment
+=============================
+
+The hosted service at https://icalendar-anonymizer.com runs on Cloudflare Workers, using `Pyodide <https://pyodide.org/>`_ to run the same FastAPI app as the pip package.
+This section is for contributors working on that deployment path.
+It's not required knowledge for the library, CLI, or self-hosted web service.
+
+:file:`worker.py` at the repository root is the Workers entry point (:file:`wrangler.jsonc`'s ``main``).
+Before importing the FastAPI app, it sets ``CLOUDFLARE_WORKERS=true`` in the environment.
+:file:`src/icalendar_anonymizer/webapp/main.py` reads that variable at import time and at request time to:
+
+-   Mount ``icalendar_anonymizer.webapp.r2.WorkersR2Client`` instead of the in-memory ``MockR2Client`` used everywhere else
+-   Skip mounting ``/static`` via FastAPI's ``StaticFiles`` (Cloudflare Workers serves static assets itself)
+-   Report ``r2_enabled: true`` from ``GET /health``
+
+:file:`wrangler.jsonc` configures the rest of the deployment: an R2 bucket binding (``CALENDAR_SHARE_BUCKET``) for shareable links, the custom domain route, and an ``assets.run_worker_first`` list of paths that must reach the Python worker instead of being served as static files.
+
+:file:`build.sh` prepares a deployable tree before ``wrangler deploy`` runs: it copies the package into ``python_modules/`` (Workers' Pyodide runtime imports it from there) and copies the static frontend into ``src/icalendar_anonymizer/webapp/assets/`` (the directory :file:`wrangler.jsonc`'s ``assets.directory`` points at).
+The ``cloudflare-deploy.yml`` GitHub Actions workflow runs this on every ``v*`` tag push, or manually via ``workflow_dispatch``.
 
 Get help
 ========
