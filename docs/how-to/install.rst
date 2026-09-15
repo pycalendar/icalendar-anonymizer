@@ -5,7 +5,7 @@
 Installation
 ============
 
-This guide covers installation for end users. For development setup, see :doc:`contributing`.
+This guide covers installation for end users. For development setup, see :doc:`../contribute`.
 
 Requirements
 ============
@@ -42,7 +42,7 @@ Install the CLI with the following command.
 
     python -m pip install icalendar-anonymizer[cli]
 
-This installs the :program:`icalendar-anonymize` and :program:`ican` commands. See :doc:`usage/cli` for usage details.
+This installs the :program:`icalendar-anonymize` and :program:`ican` commands. See :doc:`cli` for usage details.
 
 Web Service
 -----------
@@ -53,7 +53,7 @@ Install the web service with the following command.
 
     python -m pip install icalendar-anonymizer[web]
 
-This installs FastAPI, uvicorn, and dependencies for the REST API server. See :doc:`usage/web-service` for usage details.
+This installs FastAPI, uvicorn, and dependencies for the REST API server. See :doc:`web-service` for usage details.
 
 All Features
 ------------
@@ -74,7 +74,7 @@ Pull and run the Docker image:
     docker pull ghcr.io/pycalendar/icalendar-anonymizer
     docker run -p 8000:8000 ghcr.io/pycalendar/icalendar-anonymizer
 
-The web service will be available at http://localhost:8000. See :doc:`usage/self-hosting` for configuration options.
+The web service will be available at http://localhost:8000. See :doc:`self-hosting` for configuration options.
 
 Verifying Installation
 ======================

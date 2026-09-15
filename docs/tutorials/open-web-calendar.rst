@@ -128,4 +128,4 @@ Make sure you URL-encoded the Fernet URL before passing it to OWC.
 Related topics
 ==============
 
--   :doc:`../usage/web-service` is a reference for the ``/fetch`` and ``/fernet-generate`` endpoints.
+-   :doc:`../how-to/web-service` is a reference for the ``/fetch`` and ``/fernet-generate`` endpoints.

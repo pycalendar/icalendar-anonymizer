@@ -5,92 +5,11 @@
 Change log
 ==========
 
-.. icalendar-anonymizer uses `Semantic Versioning <https://semver.org>`_.
-..
-.. Given a version number MAJOR.MINOR.PATCH, increment the:
-..
-.. - MAJOR version when you make incompatible API changes.
-.. - MINOR version when you add functionality in a backward compatible manner.
-.. - PATCH version when you make backward compatible bug fixes.
-..
-.. When adding entries:
-..
-.. - Add entries as bullet points under the appropriate category.
-.. - Use double backticks for `inline literals <https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html#rst-roles>`_.
-..
-..   .. code-block:: rst
-..
-..       ``PROPERTY``
-..
-.. - Use the `Python domain <https://www.sphinx-doc.org/en/master/usage/domains/python.html>`_ to mark up Python modules, classes, methods, and other Python objects.
-..
-..   .. code-block:: rst
-..
-..       :py:func:`function_name`
-..
-.. - Use the ``:file:`` directive for `files <https://www.sphinx-doc.org/en/master/usage/restructuredtext/roles.html#role-file>`_.
-..
-..   .. code-block:: rst
-..
-..       :file:`file.py`
-..
-.. - Reference issues and pull requests with a link when relevant.
-..
-..   .. code-block:: rst
-..
-..       :issue:`123`
-..       :pr:`456`
-..
-.. - Start with a past tense verb, such as "Added", "Fixed", "Removed", "Updated", and other verbs.
+.. Do *NOT* add new change log entries to this file.
+   Instead create a file in the news directory.
+   See docs/contributing.rst for the change log entry format.
 
-0.1.5 (unreleased)
-------------------
-
-.. _v0.1.5-new-features:
-
-New features
-''''''''''''
-
-- Added Dependabot config. :issue:`78`
-- Added ``CODEOWNERS``. :issue:`28`
-- Added ``SECURITY.md``. :issue:`44`
-- Added ``field_modes`` support to Fernet live-proxy tokens so per-field UI choices are applied on fetch. :issue:`139`
-- Added Open Web Calendar tutorial at :file:`docs/tutorials/open-web-calendar.rst`. :issue:`93`
-- Added :file:`docs/examples.rst` with real-world workflows. :issue:`59`
-- Added optional Basic and Bearer authentication for fetching URLs, via ``POST /fetch`` and Fernet live-proxy links. Credentials are dropped on cross-origin redirects. :issue:`79`
-- Added encoding detection for non-UTF-8 iCalendar input, such as Latin-1 and Windows-1252 exports from Lotus Notes and pre-Unicode Outlook. Output is always UTF-8. :issue:`160`
-- Added a ``--encoding`` CLI flag to force a specific input encoding instead of auto-detecting. :issue:`160`
-- Added JSCalendar (RFC 8984) anonymization support via ``anonymize_jscal()``. :issue:`159`
-- Added jCal (RFC 7265) anonymization support via ``anonymize_jcal()``, reusing the existing iCalendar anonymization engine unchanged. :issue:`159`
-- Added CLI auto-detection of ``.json`` input as JSCalendar or jCal, with a ``--format`` flag to override it. :issue:`159`
-
-.. _v0.1.5-minor-changes:
-
-Minor changes
-'''''''''''''
-
-- Revised Contributing documentation. :issue:`74`
-- Adopted :mod:`sphinx_issues` extension for shorter changelog issue and pull request references.
-- Changed ``POST /upload`` and ``POST /anonymized`` to attempt encoding detection before rejecting non-UTF-8 input. Bytes that still can't be parsed as a calendar now fail with an ``Invalid ICS format`` error instead of an encoding-specific one. :issue:`160`
-- Documented ``POST /fetch`` and Fernet ``auth`` credentials in :file:`docs/usage/web-service.rst`. :issue:`79`
-- Documented the DNS rebinding fix, including its actual SSRF and redirect-limit rules, in :file:`docs/usage/web-service.rst` and :file:`docs/usage/self-hosting.rst`. :issue:`70`
-- Documented the ``--encoding`` and ``--format`` CLI flags in :file:`docs/usage/cli.rst`. :issue:`160`
-- Documented JSCalendar and jCal anonymization (``anonymize_jscal()``, ``anonymize_jcal()``) in :file:`docs/usage/python-api.rst` and a new :file:`docs/api/formats.rst`. :issue:`159`
-- Corrected :file:`docs/usage/python-api.rst`'s preserved-properties table, error-handling examples, and ATTENDEE/ORGANIZER example, and documented the hash functions' edge-case behavior.
-- Documented the frontend's cross-tab field syncing, ``localStorage`` persistence, and the Docker image's Gunicorn/uvloop setup, in :file:`docs/usage/web-service.rst` and :file:`docs/usage/self-hosting.rst`.
-- Added a Cloudflare Workers deployment section for contributors to :file:`docs/contributing.rst`.
-- Documented the full charset-detection behavior, including declared-charset precedence and its safe fallback, across the web service's endpoints in :file:`docs/usage/web-service.rst`.
-- Documented that ``FERNET_KEY`` must decode to exactly 32 bytes, in :file:`docs/usage/self-hosting.rst`.
-
-.. _v0.1.5-bug-fixes:
-
-Bug fixes
-'''''''''
-
-- Ignored Ruff's ``CPY001`` rule, which flagged every file's existing SPDX header as missing a copyright notice.
-- Fixed a DNS rebinding vulnerability in ``/fetch`` and ``/fernet/{token}``. URLs were validated before DNS resolution, so an attacker's domain could resolve to a public IP during validation and a private one during the actual request. Every hop now resolves DNS once, checks the result, and connects to that address directly. :issue:`70`
-- Fixed ``/fetch`` and ``/fernet/{token}`` silently corrupting non-UTF-8 calendars into replacement characters instead of decoding them; they now use the same encoding detection as ``/upload`` and ``/anonymized``. :issue:`160`
-- Bumped the minimum ``icalendar`` version to 7.3.0. Earlier versions wrote a raw carriage return or line feed in a jCal ``URL``, ``ATTENDEE``, or ``ORGANIZER`` value straight into the serialized content line, unescaped, and re-emitted jCal property, parameter, and RRULE part names on serialization without validating them first. :issue:`159`
+.. towncrier release notes start
 
 0.1.4 (2026-04-20)
 ------------------

@@ -1,0 +1,1 @@
+Added ``field_modes`` support to Fernet live-proxy tokens so per-field UI choices are applied on fetch.

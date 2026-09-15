@@ -1,0 +1,1 @@
+Documented the frontend's cross-tab field syncing, ``localStorage`` persistence, and the Docker image's Gunicorn/uvloop setup, in :file:`docs/how-to/web-service.rst` and :file:`docs/how-to/self-hosting.rst`.

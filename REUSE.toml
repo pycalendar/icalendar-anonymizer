@@ -21,3 +21,11 @@ path = "docs/_static/js/custom-icons.js"
 precedence = "override"
 SPDX-FileCopyrightText = "Copyright (c) 2018, pandas"
 SPDX-License-Identifier = "BSD-3-Clause"
+
+# Towncrier news fragments. short-lived, deleted once folded into
+# CHANGES.rst at release time. Not worth a header each.
+[[annotations]]
+path = "news/*"
+precedence = "override"
+SPDX-FileCopyrightText = "2025 icalendar-anonymizer contributors"
+SPDX-License-Identifier = "AGPL-3.0-or-later"

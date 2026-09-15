@@ -1003,6 +1003,6 @@ This is intentional to prevent resource exhaustion.
 See Also
 ========
 
-- :doc:`python-api` - Using the Python library directly
+- :doc:`../reference/python-api` - Using the Python library directly
 - :doc:`cli` - Command-line interface
-- :doc:`../contributing` - Development guide
+- :doc:`../contribute` - Development guide

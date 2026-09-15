@@ -10,6 +10,7 @@ charsets?
 codecs?
 commitizen
 cron
+[Dd]enylist
 [Dd]octests?
 [Dd]ocstrings?
 doctest

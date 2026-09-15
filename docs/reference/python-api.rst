@@ -55,7 +55,7 @@ Provide your own salt for reproducible output:
     Keep your custom salt secret if you need to prevent others from testing potential matches against the hashed values.
 
 Configurable Field Anonymization
-=================================
+================================
 
 Control how each field is anonymized using the ``field_modes`` parameter. Four modes available:
 
@@ -131,7 +131,7 @@ When using ``replace`` mode, these placeholders are used:
     })
 
 Preserving Additional Properties (Legacy)
-==========================================
+=========================================
 
 The ``preserve`` parameter is still supported for backward compatibility:
 
@@ -669,7 +669,7 @@ Here's a complete example putting it all together:
     print(f"Anonymized UID: {list(anonymized_cal.walk('VEVENT'))[0]['uid']}")
 
 JSCalendar and jCal support
-============================
+===========================
 
 ``icalendar_anonymizer`` also anonymizes JSCalendar (RFC 8984) and jCal (RFC 7265) documents, the JSON formats used by JMAP calendar servers.
 See :issue:`159`.
@@ -722,11 +722,11 @@ Participants are one map covering both organizers and attendees, rather than sep
     })
 
 jCal reuses iCalendar's own field names instead.
-Use :py:func:`icalendar_anonymizer.anonymize`'s ``CONFIGURABLE_FIELDS`` (``SUMMARY``, ``DESCRIPTION``, and so on, see :doc:`../api/config`) with ``anonymize_jcal``, not JSCalendar's field names.
+Use :py:func:`icalendar_anonymizer.anonymize`'s ``CONFIGURABLE_FIELDS`` (``SUMMARY``, ``DESCRIPTION``, and so on, see :doc:`config`) with ``anonymize_jcal``, not JSCalendar's field names.
 
 See Also
 ========
 
-- :doc:`../api/index` - Complete API reference
-- :doc:`../installation` - Installation instructions
-- :doc:`../contributing` - Development guide
+- :doc:`index` - Complete API reference
+- :doc:`../how-to/install` - Installation instructions
+- :doc:`../contribute` - Development guide

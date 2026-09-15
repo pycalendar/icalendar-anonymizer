@@ -1,0 +1,1 @@
+Added jCal (RFC 7265) anonymization support via ``anonymize_jcal()``, reusing the existing iCalendar anonymization engine unchanged.

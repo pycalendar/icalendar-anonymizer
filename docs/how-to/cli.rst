@@ -377,7 +377,7 @@ Keep summaries for debugging, pipe to a file, and compress it.
 Anonymization summary
 =====================
 
-The CLI uses the same anonymization as the :doc:`python-api`:
+The CLI uses the same anonymization as the :doc:`../reference/python-api`:
 
 ..  seealso::
 
@@ -531,7 +531,7 @@ For large files over 100MB in size, the following tips will improve performance.
 
         ican -v large-file.ics -o output.ics
 
--   Use the :doc:`python-api` for programmatic control over memory usage.
+-   Use the :doc:`../reference/python-api` for programmatic control over memory usage.
 
 Debugging
 ---------
@@ -591,7 +591,7 @@ Integration examples
 The following examples describe how to integrate icalendar-anonymizer with various third-party tools.
 
 Git pre-commit hook
---------------------
+-------------------
 
 Automatically anonymize calendars before committing:
 
@@ -711,7 +711,7 @@ Options reference
 ..  _field-configuration-options:
 
 Field configuration options
-----------------------------
+---------------------------
 
 Configure how individual fields are anonymized.
 The four modes are ``keep``, ``remove``, ``randomize``, and ``replace``.
@@ -800,7 +800,7 @@ Output is always UTF-8.
 ..  _jscalendar-and-jcal-support:
 
 JSCalendar and jCal support
-============================
+===========================
 
 ``ican`` also anonymizes JSCalendar (RFC 8984) and jCal (RFC 7265) files, the JSON formats used by JMAP calendar servers.
 A ``.json`` file is read as JSCalendar if it contains a JSON object, and as jCal if it contains a JSON array.
@@ -812,7 +812,7 @@ Use :option:`--format` to set the format explicitly for standard input.
     cat calendar.json | ican --format jscal -o anonymized.json
 
 The field configuration options above, ``--summary`` and the rest, apply to iCalendar and jCal input.
-They have no effect on JSCalendar input, which uses its own field vocabulary; configuring it is available through the Python API today, see :doc:`python-api`.
+They have no effect on JSCalendar input, which uses its own field vocabulary; configuring it is available through the Python API today, see :doc:`../reference/python-api`.
 
 JSON input must be valid UTF-8; :option:`--encoding` and the auto-detection described in :ref:`encoding-support` apply only to iCalendar (``.ics``) input.
 A non-UTF-8 ``.json`` file fails with an error rather than falling back to another codec.
@@ -820,7 +820,7 @@ A non-UTF-8 ``.json`` file fails with an error rather than falling back to anoth
 See also
 ========
 
-- :doc:`python-api` - Python API for programmatic usage
-- :doc:`../installation` - Installation instructions
-- :doc:`../api/index` - Complete API reference
-- :doc:`../contributing` - Development guide
+- :doc:`../reference/python-api` - Python API for programmatic usage
+- :doc:`install` - Installation instructions
+- :doc:`../reference/index` - Complete API reference
+- :doc:`../contribute` - Development guide

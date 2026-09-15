@@ -1,0 +1,1 @@
+Added optional Basic and Bearer authentication for fetching URLs, via ``POST /fetch`` and Fernet live-proxy links. Credentials are dropped on cross-origin redirects.

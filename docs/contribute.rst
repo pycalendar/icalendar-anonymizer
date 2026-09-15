@@ -7,6 +7,8 @@ Contributing
 
 This guide covers the development workflow, testing, code style, and other requirements to contribute to icalendar-anonymizer.
 
+icalendar-anonymizer follows the Python Calendaring Ecosystem's `Code of Conduct <https://pycal.org/code-of-conduct/>`_.
+
 .. _development-prerequisites:
 
 .. include:: ./_include/prerequisites.inc
@@ -367,7 +369,7 @@ The following list of requirements must be satisfied to merge a pull request.
 -   All tests must pass
 -   Coverage must be greater than or equal to 90%
 -   Pull request title must follow :doc:`contribute/commit-format`
--   A change log entry
+-   A change log entry (see :ref:`change-log`), unless the change doesn't affect users
 
 Title format
 ------------
@@ -385,96 +387,41 @@ The pull request title becomes the commit message on the ``main`` branch.
 Change log
 ----------
 
-Add your changes to :file:`CHANGES.rst` following the formatting rules documented in the file header.
+See :ref:`change-log` below.
 
-See :ref:`change-log-format` below.
+.. _artificial-intelligence-policy:
 
+Artificial intelligence policy
+==============================
 
-.. _change-log-format:
+icalendar-anonymizer follows the Python Calendaring Ecosystem's `AI policy <https://pycal.org/ai-policy/>`_. Read it before using AI to help draft a pull request.
 
-Change log format
-=================
+.. _change-log:
 
-Add entries under the appropriate category in :file:`CHANGES.rst`.
+Change log
+==========
 
-Breaking changes
-    Incompatible API changes
-New features
-    New functionality
-Minor changes
-    Small improvements
-Bug fixes
-    Bug fixes
+If your PR changes behavior, add a news fragment. CI-only and internal-refactor PRs don't need one.
 
-Format rules
-------------
+..  code-block:: shell
 
-Use the following reStructuredText format conventions.
+    touch news/<issue-number>.<type>.rst
 
-Inline literals
-^^^^^^^^^^^^^^^
+Where ``<type>`` is one of: ``breaking``, ``removal``, ``feature``, ``bugfix``, ``documentation``, ``deps``, ``internal``, ``chore``, ``security``.
 
-Use double backticks for property names and inline code:
+Write a short, user-facing description of the change inside the file, starting with a past tense verb such as "Added," "Fixed," "Removed," or "Updated." Use double backticks for inline literals (``` ``PROPERTY`` ```), the ``:py:func:``/``:py:class:`` roles for Python objects, and the ``:file:`` role for file paths. Towncrier appends the issue link automatically from the filename, so don't add one yourself. For a change with no issue number, name the file ``+<short-description>.<type>.rst`` instead.
 
-..  code-block:: rst
+Fragments are collected into :file:`CHANGES.rst` at release time. Don't edit that file directly.
 
-    ``PROPERTY``
-    ``preserve`` parameter
+If you used AI to help write the change, briefly disclose it in the fragment, per the :ref:`artificial-intelligence-policy`.
 
-Python objects
-^^^^^^^^^^^^^^
+To preview what the change log will look like:
 
-Use Python domain roles:
+..  code-block:: shell
 
-..  code-block:: rst
+    towncrier build --draft --version 0.0.0
 
-    :py:func:`function_name`
-    :py:class:`ClassName`
-    :py:meth:`method_name`
-
-Files
-^^^^^
-
-Use the ``:file:`` directive for files and directories.
-
-..  code-block:: rst
-
-    :file:`docs/conf.py`
-    :file:`pyproject.toml`
-    :file:`src/tests/`
-
-Issue links
-^^^^^^^^^^^
-
-Reference issues using `sphinx-issues <https://github.com/sloria/sphinx-issues#usage-inside-the-documentation>`_ syntax, after the change log entry.
-
-..  code-block:: rst
-
-    - My change log entry. :issue:`123`
-
-Verbs
-^^^^^
-
-Start entries with past tense verbs:
-
--   Added
--   Fixed
--   Updated
--   Removed
--   Deprecated
-
-Example entry
--------------
-
-..  code-block:: rst
-
-    - Added ``preserve`` parameter to :py:func:`anonymize` function. Accepts optional
-      set of property names to preserve beyond defaults. Case-insensitive. Allows
-      preserving properties like ``CATEGORIES`` or ``COMMENT`` for bug reproduction
-      when user confirms no sensitive data. Added 7 tests to preserve functionality.
-      See `Issue 53 <https://github.com/pycalendar/icalendar-anonymizer/issues/53>`_.
-
-See the :file:`CHANGES.rst` file header for complete formatting guidelines.
+If you're unsure whether your PR needs a fragment, ask a maintainer rather than skipping silently.
 
 License and REUSE compliance
 ============================

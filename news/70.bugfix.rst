@@ -1,0 +1,1 @@
+Fixed a DNS rebinding vulnerability in ``/fetch`` and ``/fernet/{token}``. URLs were validated before DNS resolution, so an attacker's domain could resolve to a public IP during validation and a private one during the actual request. Every hop now resolves DNS once, checks the result, and connects to that address directly.

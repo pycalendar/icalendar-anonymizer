@@ -1,0 +1,1 @@
+Changed ``POST /upload`` and ``POST /anonymized`` to attempt encoding detection before rejecting non-UTF-8 input. Bytes that still can't be parsed as a calendar now fail with an ``Invalid ICS format`` error instead of an encoding-specific one.
