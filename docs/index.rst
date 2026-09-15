@@ -80,18 +80,3 @@ Strip personal data from iCalendar files while preserving technical properties f
 
    contribute
    contribute/commit-format
-
-Project Information
-===================
-
-License
-    AGPL-3.0-or-later
-
-Source Code
-    https://github.com/pycalendar/icalendar-anonymizer
-
-Issue Tracker
-    https://github.com/pycalendar/icalendar-anonymizer/issues
-
-PyPI
-    https://pypi.org/project/icalendar-anonymizer/
