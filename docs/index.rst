@@ -10,135 +10,73 @@ Strip personal data from iCalendar files while preserving technical properties f
 .. grid:: 2
     :gutter: 3
 
-    .. grid-item-card:: 📦 Installation
-        :link: installation
-        :link-type: doc
-
-        Install with pip or Docker
-
-    .. grid-item-card:: 🐍 Python API
-        :link: usage/python-api
-        :link-type: doc
-
-        Using the ``anonymize()`` function
-
-    .. grid-item-card:: 💻 Command-Line Interface
-        :link: usage/cli
-        :link-type: doc
-
-        Using icalendar-anonymize and ican commands
-
-    .. grid-item-card:: 🌐 Web Service
-        :link: usage/web-service
-        :link-type: doc
-
-        REST API endpoints for anonymization
-
-    .. grid-item-card:: 🐳 Self-Hosting
-        :link: usage/self-hosting
-        :link-type: doc
-
-        Run locally with Docker for data privacy
-
-    .. grid-item-card:: 📚 API Reference
-        :link: api/index
-        :link-type: doc
-
-        Function signatures and module documentation
-
-    .. grid-item-card:: 🗓️ OWC tutorial
+    .. grid-item-card:: 🗓️ Tutorial
         :link: tutorials/open-web-calendar
         :link-type: doc
 
         Publish an anonymized calendar with Open Web Calendar
 
-    .. grid-item-card:: 📖 Examples
-        :link: examples
+    .. grid-item-card:: 📋 How-to guides
+        :link: how-to/install
         :link-type: doc
 
-        Practical workflows for common scenarios
+        Install, use the CLI and web service, self-host, and see real workflows
 
-    .. grid-item-card:: 🤝 Contributing
-        :link: contributing
+    .. grid-item-card:: 📖 Reference
+        :link: reference/index
+        :link-type: doc
+
+        The Python API, every module, and the change log
+
+    .. grid-item-card:: 💡 Explanation
+        :link: explanation/design
+        :link-type: doc
+
+        What gets anonymized, and why
+
+    .. grid-item-card:: 🤝 Contribute
+        :link: contribute
         :link-type: doc
 
         Development workflow and code style
 
-What Gets Anonymized?
-=====================
+.. toctree::
+   :hidden:
+   :caption: Tutorials
 
-**Personal data** is hashed using SHA-256:
-
-- Event summaries, descriptions, locations
-- Attendee and organizer names
-- Comments and categories
-
-**Technical properties** are preserved for bug reproduction:
-
-- Dates and times (DTSTART, DTEND, DUE)
-- Recurrence rules (RRULE, RDATE, EXDATE)
-- Metadata (STATUS, PRIORITY, SEQUENCE)
-- Timezones (complete VTIMEZONE components)
-
-See the :doc:`usage/python-api` for the complete property reference table.
-
-Features
-========
-
-Deterministic hashing
-    Same input + same salt = same output
-
-Structure preservation
-    Word count and email format stay intact
-
-UID uniqueness
-    UIDs remain unique across the calendar
-
-Customizable
-    Use ``preserve`` to keep specific properties
-
-Secure by default
-    Unknown properties get anonymized
-
-Well tested
-    High test coverage with parametrized tests
-
-Comprehensive documentation
-    "If it's not documented, it's broken."
-
-Documentation
-=============
+   tutorials/open-web-calendar
 
 .. toctree::
-    :maxdepth: 1
+   :hidden:
+   :caption: How-to guides
 
-    installation
-    usage/python-api
-    usage/cli
-    usage/web-service
-    usage/self-hosting
-    tutorials/open-web-calendar
-    examples
-    api/index
+   how-to/install
+   how-to/cli
+   how-to/web-service
+   how-to/self-hosting
+   how-to/examples
 
 .. toctree::
-    :maxdepth: 1
-    :hidden:
+   :hidden:
+   :caption: Reference
 
-    changelog
-    contributing
+   reference/index
+   reference/python-api
+   reference/anonymizer
+   reference/config
+   reference/formats
+   reference/version
+   reference/changelog
 
-Project Information
-===================
+.. toctree::
+   :hidden:
+   :caption: Explanation
 
-License
-    AGPL-3.0-or-later
+   explanation/design
 
-Source Code
-    https://github.com/pycalendar/icalendar-anonymizer
+.. toctree::
+   :hidden:
+   :caption: Project
 
-Issue Tracker
-    https://github.com/pycalendar/icalendar-anonymizer/issues
-
-PyPI
-    https://pypi.org/project/icalendar-anonymizer/
+   contribute
+   contribute/commit-format

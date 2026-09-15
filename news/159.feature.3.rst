@@ -1,0 +1,1 @@
+Added CLI auto-detection of ``.json`` input as JSCalendar or jCal, with a ``--format`` flag to override it.

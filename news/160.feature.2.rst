@@ -1,0 +1,1 @@
+Added a ``--encoding`` CLI flag to force a specific input encoding instead of auto-detecting.

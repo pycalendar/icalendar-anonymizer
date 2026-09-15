@@ -1,0 +1,1 @@
+Added encoding detection for non-UTF-8 iCalendar input, such as Latin-1 and Windows-1252 exports from Lotus Notes and pre-Unicode Outlook. Output is always UTF-8.

@@ -1,0 +1,1 @@
+Bumped the minimum ``icalendar`` version to 7.3.0. Earlier versions wrote a raw carriage return or line feed in a jCal ``URL``, ``ATTENDEE``, or ``ORGANIZER`` value straight into the serialized content line, unescaped, and re-emitted jCal property, parameter, and RRULE part names on serialization without validating them first.

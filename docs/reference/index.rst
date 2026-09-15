@@ -2,10 +2,13 @@
 .. SPDX-License-Identifier: AGPL-3.0-or-later
 
 =============
-Configuration
+API Reference
 =============
 
-.. automodule:: icalendar_anonymizer._config
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. toctree::
+   :maxdepth: 2
+
+   anonymizer
+   formats
+   config
+   version

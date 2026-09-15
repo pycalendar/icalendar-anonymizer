@@ -1,0 +1,1 @@
+Fixed ``/fetch`` and ``/fernet/{token}`` silently corrupting non-UTF-8 calendars into replacement characters instead of decoding them; they now use the same encoding detection as ``/upload`` and ``/anonymized``.

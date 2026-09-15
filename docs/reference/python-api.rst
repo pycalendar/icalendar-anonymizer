@@ -55,7 +55,7 @@ Provide your own salt for reproducible output:
     Keep your custom salt secret if you need to prevent others from testing potential matches against the hashed values.
 
 Configurable Field Anonymization
-=================================
+================================
 
 Control how each field is anonymized using the ``field_modes`` parameter. Four modes available:
 
@@ -98,6 +98,7 @@ Control how each field is anonymized using the ``field_modes`` parameter. Four m
 
 - Field names are case-insensitive: ``{"summary": "keep"}`` and ``{"SUMMARY": "keep"}`` are equivalent
 - Mode values are case-insensitive: ``"Keep"``, ``"KEEP"``, and ``"keep"`` all work
+- Mode values also accept :py:class:`icalendar_anonymizer._config.AnonymizeMode` members directly, such as ``{"SUMMARY": AnonymizeMode.KEEP}``
 - Only configured fields are affected - others use the default randomize behavior
 - Applies recursively to all components (VEVENT, VTODO, VJOURNAL, VALARM)
 - **UID constraint**: Cannot use ``remove`` mode (would break recurring events)
@@ -130,7 +131,7 @@ When using ``replace`` mode, these placeholders are used:
     })
 
 Preserving Additional Properties (Legacy)
-==========================================
+=========================================
 
 The ``preserve`` parameter is still supported for backward compatibility:
 
@@ -202,8 +203,6 @@ These properties are preserved to enable bug reproduction:
      - Creation timestamp
    * - LAST-MODIFIED
      - Last modification timestamp
-   * - COMPLETED
-     - Completion timestamp for TODOs
    * - **Recurrence Properties**
      -
    * - RRULE
@@ -212,6 +211,22 @@ These properties are preserved to enable bug reproduction:
      - Recurrence dates
    * - EXDATE
      - Exception dates
+   * - RECURRENCE-ID
+     - Identifies which recurrence instance this component modifies
+   * - **Timezone Properties**
+     -
+   * - TZID
+     - Timezone identifier
+   * - TZOFFSETFROM
+     - UTC offset before a transition
+   * - TZOFFSETTO
+     - UTC offset after a transition
+   * - TZNAME
+     - Timezone abbreviation
+   * - TZURL
+     - Reference URL for timezone data
+   * - X-WR-TIMEZONE
+     - Calendar-level timezone (non-standard but widely used)
    * - **Metadata Properties**
      -
    * - SEQUENCE
@@ -224,8 +239,26 @@ These properties are preserved to enable bug reproduction:
      - Classification (PUBLIC, PRIVATE, CONFIDENTIAL)
    * - PRIORITY
      - Priority level (0-9)
-   * - PERCENT-COMPLETE
-     - Completion percentage for TODOs
+   * - **Alarm Properties**
+     -
+   * - ACTION
+     - Alarm action type (AUDIO, DISPLAY, EMAIL)
+   * - TRIGGER
+     - When the alarm fires, relative or absolute
+   * - REPEAT
+     - Number of times to repeat the alarm
+   * - **Free/Busy Properties**
+     -
+   * - FREEBUSY
+     - Free/busy time periods
+   * - FBTYPE
+     - Free/busy type (FREE, BUSY, BUSY-UNAVAILABLE, BUSY-TENTATIVE)
+   * - **Relationship Properties**
+     -
+   * - RELATED-TO
+     - Reference to a related component's UID
+   * - REQUEST-STATUS
+     - Scheduling response status code
    * - **Calendar-Level Properties**
      -
    * - VERSION
@@ -238,10 +271,18 @@ These properties are preserved to enable bug reproduction:
      - Calendar method (REQUEST, REPLY, etc.)
    * - **Components**
      -
-   * - VTIMEZONE
-     - Complete timezone definitions preserved
-   * - Component types
-     - VEVENT, VTODO, VJOURNAL, VALARM types preserved
+   * - VTIMEZONE, STANDARD, DAYLIGHT
+     - Preserved in full, including every property inside them
+
+..  note::
+
+    ``ATTACH``, ``URL``, and ``GEO`` look technical but are anonymized, not preserved.
+    ``ATTACH``/``URL`` can carry personal data in a path or query string, and ``GEO`` reveals a home or work location.
+
+..  note::
+
+    ``COMPLETED`` and ``PERCENT-COMPLETE`` (VTODO progress properties) are not yet in the preserved set.
+    Anonymizing a VTODO that has either one currently raises an error instead of producing output. See :issue:`168`.
 
 Anonymized Properties (Personal Data)
 -------------------------------------
@@ -273,17 +314,24 @@ These properties contain personal data and are hashed:
    * - **Person Identifiers**
      -
    * - ATTENDEE
-     - CN parameter hashed, mailto: preserved for structure
+     - CN parameter and email both hashed, ``mailto:`` prefix preserved
    * - ORGANIZER
-     - CN parameter hashed, mailto: preserved for structure
+     - CN parameter and email both hashed, ``mailto:`` prefix preserved
    * - **Unique Identifiers**
      -
    * - UID
-     - Hashed but uniqueness preserved across calendar
+     - Hashed to ``{32-hex-chars}@anonymous.local``; the same input UID always maps to the same output, so recurring events keep a shared UID
    * - **Unknown Properties**
      -
-   * - Any other property
+   * - Any other property, including ``X-`` extensions
      - Anonymized by default (secure default-deny model)
+
+A property not listed in either table above is anonymized, not preserved, even if it looks structural.
+This includes custom ``X-`` properties, which some calendar apps use to carry personal data (``X-ALT-DESC``, for example).
+
+Word-level hashing (``SUMMARY``, ``DESCRIPTION``, and the rest of the text fields) hashes each word to a 16-character hex string and joins them with spaces, so a 3-word summary anonymizes to 3 hashed words.
+An empty or whitespace-only value is left unchanged rather than hashed.
+An ``ATTENDEE``/``ORGANIZER`` value with no ``@`` is hashed as opaque text instead of email-shaped output.
 
 Special Handling Examples
 =========================
@@ -291,7 +339,7 @@ Special Handling Examples
 ATTENDEE and ORGANIZER
 ----------------------
 
-The CN (Common Name) parameter is hashed while preserving the mailto: structure:
+The CN (Common Name) parameter and the email address are both hashed, keeping the ``mailto:local@domain`` shape:
 
 .. code-block:: python
 
@@ -299,7 +347,10 @@ The CN (Common Name) parameter is hashed while preserving the mailto: structure:
     ATTENDEE;CN=John Doe:mailto:john@example.com
 
     # Anonymized
-    ATTENDEE;CN=a1b2c3d4:mailto:john@example.com
+    ATTENDEE;CN=a1b2c3d4e5f6g7h8:mailto:b2c3d4e5f6g7h8i9@a1b2c3d4e5f6g7h8.local
+
+Every other parameter, such as ``ROLE``, ``PARTSTAT``, ``RSVP``, and ``CUTYPE``, is preserved unchanged.
+The ``mailto:`` prefix's case is preserved too: a value written as ``MAILTO:`` stays ``MAILTO:``.
 
 UID Uniqueness
 --------------
@@ -461,7 +512,7 @@ TypeError for Invalid Calendar
     try:
         anonymized = anonymize("BEGIN:VCALENDAR...")
     except TypeError as e:
-        print(e)  # "cal must be a Calendar instance"
+        print(e)  # "Expected Calendar, got str"
 
 TypeError for Invalid Salt
 --------------------------
@@ -472,7 +523,7 @@ TypeError for Invalid Salt
     try:
         anonymized = anonymize(cal, salt="my-salt")
     except TypeError as e:
-        print(e)  # "salt must be bytes or None"
+        print(e)  # "salt must be bytes, got str"
 
 TypeError for Invalid Preserve
 ------------------------------
@@ -483,7 +534,7 @@ TypeError for Invalid Preserve
     try:
         anonymized = anonymize(cal, preserve=["SUMMARY", "DESCRIPTION"])
     except TypeError as e:
-        print(e)  # "preserve must be a set or None"
+        print(e)  # "preserve must be a set or None, got list"
 
     # Correct: use a set
     anonymized = anonymize(cal, preserve={"SUMMARY", "DESCRIPTION"})
@@ -497,13 +548,13 @@ TypeError/ValueError for Invalid field_modes
     try:
         anonymized = anonymize(cal, field_modes=["SUMMARY"])
     except TypeError as e:
-        print(e)  # "field_modes must be dict or None"
+        print(e)  # "field_modes must be dict or None, got list"
 
     # Wrong: invalid field name
     try:
         anonymized = anonymize(cal, field_modes={"INVALID": "keep"})
     except ValueError as e:
-        print(e)  # "Unknown field 'INVALID'. Valid: ..."
+        print(e)  # "Unknown field 'INVALID'. Valid: ['ATTENDEE', 'CATEGORIES', ...]"
 
     # Wrong: invalid mode
     try:
@@ -617,9 +668,65 @@ Here's a complete example putting it all together:
     print(f"Original UID: {event['uid']}")
     print(f"Anonymized UID: {list(anonymized_cal.walk('VEVENT'))[0]['uid']}")
 
+JSCalendar and jCal support
+===========================
+
+``icalendar_anonymizer`` also anonymizes JSCalendar (RFC 8984) and jCal (RFC 7265) documents, the JSON formats used by JMAP calendar servers.
+See :issue:`159`.
+
+jCal is a JSON encoding of the same property model as iCalendar. :py:func:`icalendar_anonymizer.anonymize_jcal` reuses :py:func:`icalendar_anonymizer.anonymize` directly.
+
+.. autofunction:: icalendar_anonymizer.anonymize_jcal
+
+.. code-block:: python
+
+    from icalendar import Calendar
+    from icalendar_anonymizer import anonymize_jcal
+
+    with open('calendar.ics', 'rb') as f:
+        cal = Calendar.from_ical(f.read())
+
+    jcal_document = cal.to_jcal()
+    anonymized = anonymize_jcal(jcal_document)
+
+JSCalendar has a different shape from iCalendar.
+Participants are one map covering both organizers and attendees, rather than separate ATTENDEE and ORGANIZER properties, and locations are a map rather than a single value.
+:py:func:`icalendar_anonymizer.anonymize_jscal` walks a JSCalendar document directly to handle this, instead of converting it to iCalendar first.
+
+.. autofunction:: icalendar_anonymizer.anonymize_jscal
+
+.. code-block:: python
+
+    from icalendar_anonymizer import anonymize_jscal
+
+    event = {
+        "@type": "Event",
+        "uid": "meeting-with-dr-smith@example.com",
+        "title": "Dentist appointment with Dr. Smith",
+        "start": "2025-01-15T14:00:00",
+        "duration": "PT1H",
+    }
+
+    anonymized = anonymize_jscal(event)
+
+``field_modes`` works the same way it does for :py:func:`icalendar_anonymizer.anonymize`, but with JSCalendar's own field names instead of iCalendar's.
+
+.. autodata:: icalendar_anonymizer.JSCAL_CONFIGURABLE_FIELDS
+
+.. code-block:: python
+
+    # Keep the title, remove the locations
+    anonymized = anonymize_jscal(event, field_modes={
+        "TITLE": "keep",
+        "LOCATIONS": "remove",
+    })
+
+jCal reuses iCalendar's own field names instead.
+Use :py:func:`icalendar_anonymizer.anonymize`'s ``CONFIGURABLE_FIELDS`` (``SUMMARY``, ``DESCRIPTION``, and so on, see :doc:`config`) with ``anonymize_jcal``, not JSCalendar's field names.
+
 See Also
 ========
 
-- :doc:`../api/index` - Complete API reference
-- :doc:`../installation` - Installation instructions
-- :doc:`../contributing` - Development guide
+- :doc:`index` - Complete API reference
+- :doc:`../how-to/install` - Installation instructions
+- :doc:`../contribute` - Development guide

@@ -1,0 +1,1 @@
+Documented the DNS rebinding fix, including its actual SSRF and redirect-limit rules, in :file:`docs/how-to/web-service.rst` and :file:`docs/how-to/self-hosting.rst`.

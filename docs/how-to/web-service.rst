@@ -84,6 +84,7 @@ Paste Content
 Fetch from URL
     Enter a URL to fetch and anonymize a remote calendar.
     Subject to SSRF protection (see security considerations).
+    An Authentication dropdown offers None, Basic, and Bearer for password-protected feeds, calling ``POST /fetch`` instead of ``GET /fetch`` when credentials are set.
 
 Advanced Options
 ----------------
@@ -104,6 +105,9 @@ Configurable fields (10 total):
 - Attendee, Organizer, UID
 
 The UID field cannot use ``remove`` mode (would break recurring events).
+
+Changing a field's mode on one tab mirrors it to the same field on the other two tabs, and the selections are saved in the browser's ``localStorage`` so they survive a page reload.
+The Fetch tab's authentication fields (username, password, bearer token) are never included in this saved data.
 
 Shareable Links
 ---------------
@@ -206,9 +210,12 @@ curl-friendly endpoint for scripting and testing. Returns raw ICS without JSON w
 
 No ``Content-Disposition`` header, allowing direct piping to files.
 
+For a POST body, a ``charset`` declared in the request's own ``Content-Type`` header (for example ``Content-Type: text/calendar; charset=iso-8859-7``) is used to decode it.
+Otherwise it falls back to the same UTF-8/Windows-1252/Latin-1 detection as the CLI; see :ref:`encoding-support`.
+
 **Error Responses**
 
-- ``400 Bad Request`` - Missing ``ics`` parameter (GET), empty body (POST), invalid UTF-8, or invalid ICS format
+- ``400 Bad Request`` - Missing ``ics`` parameter (GET), empty body (POST), or invalid ICS format
 
 **Examples with curl**
 
@@ -313,6 +320,10 @@ Anonymize an uploaded iCalendar file. Optionally configure per-field anonymizati
 
 The ``config`` field is optional JSON string. If omitted, all fields use default randomize behavior.
 
+If the uploaded file's part declares a ``charset`` in its own ``Content-Type``, that charset is used to decode it, and any Python codec name is accepted, not just Windows-1252 or Latin-1 (for example ``Content-Type: text/calendar; charset=utf-16``).
+A declared charset that fails to decode the actual bytes is not trusted blindly: decoding falls back to the same detection used when no charset is declared, rather than crashing or returning corrupted text.
+See :doc:`cli` for how that fallback chain works, and :ref:`encoding-support` for its known limitation with other legacy encodings.
+
 **Response (200 OK)**
 
 .. code-block:: http
@@ -327,7 +338,7 @@ The ``config`` field is optional JSON string. If omitted, all fields use default
 
 **Error Responses**
 
-- ``400 Bad Request`` - Invalid ICS format, empty file, non-UTF-8 encoding, or invalid config JSON
+- ``400 Bad Request`` - Invalid ICS format, empty file, or invalid config JSON
 - ``413 Payload Too Large`` - File exceeds size limit
 - ``422 Unprocessable Entity`` - Invalid field config
 - ``500 Internal Server Error`` - Anonymization failed
@@ -356,13 +367,14 @@ Fetch an iCalendar file from a URL and anonymize it. Optionally configure per-fi
 
 This endpoint includes SSRF (Server-Side Request Forgery) protection:
 
-- Blocks private IP ranges (10.x, 172.16.x, 192.168.x, 169.254.x)
-- Blocks localhost (127.0.0.1, ::1, 0.0.0.0)
-- Blocks IPv6 private ranges (fc00::/7, fe80::/10)
+- Blocks any address that isn't globally routable: private, loopback, link-local, CGNAT, reserved, and documentation/benchmarking ranges, for both IPv4 and IPv6
+- Blocks multicast addresses
+- Blocks ``localhost`` and ``0.0.0.0`` by name, before DNS resolution
 - Only allows ``http://`` and ``https://`` schemes
 - 10-second timeout
 - 10 MB size limit
 - Validates redirect destinations
+- Follows at most 10 redirects, then fails with ``400 Too many redirects``
 
 **Request**
 
@@ -377,6 +389,9 @@ Field configuration parameters (all optional):
 - ``attendee``, ``organizer``, ``uid``
 
 Each accepts: ``keep``, ``remove``, ``randomize``, ``replace``
+
+If the source server declares a ``charset`` in its response's ``Content-Type``, that charset is used to decode the calendar.
+Otherwise it falls back to the same UTF-8/Windows-1252/Latin-1 detection as the CLI; see :ref:`encoding-support`.
 
 **Response (200 OK)**
 
@@ -411,10 +426,73 @@ Each accepts: ``keep``, ``remove``, ``randomize``, ``replace``
     curl "http://localhost:8000/fetch?url=https://example.com/calendar.ics&summary=keep&location=remove" \
       -o anonymized.ics
 
-**Known Limitations**
+**DNS Rebinding Protection**
 
-The SSRF protection has a Time-of-Check-Time-of-Use (TOCTOU) vulnerability to DNS rebinding attacks.
-See `Issue #70 <https://github.com/pycalendar/icalendar-anonymizer/issues/70>`_ for future enhancements.
+- Resolves the hostname once per request or redirect hop
+- Validates every resolved address, not just the hostname
+- Connects to the validated address directly, without re-resolving it
+- Repeats resolve, validate, connect on each redirect hop
+
+See :issue:`70`.
+
+POST /fetch
+-----------
+
+Fetch an iCalendar file from a URL and anonymize it. Same as ``GET /fetch``, plus optional credentials for password-protected feeds.
+
+**Security Features**
+
+- Credentials go in the request body, not the query string
+- Rejects URLs with embedded credentials (``https://alice:secret@example.com/...``)
+- Drops credentials before following any redirect that changes scheme, host, or port
+
+**Request**
+
+.. code-block:: http
+
+    POST /fetch HTTP/1.1
+    Content-Type: application/json
+
+    {
+      "url": "https://example.com/calendar.ics",
+      "auth": {"type": "basic", "username": "alice", "password": "secret"}
+    }
+
+For a bearer token, use ``"auth": {"type": "bearer", "token": "abc123"}`` instead.
+
+``config`` accepts the same per-field options as ``GET /fetch``'s query parameters, as a JSON object instead:
+
+.. code-block:: http
+
+    POST /fetch HTTP/1.1
+    Content-Type: application/json
+
+    {
+      "url": "https://example.com/calendar.ics",
+      "config": {"summary": "keep", "location": "remove"}
+    }
+
+**Response (200 OK)**
+
+Same shape as ``GET /fetch``: the anonymized calendar, served as ``text/calendar``.
+
+**Error Responses**
+
+- ``400 Bad Request`` - Invalid URL, embedded credentials, private IP, malformed auth, or invalid ICS format
+- ``408 Request Timeout`` - Request exceeded 10-second timeout
+- ``413 Payload Too Large`` - Response exceeds 10 MB size limit
+- ``422 Unprocessable Entity`` - Invalid ``auth`` shape, such as a bearer token with a username, or invalid field config
+
+**Example with curl**
+
+.. code-block:: shell
+
+    curl -X POST http://localhost:8000/fetch \
+      -H "Content-Type: application/json" \
+      -d '{"url": "https://example.com/calendar.ics", "auth": {"type": "basic", "username": "alice", "password": "secret"}}' \
+      -o anonymized.ics
+
+See :issue:`79`.
 
 POST /share
 -----------
@@ -446,7 +524,7 @@ Anonymize a calendar and generate a shareable link. Only available on the hosted
 
 **Error Responses**
 
-- ``400 Bad Request`` - Invalid ICS format, empty file, or non-UTF-8 encoding
+- ``400 Bad Request`` - Invalid ICS format or empty file
 - ``413 Payload Too Large`` - File exceeds size limit
 - ``500 Internal Server Error`` - Anonymization or storage failed
 - ``503 Service Unavailable`` - R2 storage not configured (self-hosted instances)
@@ -476,6 +554,19 @@ Generate an encrypted Fernet token for live calendar proxying. Only available wh
       "url": "https://example.com/calendar.ics"
     }
 
+This endpoint accepts the same optional ``config`` and ``auth`` fields as ``POST /fetch``.
+If the source calendar needs credentials, encrypt them into the token instead of putting them in the plain URL:
+
+.. code-block:: http
+
+    POST /fernet-generate HTTP/1.1
+    Content-Type: application/json
+
+    {
+      "url": "https://example.com/calendar.ics",
+      "auth": {"type": "basic", "username": "alice", "password": "secret"}
+    }
+
 **Response (200 OK)**
 
 .. code-block:: json
@@ -484,12 +575,10 @@ Generate an encrypted Fernet token for live calendar proxying. Only available wh
       "url": "https://icalendar-anonymizer.com/fernet/gAAAAABl..."
     }
 
-The returned URL contains an encrypted token with the source calendar URL and a random salt.
-Anyone with this URL can fetch the calendar, which will be fetched from the source and anonymized on-the-fly.
-
 **Error Responses**
 
 - ``400 Bad Request`` - Invalid URL scheme, localhost, or private IP
+- ``422 Unprocessable Entity`` - Invalid ``auth`` shape, such as a bearer token with a username
 - ``503 Service Unavailable`` - Fernet not configured (``FERNET_KEY`` not set)
 
 **Example with curl**
@@ -506,13 +595,16 @@ Anyone with this URL can fetch the calendar, which will be fetched from the sour
 
 - Source URL validated for SSRF protection (same rules as ``/fetch``)
 - Token encrypted with Fernet symmetric encryption
-- Unique random salt per token ensures different anonymization
-- Token contains authenticated data preventing tampering
+- Unique random salt per token
+- Token contains authenticated data, preventing tampering
+- Any auth credentials are encrypted into the token, not exposed in the plain URL
+- Treat the token URL like a password: anyone with it can read the source calendar
 
 GET /fernet/{token}
 -------------------
 
 Fetch and anonymize a calendar using an encrypted Fernet token.
+Fetches the source the same way ``GET /fetch`` does, including its encoding detection.
 
 **Request**
 
@@ -549,10 +641,10 @@ Fetch and anonymize a calendar using an encrypted Fernet token.
 
 **How It Works**
 
-1. Token is decrypted to retrieve source URL and salt
-2. Source URL is validated for SSRF protection
-3. Calendar is fetched from source (with redirect validation)
-4. Calendar is anonymized using the salt from token
+1. Token is decrypted to retrieve the source URL, salt, and any stored auth credentials
+2. Source URL is validated and its DNS resolved and pinned, same as ``POST /fetch``
+3. Calendar is fetched from the pinned address, with any stored credentials attached, re-validating and re-pinning DNS on every redirect
+4. Calendar is anonymized using the salt from the token
 5. Anonymized calendar is returned
 
 This provides **live proxying** - the source is fetched each time, so the anonymized calendar stays up-to-date.
@@ -813,21 +905,19 @@ Security Considerations
 
 **SSRF Protection**
 
-The ``/fetch`` endpoint implements SSRF protection but has known limitations.
-For high-security deployments:
+``/fetch``, ``/fernet-generate``, and ``/fernet/{token}`` resolve DNS once per hop, validate every resolved address, and pin the connection to a validated address, closing the DNS rebinding gap described under ``GET /fetch`` above.
+For high-security deployments, add further layers on top of this:
 
 - Use network-level firewall rules
 - Deploy in an isolated network segment
 - Implement additional rate limiting
 - Monitor for suspicious URL patterns
 
-See `Issue #70 <https://github.com/pycalendar/icalendar-anonymizer/issues/70>`_ for planned enhancements.
-
 **Input Validation**
 
 All endpoints validate:
 
-- UTF-8 encoding (no binary corruption)
+- Text encoding: UTF-8 first, then Windows-1252 and Latin-1 as a fallback for older calendar exports, see :doc:`cli` for details
 - iCalendar format (BEGIN:VCALENDAR required)
 - File size limits (10 MB for URL fetching)
 
@@ -850,7 +940,7 @@ Test coverage includes:
 
 - All three endpoints with valid and invalid inputs
 - SSRF protection (private IPs, localhost, redirects)
-- UTF-8 encoding validation
+- Encoding detection (UTF-8, Windows-1252, Latin-1, declared charsets)
 - Error handling scenarios
 - Large file handling
 
@@ -913,6 +1003,6 @@ This is intentional to prevent resource exhaustion.
 See Also
 ========
 
-- :doc:`python-api` - Using the Python library directly
+- :doc:`../reference/python-api` - Using the Python library directly
 - :doc:`cli` - Command-line interface
-- :doc:`../contributing` - Development guide
+- :doc:`../contribute` - Development guide

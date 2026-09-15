@@ -1,0 +1,1 @@
+Documented JSCalendar and jCal anonymization (``anonymize_jscal()``, ``anonymize_jcal()``) in :file:`docs/reference/python-api.rst` and a new :file:`docs/reference/formats.rst`.

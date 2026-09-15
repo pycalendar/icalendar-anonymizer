@@ -1,0 +1,1 @@
+Documented ``POST /fetch`` and Fernet ``auth`` credentials in :file:`docs/how-to/web-service.rst`.

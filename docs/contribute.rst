@@ -7,6 +7,8 @@ Contributing
 
 This guide covers the development workflow, testing, code style, and other requirements to contribute to icalendar-anonymizer.
 
+icalendar-anonymizer follows the Python Calendaring Ecosystem's `Code of Conduct <https://pycal.org/code-of-conduct/>`_.
+
 .. _development-prerequisites:
 
 .. include:: ./_include/prerequisites.inc
@@ -164,6 +166,9 @@ Fix lint errors
 ..  code-block:: shell
 
     make lint-fix
+
+This project sets ``unsafe-fixes = true`` in :file:`pyproject.toml`, so ``make lint-fix`` applies Ruff's unsafe fixes too, not only the safe ones.
+Review the diff before committing.
 
 Format code
 -----------
@@ -364,7 +369,7 @@ The following list of requirements must be satisfied to merge a pull request.
 -   All tests must pass
 -   Coverage must be greater than or equal to 90%
 -   Pull request title must follow :doc:`contribute/commit-format`
--   A change log entry
+-   A change log entry (see :ref:`change-log`), unless the change doesn't affect users
 
 Title format
 ------------
@@ -382,96 +387,41 @@ The pull request title becomes the commit message on the ``main`` branch.
 Change log
 ----------
 
-Add your changes to :file:`CHANGES.rst` following the formatting rules documented in the file header.
+See :ref:`change-log` below.
 
-See :ref:`change-log-format` below.
+.. _artificial-intelligence-policy:
 
+Artificial intelligence policy
+==============================
 
-.. _change-log-format:
+icalendar-anonymizer follows the Python Calendaring Ecosystem's `AI policy <https://pycal.org/ai-policy/>`_. Read it before using AI to help draft a pull request.
 
-Change log format
-=================
+.. _change-log:
 
-Add entries under the appropriate category in :file:`CHANGES.rst`.
+Change log
+==========
 
-Breaking changes
-    Incompatible API changes
-New features
-    New functionality
-Minor changes
-    Small improvements
-Bug fixes
-    Bug fixes
+If your PR changes behavior, add a news fragment. CI-only and internal-refactor PRs don't need one.
 
-Format rules
-------------
+..  code-block:: shell
 
-Use the following reStructuredText format conventions.
+    touch news/<issue-number>.<type>.rst
 
-Inline literals
-^^^^^^^^^^^^^^^
+Where ``<type>`` is one of: ``breaking``, ``removal``, ``feature``, ``bugfix``, ``documentation``, ``deps``, ``internal``, ``chore``, ``security``.
 
-Use double backticks for property names and inline code:
+Write a short, user-facing description of the change inside the file, starting with a past tense verb such as "Added," "Fixed," "Removed," or "Updated." Use double backticks for inline literals (``` ``PROPERTY`` ```), the ``:py:func:``/``:py:class:`` roles for Python objects, and the ``:file:`` role for file paths. Towncrier appends the issue link automatically from the filename, so don't add one yourself. For a change with no issue number, name the file ``+<short-description>.<type>.rst`` instead.
 
-..  code-block:: rst
+Fragments are collected into :file:`CHANGES.rst` at release time. Don't edit that file directly.
 
-    ``PROPERTY``
-    ``preserve`` parameter
+If you used AI to help write the change, briefly disclose it in the fragment, per the :ref:`artificial-intelligence-policy`.
 
-Python objects
-^^^^^^^^^^^^^^
+To preview what the change log will look like:
 
-Use Python domain roles:
+..  code-block:: shell
 
-..  code-block:: rst
+    towncrier build --draft --version 0.0.0
 
-    :py:func:`function_name`
-    :py:class:`ClassName`
-    :py:meth:`method_name`
-
-Files
-^^^^^
-
-Use the ``:file:`` directive for files and directories.
-
-..  code-block:: rst
-
-    :file:`docs/conf.py`
-    :file:`pyproject.toml`
-    :file:`src/tests/`
-
-Issue links
-^^^^^^^^^^^
-
-Reference issues using `sphinx-issues <https://github.com/sloria/sphinx-issues#usage-inside-the-documentation>`_ syntax, after the change log entry.
-
-..  code-block:: rst
-
-    - My change log entry. :issue:`123`
-
-Verbs
-^^^^^
-
-Start entries with past tense verbs:
-
--   Added
--   Fixed
--   Updated
--   Removed
--   Deprecated
-
-Example entry
--------------
-
-..  code-block:: rst
-
-    - Added ``preserve`` parameter to :py:func:`anonymize` function. Accepts optional
-      set of property names to preserve beyond defaults. Case-insensitive. Allows
-      preserving properties like ``CATEGORIES`` or ``COMMENT`` for bug reproduction
-      when user confirms no sensitive data. Added 7 tests to preserve functionality.
-      See `Issue 53 <https://github.com/pycalendar/icalendar-anonymizer/issues/53>`_.
-
-See the :file:`CHANGES.rst` file header for complete formatting guidelines.
+If you're unsure whether your PR needs a fragment, ask a maintainer rather than skipping silently.
 
 License and REUSE compliance
 ============================
@@ -532,6 +482,26 @@ You can also run the check manually:
     reuse lint
 
 All files must pass REUSE compliance before merge.
+
+Cloudflare Workers deployment
+=============================
+
+The hosted service at https://icalendar-anonymizer.com runs on Cloudflare Workers, using `Pyodide <https://pyodide.org/>`_ to run the same FastAPI app as the pip package.
+This section is for contributors working on that deployment path.
+It's not required knowledge for the library, CLI, or self-hosted web service.
+
+:file:`worker.py` at the repository root is the Workers entry point (:file:`wrangler.jsonc`'s ``main``).
+Before importing the FastAPI app, it sets ``CLOUDFLARE_WORKERS=true`` in the environment.
+:file:`src/icalendar_anonymizer/webapp/main.py` reads that variable at import time and at request time to:
+
+-   Mount ``icalendar_anonymizer.webapp.r2.WorkersR2Client`` instead of the in-memory ``MockR2Client`` used everywhere else
+-   Skip mounting ``/static`` via FastAPI's ``StaticFiles`` (Cloudflare Workers serves static assets itself)
+-   Report ``r2_enabled: true`` from ``GET /health``
+
+:file:`wrangler.jsonc` configures the rest of the deployment: an R2 bucket binding (``CALENDAR_SHARE_BUCKET``) for shareable links, the custom domain route, and an ``assets.run_worker_first`` list of paths that must reach the Python worker instead of being served as static files.
+
+:file:`build.sh` prepares a deployable tree before ``wrangler deploy`` runs: it copies the package into ``python_modules/`` (Workers' Pyodide runtime imports it from there) and copies the static frontend into ``src/icalendar_anonymizer/webapp/assets/`` (the directory :file:`wrangler.jsonc`'s ``assets.directory`` points at).
+The ``cloudflare-deploy.yml`` GitHub Actions workflow runs this on every ``v*`` tag push, or manually via ``workflow_dispatch``.
 
 Get help
 ========

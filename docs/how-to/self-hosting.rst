@@ -64,6 +64,9 @@ Server Configuration
 ``WORKERS``
    Number of Gunicorn worker processes (default: ``4``)
 
+   The Docker image runs Gunicorn with the ``uvicorn.workers.UvicornWorker`` worker class, plus the ``uvloop`` and ``httptools`` performance extras.
+   Access and error logs go to stdout/stderr, so ``docker-compose logs -f`` shows both.
+
 File Handling
 ~~~~~~~~~~~~~
 
@@ -88,6 +91,9 @@ Shareable Links
    .. code-block:: bash
 
       python -c "from icalendar_anonymizer.webapp.vendored.fernet_compat import Fernet; print(Fernet.generate_key().decode())"
+
+   The key must be base64-encoded and decode to exactly 32 bytes.
+   A key of the wrong length isn't validated at startup: it fails with a generic ``500 Internal Server Error`` on the first request to ``POST /fernet-generate`` or ``GET /fernet/{token}``.
 
    .. warning::
 
@@ -205,13 +211,9 @@ The service only exposes port 8000. No other services or ports are accessible.
 SSRF Protection
 ---------------
 
-URL fetching includes SSRF protection that blocks:
+URL fetching includes SSRF protection that blocks any address that isn't globally routable (private, loopback, link-local, CGNAT, reserved, and documentation/benchmarking ranges, for both IPv4 and IPv6), plus multicast addresses.
 
-- Private IP ranges (10.0.0.0/8, 192.168.0.0/16, 172.16.0.0/12)
-- Loopback addresses (127.0.0.1, localhost)
-- Link-local addresses (169.254.0.0/16)
-
-Known limitation: DNS rebinding attacks may bypass these checks. See Issue #70 for details.
+DNS resolves once per request or redirect hop, and the connection is pinned to the validated address. See :doc:`web-service` for details and :issue:`70`.
 
 File Size Limits
 ----------------
@@ -225,7 +227,7 @@ For production environments:
 
 1. **Use HTTPS**: Put the service behind a reverse proxy (nginx, Caddy, Traefik) with TLS
 2. **Tighten CORS**: Edit ``main.py`` to allow only specific origins instead of ``*``
-3. **Add authentication**: See Issue #79 for planned authentication support
+3. **Require credentials on fetched feeds**: Use ``POST /fetch``'s ``auth`` field for calendars that need Basic or Bearer authentication, see :doc:`web-service`
 4. **Monitor logs**: Set up log aggregation and monitoring
 5. **Regular updates**: Subscribe to security advisories and update promptly
 
